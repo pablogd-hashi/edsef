@@ -1,0 +1,635 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth.js ───────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  familyMembers FamilyMember[]
+  auditLogs     AuditLog[]     @relation("AuditActor")
+  invitations   Invitation[]   @relation("InvitedBy")
+
+  createdChildren    Child[]    @relation("ChildCreatedBy")
+  updatedChildren    Child[]    @relation("ChildUpdatedBy")
+  createdYearbooks   Yearbook[] @relation("YearbookCreatedBy")
+  updatedYearbooks   Yearbook[] @relation("YearbookUpdatedBy")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Enums ─────────────────────────────────────────────────────────────────
+
+enum FamilyRole {
+  OWNER
+  PARENT
+  CHILD
+  GUEST
+}
+
+enum ChildStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum YearbookStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum YearbookTemplate {
+  EDITORIAL
+  TIMELINE
+  ALBUM
+}
+
+enum SectionType {
+  COVER
+  SUMMARY
+  MILESTONES
+  STORIES
+  VIDEOS
+  MUSIC
+  PARENT_NOTES
+  TIMELINE
+  FUTURE_LETTER
+  ATTACHMENTS
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+}
+
+enum MediaVariantType {
+  ORIGINAL
+  WEB
+  THUMBNAIL
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum JobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ExportFormat {
+  PDF
+  HTML
+  JSON
+  ZIP
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+// ─── Family & Access ─────────────────────────────────────────────────────────
+
+model Family {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members     FamilyMember[]
+  children    Child[]
+  people      Person[]
+  locations   Location[]
+  tags        Tag[]
+  exportJobs  ExportJob[]
+  backupJobs  BackupJob[]
+  auditLogs   AuditLog[]
+  invitations Invitation[]
+}
+
+model FamilyMember {
+  id        String     @id @default(cuid())
+  familyId  String
+  userId    String
+  role      FamilyRole @default(PARENT)
+  childId   String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  child  Child? @relation(fields: [childId], references: [id])
+
+  @@unique([familyId, userId, childId])
+  @@index([familyId])
+  @@index([userId])
+}
+
+model Invitation {
+  id             String           @id @default(cuid())
+  familyId       String
+  email          String
+  role           FamilyRole       @default(CHILD)
+  childId        String?
+  token          String           @unique @default(cuid())
+  status         InvitationStatus @default(PENDING)
+  activateAtAge  Int?
+  expiresAt      DateTime?
+  invitedById    String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  family    Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  child     Child? @relation(fields: [childId], references: [id])
+  invitedBy User   @relation("InvitedBy", fields: [invitedById], references: [id])
+
+  @@index([familyId])
+  @@index([email])
+}
+
+// ─── Child & Yearbook ────────────────────────────────────────────────────────
+
+model Child {
+  id             String      @id @default(cuid())
+  familyId       String
+  fullName       String
+  nickname       String?
+  birthDate      DateTime    @db.Date
+  profilePhotoId String?
+  themeColor     String      @default("#C4A77D")
+  titleFont      String      @default("serif")
+  description    String?     @db.Text
+  status         ChildStatus @default(ACTIVE)
+  createdById    String?
+  updatedById    String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  deletedAt      DateTime?
+
+  family         Family         @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  profilePhoto   MediaAsset?    @relation("ChildProfilePhoto", fields: [profilePhotoId], references: [id])
+  createdBy      User?          @relation("ChildCreatedBy", fields: [createdById], references: [id])
+  updatedBy      User?          @relation("ChildUpdatedBy", fields: [updatedById], references: [id])
+  yearbooks      Yearbook[]
+  mediaAssets    MediaAsset[]   @relation("ChildMedia")
+  familyMembers  FamilyMember[]
+  invitations    Invitation[]
+
+  @@index([familyId, status])
+}
+
+model Yearbook {
+  id               String           @id @default(cuid())
+  childId          String
+  title            String
+  yearNumber       Int?
+  periodStart      DateTime?        @db.Date
+  periodEnd        DateTime?        @db.Date
+  ageLabel         String?
+  template         YearbookTemplate @default(EDITORIAL)
+  status           YearbookStatus   @default(DRAFT)
+  coverPhotoId     String?
+  customCoverTitle String?
+  summaryContent   Json?
+  createdById      String?
+  updatedById      String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+
+  child        Child           @relation(fields: [childId], references: [id], onDelete: Cascade)
+  coverPhoto   MediaAsset?     @relation("YearbookCover", fields: [coverPhotoId], references: [id])
+  createdBy    User?           @relation("YearbookCreatedBy", fields: [createdById], references: [id])
+  updatedBy    User?           @relation("YearbookUpdatedBy", fields: [updatedById], references: [id])
+  sections     Section[]
+  stories      Story[]
+  milestones   Milestone[]
+  timeline     TimelineEntry[]
+  music        MusicEntry[]
+  parentNotes  ParentNote[]
+  futureLetter FutureLetter?
+  attachments  Attachment[]
+  mediaAssets  MediaAsset[]    @relation("YearbookMedia")
+  exportJobs   ExportJob[]
+
+  @@index([childId, status])
+}
+
+model Section {
+  id         String      @id @default(cuid())
+  yearbookId String
+  type       SectionType
+  title      String?
+  order      Int         @default(0)
+  visible    Boolean     @default(true)
+  content    Json?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  yearbook Yearbook @relation(fields: [yearbookId], references: [id], onDelete: Cascade)
+
+  @@index([yearbookId, order])
+}
+
+// ─── Content ─────────────────────────────────────────────────────────────────
+
+model Story {
+  id         String    @id @default(cuid())
+  yearbookId String
+  title      String
+  content    Json
+  order      Int       @default(0)
+  isFeatured Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  yearbook    Yearbook     @relation(fields: [yearbookId], references: [id], onDelete: Cascade)
+  attachments Attachment[]
+
+  @@index([yearbookId, order])
+}
+
+model Milestone {
+  id          String    @id @default(cuid())
+  yearbookId  String
+  title       String
+  description String?   @db.Text
+  eventDate   DateTime? @db.Date
+  ageLabel    String?
+  order       Int       @default(0)
+  locationId  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  yearbook  Yearbook           @relation(fields: [yearbookId], references: [id], onDelete: Cascade)
+  location  Location?          @relation(fields: [locationId], references: [id])
+  media     MilestoneMedia[]
+  tags      MilestoneTag[]
+  people    MilestonePerson[]
+
+  @@index([yearbookId, order])
+}
+
+model TimelineEntry {
+  id          String    @id @default(cuid())
+  yearbookId  String
+  title       String
+  description String?   @db.Text
+  eventDate   DateTime  @db.Date
+  month       Int?
+  ageLabel    String?
+  order       Int       @default(0)
+  locationId  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  yearbook Yearbook              @relation(fields: [yearbookId], references: [id], onDelete: Cascade)
+  location Location?             @relation(fields: [locationId], references: [id])
+  media    TimelineEntryMedia[]
+  tags     TimelineEntryTag[]
+
+  @@index([yearbookId, month])
+  @@index([yearbookId, eventDate])
+}
+
+model MusicEntry {
+  id         String   @id @default(cuid())
+  yearbookId String
+  title      String
+  artist     String?
+  spotifyUrl String?
+  youtubeUrl String?
+  coverUrl   String?
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  yearbook Yearbook @relation(fields: [yearbookId], references: [id], onDelete: Cascade)
+
+  @@index([yearbookId, order])
+}
+
+model ParentNote {
+  id         String   @id @default(cuid())
+  yearbookId String
+  author     String
+  content    String   @db.Text
+  noteDate   DateTime @db.Date
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  yearbook Yearbook @relation(fields: [yearbookId], references: [id], onDelete: Cascade)
+
+  @@index([yearbookId, order])
+}
+
+model FutureLetter {
+  id             String    @id @default(cuid())
+  yearbookId     String    @unique
+  content        String    @db.Text
+  signature      String?
+  letterDate     DateTime  @db.Date
+  hiddenUntilAge Int?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  yearbook Yearbook @relation(fields: [yearbookId], references: [id], onDelete: Cascade)
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  yearbookId String
+  storyId    String?
+  mediaId    String
+  title      String?
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  yearbook Yearbook    @relation(fields: [yearbookId], references: [id], onDelete: Cascade)
+  story    Story?      @relation(fields: [storyId], references: [id])
+  media    MediaAsset  @relation(fields: [mediaId], references: [id])
+
+  @@index([yearbookId])
+}
+
+// ─── Media ───────────────────────────────────────────────────────────────────
+
+model MediaAsset {
+  id               String           @id @default(cuid())
+  childId          String
+  yearbookId       String?
+  type             MediaType
+  originalFilename String
+  mimeType         String
+  size             BigInt
+  width            Int?
+  height           Int?
+  duration         Float?
+  storageKey       String
+  checksum         String?
+  title            String?
+  description      String?          @db.Text
+  altText          String?
+  capturedAt       DateTime?
+  uploadedAt       DateTime         @default(now())
+  processingStatus ProcessingStatus @default(PENDING)
+  externalUrl      String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+
+  child              Child                @relation("ChildMedia", fields: [childId], references: [id], onDelete: Cascade)
+  yearbook           Yearbook?            @relation("YearbookMedia", fields: [yearbookId], references: [id])
+  variants           MediaVariant[]
+  childProfileFor    Child[]              @relation("ChildProfilePhoto")
+  yearbookCoverFor   Yearbook[]           @relation("YearbookCover")
+  milestoneLinks     MilestoneMedia[]
+  timelineLinks      TimelineEntryMedia[]
+  attachments        Attachment[]
+
+  @@index([childId, type])
+  @@index([yearbookId])
+  @@index([processingStatus])
+}
+
+model MediaVariant {
+  id         String           @id @default(cuid())
+  mediaId    String
+  variant    MediaVariantType
+  storageKey String
+  mimeType   String
+  size       BigInt
+  width      Int?
+  height     Int?
+  checksum   String?
+  createdAt  DateTime         @default(now())
+
+  media MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([mediaId, variant])
+}
+
+// ─── Taxonomy ────────────────────────────────────────────────────────────────
+
+model Tag {
+  id        String   @id @default(cuid())
+  familyId  String
+  name      String
+  color     String?
+  createdAt DateTime @default(now())
+
+  family    Family             @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  milestones MilestoneTag[]
+  timeline   TimelineEntryTag[]
+
+  @@unique([familyId, name])
+}
+
+model Location {
+  id        String   @id @default(cuid())
+  familyId  String
+  name      String
+  city      String?
+  country   String?
+  latitude  Float?
+  longitude Float?
+  createdAt DateTime @default(now())
+
+  family     Family          @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  milestones Milestone[]
+  timeline   TimelineEntry[]
+
+  @@index([familyId])
+}
+
+model Person {
+  id        String   @id @default(cuid())
+  familyId  String
+  name      String
+  relation  String?
+  createdAt DateTime @default(now())
+
+  family     Family            @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  milestones MilestonePerson[]
+
+  @@index([familyId])
+}
+
+// ─── Join tables ─────────────────────────────────────────────────────────────
+
+model MilestoneMedia {
+  milestoneId String
+  mediaId     String
+  order       Int    @default(0)
+
+  milestone Milestone  @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  media     MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([milestoneId, mediaId])
+}
+
+model MilestoneTag {
+  milestoneId String
+  tagId       String
+
+  milestone Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  tag       Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([milestoneId, tagId])
+}
+
+model MilestonePerson {
+  milestoneId String
+  personId    String
+
+  milestone Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  person    Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@id([milestoneId, personId])
+}
+
+model TimelineEntryMedia {
+  timelineEntryId String
+  mediaId         String
+  order           Int    @default(0)
+
+  timelineEntry TimelineEntry @relation(fields: [timelineEntryId], references: [id], onDelete: Cascade)
+  media         MediaAsset    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([timelineEntryId, mediaId])
+}
+
+model TimelineEntryTag {
+  timelineEntryId String
+  tagId           String
+
+  timelineEntry TimelineEntry @relation(fields: [timelineEntryId], references: [id], onDelete: Cascade)
+  tag           Tag           @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([timelineEntryId, tagId])
+}
+
+// ─── Jobs & Audit ────────────────────────────────────────────────────────────
+
+model ExportJob {
+  id          String       @id @default(cuid())
+  familyId    String
+  yearbookId  String
+  format      ExportFormat
+  status      JobStatus    @default(QUEUED)
+  progress    Int          @default(0)
+  resultKey   String?
+  resultSize  BigInt?
+  error       String?      @db.Text
+  options     Json?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  family   Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  yearbook Yearbook @relation(fields: [yearbookId], references: [id], onDelete: Cascade)
+
+  @@index([familyId])
+  @@index([yearbookId, status])
+}
+
+model BackupJob {
+  id          String    @id @default(cuid())
+  familyId    String
+  status      JobStatus @default(QUEUED)
+  progress    Int       @default(0)
+  resultKey   String?
+  resultSize  BigInt?
+  destination String?
+  manifestKey String?
+  error       String?   @db.Text
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  @@index([familyId, status])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  familyId   String?
+  actorId    String?
+  action     String
+  resource   String?
+  resourceId String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  family Family? @relation(fields: [familyId], references: [id])
+  actor  User?   @relation("AuditActor", fields: [actorId], references: [id])
+
+  @@index([familyId, createdAt])
+  @@index([actorId])
+}

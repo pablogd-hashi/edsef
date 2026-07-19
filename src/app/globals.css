@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+:root {
+  --background: #faf8f5;
+  --foreground: #2c2417;
+  --muted: #6b5d4d;
+  --accent: #c4a77d;
+  --accent-dark: #a68b5b;
+  --card: #ffffff;
+  --border: #e8e0d4;
+  --serif: "Georgia", "Times New Roman", serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-dark: var(--accent-dark);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+  --font-serif: var(--serif);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.font-editorial {
+  font-family: var(--serif);
+}
+
+.prose-yearbook {
+  max-width: 45rem;
+  line-height: 1.75;
+}
+
+.prose-yearbook h1,
+.prose-yearbook h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
