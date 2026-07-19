@@ -9,12 +9,16 @@ const yearbookWithRelations = {
   milestones: {
     where: { deletedAt: null },
     orderBy: { order: "asc" as const },
-    include: { media: { include: { media: true } }, tags: { include: { tag: true } } },
+    include: {
+      media: { include: { media: true } },
+      tags: { include: { tag: true } },
+      location: true,
+    },
   },
   timeline: {
     where: { deletedAt: null },
     orderBy: { eventDate: "asc" as const },
-    include: { media: { include: { media: true } } },
+    include: { media: { include: { media: true } }, location: true },
   },
   music: { orderBy: { order: "asc" as const } },
   parentNotes: { orderBy: { order: "asc" as const } },

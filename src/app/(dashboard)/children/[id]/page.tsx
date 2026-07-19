@@ -2,8 +2,14 @@ import Link from "next/link";
 import { auth } from "@/lib/auth/config";
 import { childrenService, yearbookService } from "@/lib/services";
 import { redirect, notFound } from "next/navigation";
-import { formatDate, calculateAge } from "@/lib/age";
-import { Plus, ArrowLeft } from "lucide-react";
+import { AppShell } from "@/components/layout/app-shell";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { FadeIn, StaggerChildren, StaggerItem } from "@/components/ui/motion";
+import { calculateAge, formatDate } from "@/lib/age";
+import { ArrowLeft, Plus, Eye, BookOpen, Calendar } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default async function ChildPage({
   params,
@@ -21,92 +27,148 @@ export default async function ChildPage({
   const age = calculateAge(child.birthDate);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-4xl items-center gap-4 px-6 py-4">
-          <Link href="/dashboard" className="text-muted hover:text-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <h1 className="font-editorial text-xl">{child.fullName}</h1>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-4xl px-6 py-10">
-        <div className="mb-10 flex items-start gap-6">
-          <div
-            className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl text-3xl font-editorial text-white"
-            style={{ backgroundColor: child.themeColor }}
-          >
-            {child.nickname?.[0] ?? child.fullName[0]}
-          </div>
-          <div>
-            <h2 className="font-editorial text-3xl">
-              {child.nickname ?? child.fullName}
-            </h2>
-            <p className="mt-1 text-muted">
-              Nacida el {formatDate(child.birthDate)} · {age.label}
-            </p>
-            {child.description && (
-              <p className="mt-3 text-muted leading-relaxed max-w-lg">
-                {child.description}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="font-editorial text-xl">Años de vida</h3>
+    <AppShell userName={session.user.name}>
+      {/* Hero */}
+      <div
+        className="relative border-b border-border overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, color-mix(in srgb, ${child.themeColor} 12%, var(--background)), var(--background))`,
+        }}
+      >
+        <div className="absolute inset-0 hero-pattern opacity-30" />
+        <div className="relative mx-auto max-w-4xl px-6 py-12 md:py-16">
           <Link
-            href={`/children/${id}/yearbooks/new`}
-            className="flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-card transition-colors"
+            href="/dashboard"
+            className="inline-flex items-center gap-2 text-sm text-muted hover:text-foreground mb-8 transition-colors"
           >
-            <Plus className="h-4 w-4" />
-            Nuevo año
+            <ArrowLeft className="h-4 w-4" />
+            Mis hijos
           </Link>
-        </div>
 
-        {yearbooks.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border p-12 text-center">
-            <p className="text-muted mb-4">Aún no hay años creados</p>
+          <FadeIn>
+            <div className="flex flex-col sm:flex-row items-start gap-6">
+              <Avatar
+                name={child.nickname ?? child.fullName}
+                color={child.themeColor}
+                size="xl"
+              />
+              <div className="flex-1">
+                <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight">
+                  {child.nickname ?? child.fullName}
+                </h1>
+                <p className="mt-2 text-muted text-lg">
+                  {child.fullName}
+                </p>
+                <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted">
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-accent-dark" />
+                    Nacida el {formatDate(child.birthDate)}
+                  </span>
+                  <span className="text-muted-light">·</span>
+                  <span>{age.label}</span>
+                </div>
+                {child.description && (
+                  <p className="mt-5 text-muted leading-relaxed max-w-xl">
+                    {child.description}
+                  </p>
+                )}
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </div>
+
+      <main className="mx-auto max-w-4xl px-6 py-10 md:py-14">
+        <FadeIn>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="font-editorial text-2xl">Años de vida</h2>
+              <p className="text-sm text-muted mt-1">
+                Cada año es un libro digital independiente
+              </p>
+            </div>
             <Link
               href={`/children/${id}/yearbooks/new`}
-              className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm text-white"
+              className={buttonVariants("outline", "sm")}
             >
               <Plus className="h-4 w-4" />
-              Crear primer año
+              Nuevo año
             </Link>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {yearbooks.map((yearbook) => (
+        </FadeIn>
+
+        {yearbooks.length === 0 ? (
+          <FadeIn delay={0.1}>
+            <div className="rounded-2xl border border-dashed border-border p-16 text-center">
+              <BookOpen className="mx-auto h-10 w-10 text-accent/40 mb-4" />
+              <p className="text-muted mb-6">Aún no hay años creados</p>
               <Link
-                key={yearbook.id}
-                href={`/children/${id}/yearbooks/${yearbook.id}`}
-                className="flex items-center justify-between rounded-xl border border-border bg-card p-5 hover:shadow-sm transition-shadow"
+                href={`/children/${id}/yearbooks/new`}
+                className={buttonVariants("secondary", "md")}
               >
-                <div>
-                  <h4 className="font-editorial text-lg">{yearbook.title}</h4>
-                  <p className="text-sm text-muted">
-                    {yearbook.ageLabel ?? `Año ${yearbook.yearNumber}`}
-                    {" "}
-                    · {yearbook._count.milestones} hitos ·{" "}
-                    {yearbook._count.mediaAssets} archivos
-                  </p>
-                </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${
-                    yearbook.status === "PUBLISHED"
-                      ? "bg-green-50 text-green-700"
-                      : "bg-amber-50 text-amber-700"
-                  }`}
-                >
-                  {yearbook.status === "PUBLISHED" ? "Publicado" : "Borrador"}
-                </span>
+                <Plus className="h-4 w-4" />
+                Crear primer año
               </Link>
+            </div>
+          </FadeIn>
+        ) : (
+          <StaggerChildren className="space-y-4">
+            {yearbooks.map((yearbook) => (
+              <StaggerItem key={yearbook.id}>
+                <div className="group rounded-2xl border border-border bg-card overflow-hidden transition-all duration-300 hover:shadow-[var(--warm-shadow)] hover:border-accent-light/50">
+                  <div className="flex flex-col sm:flex-row">
+                    {/* Color accent bar */}
+                    <div
+                      className="h-2 sm:h-auto sm:w-1.5 shrink-0"
+                      style={{ backgroundColor: child.themeColor }}
+                    />
+                    <div className="flex-1 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-3 mb-1">
+                          <h3 className="font-editorial text-xl group-hover:text-accent-dark transition-colors">
+                            {yearbook.title}
+                          </h3>
+                          <Badge
+                            variant={
+                              yearbook.status === "PUBLISHED" ? "success" : "warning"
+                            }
+                          >
+                            {yearbook.status === "PUBLISHED"
+                              ? "Publicado"
+                              : "Borrador"}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted">
+                          {yearbook.ageLabel ?? `Año ${yearbook.yearNumber}`}
+                          {" · "}
+                          {yearbook._count.milestones} hitos ·{" "}
+                          {yearbook._count.stories} historias ·{" "}
+                          {yearbook._count.timeline} eventos
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Link
+                          href={`/children/${id}/yearbooks/${yearbook.id}/preview`}
+                          className={cn(buttonVariants("ghost", "sm"))}
+                        >
+                          <Eye className="h-4 w-4" />
+                          Vista previa
+                        </Link>
+                        <Link
+                          href={`/children/${id}/yearbooks/${yearbook.id}`}
+                          className={cn(buttonVariants("primary", "sm"))}
+                        >
+                          Abrir
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerChildren>
         )}
       </main>
-    </div>
+    </AppShell>
   );
 }
