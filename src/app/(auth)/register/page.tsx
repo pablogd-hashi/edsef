@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -41,74 +43,78 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="min-h-screen warm-gradient hero-pattern flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <BookOpen className="mx-auto h-10 w-10 text-accent-dark mb-4" />
-          <h1 className="font-editorial text-3xl">Crear cuenta</h1>
+        <div className="text-center mb-10">
+          <Link href="/" className="inline-flex items-center gap-2 mb-8">
+            <BookOpen className="h-6 w-6 text-accent-dark" />
+            <span className="font-editorial text-xl">Memoria</span>
+          </Link>
+          <h1 className="font-display text-4xl font-light tracking-tight">
+            Crear cuenta
+          </h1>
           <p className="mt-2 text-muted">Empieza a conservar recuerdos</p>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-2xl border border-border bg-card p-8 shadow-sm"
-        >
-          {error && (
-            <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
+        <div className="rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-8 shadow-[var(--warm-shadow)]">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Tu nombre</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
+              />
             </div>
-          )}
 
-          <label className="block mb-4">
-            <span className="text-sm font-medium">Tu nombre</span>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="mt-1 w-full rounded-lg border border-border px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-accent/50"
-            />
-          </label>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
+              />
+            </div>
 
-          <label className="block mb-4">
-            <span className="text-sm font-medium">Email</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-1 w-full rounded-lg border border-border px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-accent/50"
-            />
-          </label>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Contraseña</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
+              />
+              <p className="mt-1.5 text-xs text-muted-light">Mínimo 8 caracteres</p>
+            </div>
 
-          <label className="block mb-6">
-            <span className="text-sm font-medium">Contraseña</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              className="mt-1 w-full rounded-lg border border-border px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-accent/50"
-            />
-            <span className="mt-1 text-xs text-muted">Mínimo 8 caracteres</span>
-          </label>
+            <button
+              type="submit"
+              disabled={loading}
+              className={cn(buttonVariants("primary", "md"), "w-full")}
+            >
+              {loading ? "Creando cuenta..." : "Crear cuenta"}
+            </button>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-foreground py-2.5 font-medium text-background hover:opacity-90 disabled:opacity-50 transition-opacity"
-          >
-            {loading ? "Creando cuenta..." : "Crear cuenta"}
-          </button>
-
-          <p className="mt-6 text-center text-sm text-muted">
-            ¿Ya tienes cuenta?{" "}
-            <Link href="/login" className="text-accent-dark hover:underline">
-              Iniciar sesión
-            </Link>
-          </p>
-        </form>
+            <p className="text-center text-sm text-muted">
+              ¿Ya tienes cuenta?{" "}
+              <Link href="/login" className="text-accent-dark hover:underline font-medium">
+                Iniciar sesión
+              </Link>
+            </p>
+          </form>
+        </div>
       </div>
     </div>
   );
