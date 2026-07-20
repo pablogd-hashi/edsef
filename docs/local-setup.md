@@ -1,6 +1,6 @@
-# Memoria — local mode (no MinIO)
+# Local development
 
-Minimal stack for running at home: PostgreSQL + Redis + the app with on-disk storage.
+Minimal stack: PostgreSQL + Redis in Docker, app on your machine with files in `./storage/`.
 
 ```bash
 cp .env.example .env
@@ -10,37 +10,20 @@ npx prisma migrate deploy
 npm run dev
 ```
 
-## First run
-
-1. Open http://localhost:3000/register and create your account
-2. Add a child from the dashboard
-3. Create their first life year
-
-No demo users or children are seeded.
+Open http://localhost:3000/register and create your account. No demo data is seeded.
 
 ## Storage
 
-Photos and videos are stored in `./storage/` (override with `STORAGE_PATH`).
-S3/MinIO is not used in this mode.
+Photos and videos go to `./storage/` (override with `STORAGE_PATH` in `.env`).
 
-## Export for long-term archive
+## Security
 
-1. Open a year → **Export** → choose **Full ZIP**
-2. The ZIP contains offline HTML, photos, videos, PDF, and JSON data
-3. Copy the ZIP to USB. Open `html/index.html` to view everything offline.
+After creating your account, set `ALLOW_REGISTRATION=false` in `.env`.
 
-## Local security
+## Phone access while developing
 
-After creating your account, set in `.env`:
+`npm run dev` listens on `0.0.0.0:3000`. Set `AUTH_URL` to your Mac's LAN IP — see [remote-access.md](./remote-access.md).
 
-```
-ALLOW_REGISTRATION=false
-```
+## Production on Mac
 
-## Access from iPhone (dev)
-
-See **[remote-access.md](./remote-access.md)**.
-
-## MacBook production
-
-See **[production-mac.md](./production-mac.md)**.
+See [production-mac.md](./production-mac.md).
