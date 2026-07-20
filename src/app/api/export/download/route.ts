@@ -8,14 +8,14 @@ import { STORAGE_ROOT } from "@/lib/storage/local";
 export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user?.familyId) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
   const filePath = searchParams.get("path");
 
   if (!filePath) {
-    return NextResponse.json({ error: "path requerido" }, { status: 400 });
+    return NextResponse.json({ error: "path required" }, { status: 400 });
   }
 
   const resolved = path.resolve(filePath);
@@ -23,11 +23,11 @@ export async function GET(request: Request) {
 
   // Only allow downloads from exports directory
   if (!resolved.startsWith(exportsRoot)) {
-    return NextResponse.json({ error: "Ruta no permitida" }, { status: 403 });
+    return NextResponse.json({ error: "Path not allowed" }, { status: 403 });
   }
 
   if (!existsSync(resolved)) {
-    return NextResponse.json({ error: "Archivo no encontrado" }, { status: 404 });
+    return NextResponse.json({ error: "File not found" }, { status: 404 });
   }
 
   const stream = createReadStream(resolved);

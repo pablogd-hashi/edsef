@@ -10,7 +10,7 @@ export async function PATCH(
   const { id } = await params;
   const letter = await getChildIdFromFutureLetter(id);
   if (!letter) {
-    return NextResponse.json({ error: "Carta no encontrada" }, { status: 404 });
+    return NextResponse.json({ error: "Letter not found" }, { status: 404 });
   }
 
   const auth = await requireParentSession(letter.yearbook.childId);

@@ -6,6 +6,7 @@ import { YearbookViewer } from "@/components/yearbook/yearbook-viewer";
 import { buttonVariants } from "@/components/ui/button";
 import { ArrowLeft, Pencil, Download, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChildTheme } from "@/components/theme/child-theme";
 
 export default async function PreviewPage({
   params,
@@ -20,7 +21,7 @@ export default async function PreviewPage({
   if (!yearbook) notFound();
 
   return (
-    <div className="min-h-screen bg-card preview-mode">
+    <ChildTheme themeColor={yearbook.child.themeColor} className="min-h-screen bg-card preview-mode">
       {/* Minimal preview chrome */}
       <header className="fixed top-0 inset-x-0 z-50 glass border-b border-border/40">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 sm:px-6 py-3">
@@ -33,7 +34,7 @@ export default async function PreviewPage({
             </Link>
             <div>
               <p className="text-xs uppercase tracking-[0.15em] text-accent-dark">
-                Vista previa
+                Preview
               </p>
               <p className="text-sm font-medium truncate max-w-[200px] sm:max-w-none">
                 {yearbook.customCoverTitle ?? yearbook.title}
@@ -47,14 +48,14 @@ export default async function PreviewPage({
               className={cn(buttonVariants("ghost", "sm"))}
             >
               <Pencil className="h-4 w-4" />
-              <span className="hidden sm:inline">Editar</span>
+              <span className="hidden sm:inline">Edit</span>
             </Link>
             <Link
               href={`/children/${childId}/yearbooks/${yearbookId}/export`}
               className={cn(buttonVariants("secondary", "sm"))}
             >
               <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Exportar</span>
+              <span className="hidden sm:inline">Export</span>
             </Link>
           </div>
         </div>
@@ -74,9 +75,9 @@ export default async function PreviewPage({
           )}
         >
           <ArrowLeft className="h-4 w-4" />
-          Volver a {yearbook.child.nickname ?? yearbook.child.fullName}
+          Back to {yearbook.child.nickname ?? yearbook.child.fullName}
         </Link>
       </div>
-    </div>
+    </ChildTheme>
   );
 }

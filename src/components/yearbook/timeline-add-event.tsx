@@ -121,7 +121,7 @@ export function TimelineAddEvent({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) {
-      setError("Escribe un título para el momento");
+      setError("Enter a title for this moment");
       return;
     }
 
@@ -146,7 +146,7 @@ export function TimelineAddEvent({
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "No se pudo crear el evento");
+      if (!res.ok) throw new Error(data.error ?? "Could not create event");
 
       if (pendingFiles.length > 0) {
         await uploadMediaFiles(pendingFiles, {
@@ -159,7 +159,7 @@ export function TimelineAddEvent({
       handleClose();
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al guardar");
+      setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
       setSaving(false);
     }
@@ -173,7 +173,7 @@ export function TimelineAddEvent({
         className={cn(buttonVariants("outline", "sm"), "w-full border-dashed gap-2 py-4 touch-manipulation")}
       >
         <Plus className="h-4 w-4" />
-        Agregar momento en la línea temporal
+        Add timeline moment
       </button>
     );
   }
@@ -186,19 +186,19 @@ export function TimelineAddEvent({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-accent-dark">
           <Calendar className="h-5 w-5" />
-          <h4 className="font-medium">Nuevo momento</h4>
+          <h4 className="font-medium">New moment</h4>
         </div>
         <button
           type="button"
           onClick={handleClose}
           className="rounded-full p-2 hover:bg-cream text-muted"
-          aria-label="Cerrar"
+          aria-label="Close"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
 
-      {/* Día vs mes */}
+      {/* Day vs month */}
       <div className="flex rounded-full bg-cream p-1 text-sm">
         {(["day", "month"] as const).map((mode) => (
           <button
@@ -210,14 +210,14 @@ export function TimelineAddEvent({
               dateMode === mode ? "bg-foreground text-background shadow-sm" : "text-muted"
             )}
           >
-            {mode === "day" ? "Día exacto" : "Solo mes"}
+            {mode === "day" ? "Exact day" : "Month only"}
           </button>
         ))}
       </div>
 
       <div>
         <label htmlFor={titleId} className="block text-xs uppercase tracking-wider text-muted mb-2">
-          {dateMode === "day" ? "Fecha" : "Mes"}
+          {dateMode === "day" ? "Date" : "Month"}
         </label>
         {dateMode === "day" ? (
           <input
@@ -251,13 +251,13 @@ export function TimelineAddEvent({
 
       <div>
         <label className="block text-xs uppercase tracking-wider text-muted mb-2">
-          Título
+          Title
         </label>
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Ej: Primeros pasos en el parque"
+          placeholder="e.g. First steps at the park"
           className="w-full rounded-xl border border-border bg-card px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/40"
           required
         />
@@ -265,20 +265,20 @@ export function TimelineAddEvent({
 
       <div>
         <label className="block text-xs uppercase tracking-wider text-muted mb-2">
-          Descripción (opcional)
+          Description (optional)
         </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          placeholder="Qué pasó ese día..."
+          placeholder="What happened that day..."
           className="w-full rounded-xl border border-border bg-card px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-accent/40"
         />
       </div>
 
       <div>
         <p className="text-xs uppercase tracking-wider text-muted mb-2">
-          Fotos o videos
+          Photos or videos
         </p>
         <input
           id={photoInputId}
@@ -311,7 +311,7 @@ export function TimelineAddEvent({
             )}
           >
             <ImageIcon className="h-4 w-4" />
-            Fotos
+            Photos
           </label>
           <label
             htmlFor={videoInputId}
@@ -355,10 +355,10 @@ export function TimelineAddEvent({
         {saving ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Guardando...
+            Saving...
           </>
         ) : (
-          "Guardar momento"
+          "Save moment"
         )}
       </button>
     </form>

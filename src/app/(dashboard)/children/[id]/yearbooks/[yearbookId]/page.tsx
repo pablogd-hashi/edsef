@@ -7,6 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Eye, Download, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChildTheme } from "@/components/theme/child-theme";
 
 export default async function YearbookPage({
   params,
@@ -24,7 +25,7 @@ export default async function YearbookPage({
     session.user.role === "OWNER" || session.user.role === "PARENT";
 
   return (
-    <div className="min-h-screen bg-background">
+    <ChildTheme themeColor={yearbook.child.themeColor} className="min-h-screen bg-background">
       {/* Editor toolbar */}
       <header className="sticky top-0 z-50 border-b border-border/60 glass">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 sm:px-6 py-3">
@@ -43,7 +44,7 @@ export default async function YearbookPage({
                 <Badge
                   variant={yearbook.status === "PUBLISHED" ? "success" : "warning"}
                 >
-                  {yearbook.status === "PUBLISHED" ? "Publicado" : "Borrador"}
+                  {yearbook.status === "PUBLISHED" ? "Published" : "Draft"}
                 </Badge>
               </div>
               <p className="text-xs text-muted truncate">
@@ -58,14 +59,14 @@ export default async function YearbookPage({
               className={cn(buttonVariants("outline", "sm"), "hidden sm:inline-flex")}
             >
               <Eye className="h-4 w-4" />
-              Vista previa
+              Preview
             </Link>
             <Link
               href={`/children/${childId}/yearbooks/${yearbookId}/export`}
               className={cn(buttonVariants("secondary", "sm"))}
             >
               <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Exportar</span>
+              <span className="hidden sm:inline">Export</span>
             </Link>
           </div>
         </div>
@@ -75,12 +76,12 @@ export default async function YearbookPage({
         <div className="border-b border-border-light bg-cream/50">
           <div className="mx-auto max-w-5xl px-6 py-2.5 flex items-center justify-center gap-2 text-sm text-muted">
             <Pencil className="h-3.5 w-3.5" />
-            Modo edición — toca cualquier texto o foto para modificar
+            Edit mode — tap any text or photo to change it
           </div>
         </div>
       )}
 
       <YearbookViewer yearbook={yearbook} mode="edit" canEdit={isParent} />
-    </div>
+    </ChildTheme>
   );
 }

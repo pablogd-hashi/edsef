@@ -45,16 +45,16 @@ export type YearbookListItem = Prisma.YearbookGetPayload<{
 }>;
 
 const DEFAULT_SECTIONS: { type: SectionType; title: string; order: number }[] = [
-  { type: "COVER", title: "Portada", order: 0 },
-  { type: "SUMMARY", title: "Resumen del año", order: 1 },
-  { type: "MILESTONES", title: "Hitos", order: 2 },
-  { type: "STORIES", title: "Historias", order: 3 },
+  { type: "COVER", title: "Cover", order: 0 },
+  { type: "SUMMARY", title: "Year summary", order: 1 },
+  { type: "MILESTONES", title: "Milestones", order: 2 },
+  { type: "STORIES", title: "Stories", order: 3 },
   { type: "VIDEOS", title: "Videos", order: 4 },
-  { type: "MUSIC", title: "Música", order: 5 },
-  { type: "PARENT_NOTES", title: "Notas de mamá y papá", order: 6 },
-  { type: "TIMELINE", title: "Línea temporal", order: 7 },
-  { type: "FUTURE_LETTER", title: "Carta al futuro", order: 8 },
-  { type: "ATTACHMENTS", title: "Archivos importantes", order: 9 },
+  { type: "MUSIC", title: "Music", order: 5 },
+  { type: "PARENT_NOTES", title: "Parent notes", order: 6 },
+  { type: "TIMELINE", title: "Timeline", order: 7 },
+  { type: "FUTURE_LETTER", title: "Future letter", order: 8 },
+  { type: "ATTACHMENTS", title: "Important files", order: 9 },
 ];
 
 export class YearbookService {

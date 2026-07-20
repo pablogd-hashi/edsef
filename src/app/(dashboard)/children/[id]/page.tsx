@@ -10,6 +10,8 @@ import { FadeIn, StaggerChildren, StaggerItem } from "@/components/ui/motion";
 import { calculateAge, formatDate } from "@/lib/age";
 import { ArrowLeft, Plus, Eye, BookOpen, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChildTheme } from "@/components/theme/child-theme";
+import { ChildThemePicker } from "@/components/children/child-theme-picker";
 
 export default async function ChildPage({
   params,
@@ -26,8 +28,12 @@ export default async function ChildPage({
   const yearbooks = await yearbookService.listByChild(id);
   const age = calculateAge(child.birthDate);
 
+  const isParent =
+    session.user.role === "OWNER" || session.user.role === "PARENT";
+
   return (
     <AppShell userName={session.user.name}>
+      <ChildTheme themeColor={child.themeColor}>
       {/* Hero */}
       <div
         className="relative border-b border-border overflow-hidden"
@@ -42,7 +48,7 @@ export default async function ChildPage({
             className="inline-flex items-center gap-2 text-sm text-muted hover:text-foreground mb-8 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Mis hijos
+            My children
           </Link>
 
           <FadeIn>
@@ -62,7 +68,7 @@ export default async function ChildPage({
                 <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted">
                   <span className="flex items-center gap-1.5">
                     <Calendar className="h-4 w-4 text-accent-dark" />
-                    Nacida el {formatDate(child.birthDate)}
+                    Born {formatDate(child.birthDate)}
                   </span>
                   <span className="text-muted-light">·</span>
                   <span>{age.label}</span>
@@ -72,6 +78,11 @@ export default async function ChildPage({
                     {child.description}
                   </p>
                 )}
+                <ChildThemePicker
+                  childId={child.id}
+                  currentColor={child.themeColor}
+                  canEdit={isParent}
+                />
               </div>
             </div>
           </FadeIn>
@@ -82,9 +93,9 @@ export default async function ChildPage({
         <FadeIn>
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="font-editorial text-2xl">Años de vida</h2>
+              <h2 className="font-editorial text-2xl">Life years</h2>
               <p className="text-sm text-muted mt-1">
-                Cada año es un libro digital independiente
+                Each year is an independent digital book
               </p>
             </div>
             <Link
@@ -92,7 +103,7 @@ export default async function ChildPage({
               className={buttonVariants("outline", "sm")}
             >
               <Plus className="h-4 w-4" />
-              Nuevo año
+              New year
             </Link>
           </div>
         </FadeIn>
@@ -101,13 +112,13 @@ export default async function ChildPage({
           <FadeIn delay={0.1}>
             <div className="rounded-2xl border border-dashed border-border p-16 text-center">
               <BookOpen className="mx-auto h-10 w-10 text-accent/40 mb-4" />
-              <p className="text-muted mb-6">Aún no hay años creados</p>
+              <p className="text-muted mb-6">No years created yet</p>
               <Link
                 href={`/children/${id}/yearbooks/new`}
                 className={buttonVariants("secondary", "md")}
               >
                 <Plus className="h-4 w-4" />
-                Crear primer año
+                Create first year
               </Link>
             </div>
           </FadeIn>
@@ -133,17 +144,15 @@ export default async function ChildPage({
                               yearbook.status === "PUBLISHED" ? "success" : "warning"
                             }
                           >
-                            {yearbook.status === "PUBLISHED"
-                              ? "Publicado"
-                              : "Borrador"}
+                            {yearbook.status === "PUBLISHED" ? "Published" : "Draft"}
                           </Badge>
                         </div>
                         <p className="text-sm text-muted">
-                          {yearbook.ageLabel ?? `Año ${yearbook.yearNumber}`}
+                          {yearbook.ageLabel ?? `Year ${yearbook.yearNumber}`}
                           {" · "}
-                          {yearbook._count.milestones} hitos ·{" "}
-                          {yearbook._count.stories} historias ·{" "}
-                          {yearbook._count.timeline} eventos
+                          {yearbook._count.milestones} milestones ·{" "}
+                          {yearbook._count.stories} stories ·{" "}
+                          {yearbook._count.timeline} events
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
@@ -152,13 +161,13 @@ export default async function ChildPage({
                           className={cn(buttonVariants("ghost", "sm"))}
                         >
                           <Eye className="h-4 w-4" />
-                          Vista previa
+                          Preview
                         </Link>
                         <Link
                           href={`/children/${id}/yearbooks/${yearbook.id}`}
                           className={cn(buttonVariants("primary", "sm"))}
                         >
-                          Abrir
+                          Open
                         </Link>
                       </div>
                     </div>
@@ -169,6 +178,7 @@ export default async function ChildPage({
           </StaggerChildren>
         )}
       </main>
+      </ChildTheme>
     </AppShell>
   );
 }

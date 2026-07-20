@@ -11,11 +11,11 @@ log() { echo "→ $*"; }
 die() { echo "✗ $*" >&2; exit 1; }
 
 require_cmd() {
-  command -v "$1" >/dev/null 2>&1 || die "Falta '$1'. Instálalo y vuelve a intentar."
+  command -v "$1" >/dev/null 2>&1 || die "Missing '$1'. Install it and try again."
 }
 
 load_env() {
-  [[ -f "$ENV_FILE" ]] || die "No existe $ENV_FILE. Ejecuta primero: ./scripts/prod/setup-mac.sh"
+  [[ -f "$ENV_FILE" ]] || die "Missing $ENV_FILE. Run first: ./scripts/prod/setup-mac.sh"
   set -a
   # shellcheck disable=SC1090
   source "$ENV_FILE"
@@ -27,6 +27,15 @@ lan_ip() {
     ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || true
   else
     hostname -I 2>/dev/null | awk '{print $1}' || true
+  fi
+}
+
+set_auth_url() {
+  local url="$1"
+  if [[ "$(uname)" == "Darwin" ]]; then
+    sed -i '' "s|^AUTH_URL=.*|AUTH_URL=\"$url\"|" "$ENV_FILE"
+  else
+    sed -i "s|^AUTH_URL=.*|AUTH_URL=\"$url\"|" "$ENV_FILE"
   fi
 }
 
@@ -45,5 +54,5 @@ wait_postgres() {
     fi
     sleep 1
   done
-  die "Postgres no respondió a tiempo"
+  die "Postgres did not become ready in time"
 }

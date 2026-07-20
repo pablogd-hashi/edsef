@@ -6,12 +6,12 @@ import { NextResponse } from "next/server";
 export async function requireParentSession(childId: string) {
   const session = await auth();
   if (!session?.user?.id) {
-    return { error: NextResponse.json({ error: "No autorizado" }, { status: 401 }) };
+    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
 
   const canEdit = await accessService.assertParentAccess(session.user.id, childId);
   if (!canEdit) {
-    return { error: NextResponse.json({ error: "Solo mamá o papá pueden editar" }, { status: 403 }) };
+    return { error: NextResponse.json({ error: "Only parents can edit" }, { status: 403 }) };
   }
 
   return { session, childId };

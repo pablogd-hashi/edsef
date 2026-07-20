@@ -10,7 +10,7 @@ export async function PATCH(
   const { id } = await params;
   const milestone = await getChildIdFromMilestone(id);
   if (!milestone) {
-    return NextResponse.json({ error: "Hito no encontrado" }, { status: 404 });
+    return NextResponse.json({ error: "Milestone not found" }, { status: 404 });
   }
 
   const auth = await requireParentSession(milestone.yearbook.childId);

@@ -230,7 +230,7 @@ function generateOfflineHtml(
     }
     timelineHtml += `
       <div class="timeline-item">
-        <time>${new Date(t.eventDate).toLocaleDateString("es")}</time>
+        <time>${new Date(t.eventDate).toLocaleDateString("en-US")}</time>
         <h4>${esc(t.title)}</h4>
         ${t.description ? `<p>${esc(t.description)}</p>` : ""}
         ${mediaHtml}
@@ -250,7 +250,7 @@ function generateOfflineHtml(
   const letter = yearbook.futureLetter;
 
   return `<!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -263,12 +263,12 @@ function generateOfflineHtml(
     <h1>${esc(coverTitle)}</h1>
     <p class="age">${esc(yearbook.ageLabel ?? "")}</p>
   </header>
-  ${summaryHtml ? `<section><h2>Resumen del año</h2><div class="summary-grid">${summaryHtml}</div></section>` : ""}
-  ${milestonesHtml ? `<section><h2>Hitos</h2>${milestonesHtml}</section>` : ""}
-  ${storiesHtml ? `<section><h2>Historias</h2>${storiesHtml}</section>` : ""}
-  ${timelineHtml ? `<section><h2>Línea temporal</h2>${timelineHtml}</section>` : ""}
-  ${letter ? `<section class="letter"><h2>Carta al futuro</h2><div class="letter-body">${esc(letter.content).replace(/\n/g, "<br/>")}</div>${letter.signature ? `<p class="signature">— ${esc(letter.signature)}</p>` : ""}</section>` : ""}
-  <footer><p>Exportado con Memoria · ${new Date().toLocaleDateString("es")}</p><p class="hint">Los videos se reproducen en esta misma página. En el PDF, abre este archivo HTML para verlos.</p></footer>
+  ${summaryHtml ? `<section><h2>Year summary</h2><div class="summary-grid">${summaryHtml}</div></section>` : ""}
+  ${milestonesHtml ? `<section><h2>Milestones</h2>${milestonesHtml}</section>` : ""}
+  ${storiesHtml ? `<section><h2>Stories</h2>${storiesHtml}</section>` : ""}
+  ${timelineHtml ? `<section><h2>Timeline</h2>${timelineHtml}</section>` : ""}
+  ${letter ? `<section class="letter"><h2>Future letter</h2><div class="letter-body">${esc(letter.content).replace(/\n/g, "<br/>")}</div>${letter.signature ? `<p class="signature">— ${esc(letter.signature)}</p>` : ""}</section>` : ""}
+  <footer><p>Exported with Memoria · ${new Date().toLocaleDateString("en-US")}</p><p class="hint">Videos play on this page. For videos in the PDF export, open this HTML file.</p></footer>
 </body>
 </html>`;
 }
@@ -276,23 +276,23 @@ function generateOfflineHtml(
 function generateExportCss(): string {
   return `
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: Georgia, serif; background: #faf7f2; color: #1c1917; line-height: 1.75; }
+body { font-family: Georgia, serif; background: #fdf4ff; color: #1e1b2e; line-height: 1.75; }
 .cover { text-align: center; padding: 4rem 1.5rem; min-height: 60vh; display: flex; flex-direction: column; justify-content: center; }
 .cover h1 { font-size: 2.5rem; font-weight: 400; margin: 1rem 0; }
-.child-name { text-transform: uppercase; letter-spacing: 0.2em; font-size: 0.85rem; color: #8b6f47; }
+.child-name { text-transform: uppercase; letter-spacing: 0.2em; font-size: 0.85rem; color: #a21caf; }
 .age { color: #78716c; font-size: 1.1rem; }
 section { max-width: 42rem; margin: 0 auto; padding: 3rem 1.5rem; border-top: 1px solid #e7e0d5; }
 h2 { font-size: 1.75rem; font-weight: 400; margin-bottom: 2rem; }
 .milestone { margin-bottom: 2.5rem; }
-.age-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: #8b6f47; }
+.age-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: #a21caf; }
 .milestone h3 { font-size: 1.35rem; margin: 0.25rem 0 0.5rem; }
 .media-grid { display: grid; gap: 1rem; margin-top: 1rem; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 img, video { width: 100%; border-radius: 8px; display: block; }
-blockquote { border-left: 3px solid #b8956c; padding-left: 1.25rem; margin: 1.5rem 0; font-style: italic; }
+blockquote { border-left: 3px solid #d946ef; padding-left: 1.25rem; margin: 1.5rem 0; font-style: italic; }
 .timeline-item { margin-bottom: 1.5rem; padding-left: 1rem; border-left: 2px solid #e7e0d5; }
 .timeline-item time { font-size: 0.85rem; color: #78716c; }
 .letter-body { font-style: italic; font-size: 1.1rem; }
-.signature { text-align: right; margin-top: 2rem; color: #8b6f47; }
+.signature { text-align: right; margin-top: 2rem; color: #a21caf; }
 .summary-grid { display: grid; gap: 1rem; }
 .summary-item { background: #fff; padding: 1rem; border-radius: 8px; border: 1px solid #e7e0d5; }
 footer { text-align: center; padding: 2rem; color: #78716c; font-size: 0.85rem; }
@@ -302,26 +302,26 @@ footer { text-align: center; padding: 2rem; color: #78716c; font-size: 0.85rem; 
 }
 
 function generateReadme(childName: string, title: string): string {
-  return `# Archivo de ${childName} — ${title}
+  return `# Archive for ${childName} — ${title}
 
-## Cómo ver este año
+## How to view this year
 
-### Opción 1 — La más fácil (recomendada)
-1. Abre la carpeta \`html\`
-2. Haz doble clic en \`index.html\`
-3. Se abrirá en tu navegador con fotos, videos e historias
+### Option 1 — Easiest (recommended)
+1. Open the \`html\` folder
+2. Double-click \`index.html\`
+3. It opens in your browser with photos, videos, and stories
 
-### Opción 2 — PDF
-Abre \`pdf/yearbook.pdf\` para una versión imprimible.
-Los videos no se reproducen dentro del PDF — usa el HTML para verlos.
+### Option 2 — PDF
+Open \`pdf/yearbook.pdf\` for a printable version.
+Videos do not play inside the PDF — use the HTML to watch them.
 
-### Opción 3 — Datos completos
-El archivo \`data/yearbook.json\` contiene todos los datos en formato abierto.
+### Option 3 — Full data
+The \`data/yearbook.json\` file contains all data in an open format.
 
-## Integridad
-Consulta \`manifest.json\` para verificar checksums de cada archivo.
+## Integrity
+See \`manifest.json\` to verify checksums for each file.
 
-Generado por Memoria — ${new Date().toISOString()}
+Generated by Memoria — ${new Date().toISOString()}
 `;
 }
 

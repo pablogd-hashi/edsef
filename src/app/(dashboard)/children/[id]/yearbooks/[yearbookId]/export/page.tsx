@@ -4,6 +4,7 @@ import { yearbookService } from "@/lib/services";
 import { redirect, notFound } from "next/navigation";
 import { ExportPanel } from "@/components/yearbook/export-panel";
 import { ArrowLeft } from "lucide-react";
+import { ChildTheme } from "@/components/theme/child-theme";
 
 export default async function ExportPage({
   params,
@@ -18,7 +19,7 @@ export default async function ExportPage({
   if (!yearbook) notFound();
 
   return (
-    <div className="min-h-screen bg-background">
+    <ChildTheme themeColor={yearbook.child.themeColor} className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-4xl items-center gap-4 px-6 py-4">
           <Link
@@ -28,7 +29,7 @@ export default async function ExportPage({
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="font-editorial text-xl">Exportar</h1>
+            <h1 className="font-editorial text-xl">Export</h1>
             <p className="text-sm text-muted">
               {yearbook.title} · {yearbook.child.fullName}
             </p>
@@ -44,6 +45,6 @@ export default async function ExportPage({
           yearTitle={yearbook.title}
         />
       </main>
-    </div>
+    </ChildTheme>
   );
 }

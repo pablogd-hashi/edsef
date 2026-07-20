@@ -23,13 +23,13 @@ export function MilestoneMediaGallery({
   if (!media.length) return null;
 
   async function removeMedia(mediaId: string) {
-    if (!confirm("¿Eliminar esta foto o video?")) return;
+    if (!confirm("Delete this photo or video?")) return;
     setDeletingId(mediaId);
     try {
       const res = await fetch(`/api/media/${mediaId}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error ?? "Error al eliminar");
+        alert(data.error ?? "Failed to delete");
         return;
       }
       router.refresh();
@@ -66,7 +66,7 @@ export function MilestoneMediaGallery({
               onClick={() => removeMedia(m.id)}
               disabled={deletingId === m.id}
               className="absolute top-1.5 right-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity touch-manipulation"
-              aria-label="Eliminar"
+              aria-label="Delete"
             >
               {deletingId === m.id ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

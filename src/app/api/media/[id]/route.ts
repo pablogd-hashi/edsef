@@ -8,7 +8,7 @@ export async function DELETE(
 ) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
@@ -17,8 +17,8 @@ export async function DELETE(
     await localMediaService.delete(session.user.id, id);
     return NextResponse.json({ success: true });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Error al eliminar";
-    const status = message === "Forbidden" ? 403 : message === "No encontrado" ? 404 : 500;
+    const message = e instanceof Error ? e.message : "Delete failed";
+    const status = message === "Forbidden" ? 403 : message === "Not found" ? 404 : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }

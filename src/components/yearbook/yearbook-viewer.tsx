@@ -14,14 +14,14 @@ import { FadeIn, SectionTitle } from "@/components/ui/motion";
 import type { Prisma } from "@prisma/client";
 
 const SECTIONS = [
-  { id: "cover", label: "Portada" },
-  { id: "summary", label: "Resumen" },
-  { id: "milestones", label: "Hitos" },
-  { id: "stories", label: "Historias" },
-  { id: "music", label: "Música" },
-  { id: "notes", label: "Notas" },
+  { id: "cover", label: "Cover" },
+  { id: "summary", label: "Summary" },
+  { id: "milestones", label: "Milestones" },
+  { id: "stories", label: "Stories" },
+  { id: "music", label: "Music" },
+  { id: "notes", label: "Notes" },
   { id: "timeline", label: "Timeline" },
-  { id: "letter", label: "Carta" },
+  { id: "letter", label: "Letter" },
 ] as const;
 
 interface YearbookViewerProps {
@@ -111,8 +111,8 @@ export function YearbookViewer({
         {hasSummary && (
           <section id="section-summary">
             <FadeIn>
-              <SectionTitle subtitle="Un vistazo al año">
-                Resumen
+              <SectionTitle subtitle="A look at the year">
+                Summary
               </SectionTitle>
               <SummarySection content={summary} />
             </FadeIn>
@@ -123,8 +123,8 @@ export function YearbookViewer({
         {yearbook.milestones.length > 0 && (
           <section id="section-milestones">
             <FadeIn>
-              <SectionTitle subtitle="Los momentos que marcaron el camino">
-                Hitos
+              <SectionTitle subtitle="Moments that shaped the journey">
+                Milestones
               </SectionTitle>
               <MilestoneGrid
                 milestones={yearbook.milestones.map((m) => ({
@@ -147,8 +147,8 @@ export function YearbookViewer({
         {yearbook.stories.length > 0 && (
           <section id="section-stories">
             <FadeIn>
-              <SectionTitle subtitle="Las historias que contar">
-                Historias
+              <SectionTitle subtitle="Stories worth telling">
+                Stories
               </SectionTitle>
               <div className="space-y-16">
                 {yearbook.stories.map((story) => (
@@ -169,8 +169,8 @@ export function YearbookViewer({
         {yearbook.music.length > 0 && (
           <section id="section-music">
             <FadeIn>
-              <SectionTitle subtitle="La banda sonora del año">
-                Música
+              <SectionTitle subtitle="The soundtrack of the year">
+                Music
               </SectionTitle>
               <MusicPlaylist tracks={yearbook.music} />
             </FadeIn>
@@ -181,8 +181,8 @@ export function YearbookViewer({
         {yearbook.parentNotes.length > 0 && (
           <section id="section-notes">
             <FadeIn>
-              <SectionTitle subtitle="Palabras del corazón">
-                Notas de mamá y papá
+              <SectionTitle subtitle="Words from the heart">
+                Parent notes
               </SectionTitle>
               <ParentNotes notes={yearbook.parentNotes} canEdit={canEdit} />
             </FadeIn>
@@ -193,8 +193,8 @@ export function YearbookViewer({
         {(yearbook.timeline.length > 0 || canEdit) && (
           <section id="section-timeline">
             <FadeIn>
-              <SectionTitle subtitle="Mes a mes, paso a paso">
-                Línea temporal
+              <SectionTitle subtitle="Month by month, step by step">
+                Timeline
               </SectionTitle>
               <InteractiveTimeline
                 items={yearbook.timeline.map((t) => ({
@@ -221,8 +221,8 @@ export function YearbookViewer({
         {yearbook.futureLetter && (
           <section id="section-letter">
             <FadeIn>
-              <SectionTitle subtitle="Para cuando seas mayor">
-                Carta al futuro
+              <SectionTitle subtitle="For when you're older">
+                Future letter
               </SectionTitle>
               <FutureLetter
                 id={yearbook.futureLetter.id}

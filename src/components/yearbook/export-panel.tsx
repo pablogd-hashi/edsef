@@ -37,7 +37,7 @@ export function ExportPanel({
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Error en exportación");
+      if (!res.ok) throw new Error(data.error ?? "Export failed");
 
       setResult(data);
     } catch (e) {
@@ -50,9 +50,9 @@ export function ExportPanel({
   return (
     <div className="max-w-2xl">
       <p className="text-muted mb-8 leading-relaxed">
-        Exporta <strong>{yearTitle}</strong> de {childName} con todas las fotos y
-        videos referenciados localmente. El ZIP incluye HTML offline que Bianca
-        podrá abrir sin instalar nada — solo doble clic en{" "}
+        Export <strong>{yearTitle}</strong> for {childName} with all photos and
+        videos referenced locally. The ZIP includes offline HTML you can open with
+        no install — just double-click{" "}
         <code className="text-sm bg-cream px-1.5 py-0.5 rounded">html/index.html</code>.
       </p>
 
@@ -61,21 +61,21 @@ export function ExportPanel({
           {
             format: "ZIP" as const,
             icon: FileArchive,
-            label: "ZIP completo",
-            desc: "HTML + fotos + videos + PDF",
+            label: "Full ZIP",
+            desc: "HTML + photos + videos + PDF",
             recommended: true,
           },
           {
             format: "HTML" as const,
             icon: FileText,
-            label: "Solo HTML",
-            desc: "index.html (requiere carpeta assets)",
+            label: "HTML only",
+            desc: "index.html (needs assets folder)",
           },
           {
             format: "PDF" as const,
             icon: FileImage,
-            label: "Solo PDF",
-            desc: "Imprimible; videos en HTML",
+            label: "PDF only",
+            desc: "Printable; videos in HTML",
           },
         ].map((opt) => (
           <button
@@ -98,7 +98,7 @@ export function ExportPanel({
             <p className="text-xs text-muted mt-1">{opt.desc}</p>
             {opt.recommended && (
               <span className="inline-block mt-2 text-xs text-accent-dark font-medium">
-                Recomendado
+                Recommended
               </span>
             )}
           </button>
@@ -116,9 +116,9 @@ export function ExportPanel({
           <div className="flex items-start gap-3">
             <CheckCircle className="h-6 w-6 text-emerald-600 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="font-medium text-emerald-900">Exportación lista</p>
+              <p className="font-medium text-emerald-900">Export ready</p>
               <p className="text-sm text-emerald-800 mt-1">
-                {result.mediaCount} archivos de media incluidos en el paquete.
+                {result.mediaCount} media files included in the package.
               </p>
               <a
                 href={result.downloadUrl}
@@ -126,11 +126,11 @@ export function ExportPanel({
                 className={cn(buttonVariants("primary", "sm"), "mt-4 inline-flex")}
               >
                 <Download className="h-4 w-4" />
-                Descargar {result.filename}
+                Download {result.filename}
               </a>
               <p className="text-xs text-emerald-700 mt-3">
-                Para Bianca: copia el ZIP a un USB. Abre{" "}
-                <strong>html/index.html</strong> para ver fotos y reproducir videos.
+                Copy the ZIP to a USB drive. Open <strong>html/index.html</strong> to
+                view photos and play videos.
               </p>
             </div>
           </div>

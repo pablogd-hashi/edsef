@@ -87,12 +87,12 @@ export function SummarySection({
   if (!content) return null;
 
   const items = [
-    { label: "Dónde vivíamos", value: content.location, icon: MapPin },
-    { label: "Contexto", value: content.context },
-    { label: "Viajes", value: content.trips?.join(" · ") },
-    { label: "Música favorita", value: content.favoriteMusic },
-    { label: "Le gustaba", value: content.likes },
-    { label: "Miedos", value: content.fears },
+    { label: "Where we lived", value: content.location, icon: MapPin },
+    { label: "Context", value: content.context },
+    { label: "Trips", value: content.trips?.join(" · ") },
+    { label: "Favorite music", value: content.favoriteMusic },
+    { label: "Likes", value: content.likes },
+    { label: "Fears", value: content.fears },
   ].filter((i) => i.value);
 
   return (
@@ -112,7 +112,7 @@ export function SummarySection({
       {content.quotes && content.quotes.length > 0 && (
         <div className="sm:col-span-2 rounded-xl border border-border-light bg-card p-6">
           <p className="text-xs uppercase tracking-wider text-accent-dark mb-3">
-            Frases del año
+            Quotes of the year
           </p>
           <div className="flex flex-wrap gap-2">
             {content.quotes.map((q) => (
@@ -130,7 +130,7 @@ export function SummarySection({
       {content.importantPeople && content.importantPeople.length > 0 && (
         <div className="sm:col-span-2 rounded-xl border border-border-light bg-card p-6">
           <p className="text-xs uppercase tracking-wider text-accent-dark mb-3">
-            Personas importantes
+            Important people
           </p>
           <div className="flex flex-wrap gap-2">
             {content.importantPeople.map((p) => (

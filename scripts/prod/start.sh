@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Arranca Memoria en producción (MacBook siempre encendido).
+# Start Memoria in production (always-on MacBook).
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -14,7 +14,7 @@ compose up -d
 wait_postgres
 
 if [[ ! -d .next ]]; then
-  log "Build inicial..."
+  log "Initial build..."
   npm run build
 fi
 
@@ -24,9 +24,10 @@ export PORT="${PORT:-3000}"
 
 IP=$(lan_ip)
 echo
-echo "  Memoria en http://localhost:$PORT"
-[[ -n "$IP" ]] && echo "  Desde iPhone/iPad (misma WiFi): http://$IP:$PORT"
-echo "  AUTH_URL en .env debe coincidir con la URL del navegador"
+echo "  Memoria at http://localhost:$PORT"
+[[ -n "$IP" ]] && echo "  iPhone/iPad (same Wi‑Fi): http://$IP:$PORT"
+echo "  AUTH_URL in .env must match the browser URL"
+echo "  Remote access: docs/remote-access.md"
 echo
 
 exec npm start

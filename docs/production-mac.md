@@ -1,127 +1,121 @@
-# Memoria en producción — MacBook M1/M2/M3
+# Memoria in production — MacBook M1/M2/M3
 
-Guía para correr Memoria en tu Mac como servidor familiar. La laptop debe estar encendida y en la misma red WiFi para acceder desde iPhone/iPad.
+Guide to run Memoria on your Mac as a family server. The laptop should stay on. For phone access, see **[remote-access.md](./remote-access.md)**.
 
-## Requisitos
+## Requirements
 
-- macOS en Apple Silicon (M1+)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (solo Postgres + Redis)
+- macOS on Apple Silicon (M1+)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Postgres + Redis only)
 - Node.js 22+ (`brew install node@22`)
 - Git
 
-## Instalación (una vez)
+## One-time install
 
 ```bash
 git clone https://github.com/pablogd-hashi/edsef.git
 cd edsef
 chmod +x scripts/prod/*.sh
 
-# Crea .env con claves aleatorias, migra DB y hace build
+# Creates .env with random secrets, migrates DB, builds
 ./scripts/prod/setup-mac.sh --seed
 ```
 
-El flag `--seed` carga Bianca de demo. Sin él, crea tu cuenta en `/register` antes de poner `ALLOW_REGISTRATION=false`.
+The `--seed` flag loads the Bianca demo. Without it, create your account at `/register` before setting `ALLOW_REGISTRATION=false`.
 
-## Arrancar / parar
+## Start / stop
 
 ```bash
-# Producción (escucha en 0.0.0.0:3000 — accesible en la red local)
+# Production (listens on 0.0.0.0:3000 — reachable on LAN)
 ./scripts/prod/start.sh
 
-# Parar Docker (Ctrl+C detiene la app si corre en primer plano)
+# Stop Docker (Ctrl+C stops the app if running in foreground)
 ./scripts/prod/stop.sh
 
-# Estado
+# Health check
 ./scripts/prod/health.sh
 ```
 
-## Acceso desde iPhone / iPad
+## Access from iPhone / iPad
 
-1. Averigua la IP de tu Mac en WiFi:
+**Same Wi‑Fi:** set `AUTH_URL` to your Mac's LAN IP. Full checklist: **[remote-access.md](./remote-access.md#lan-checklist-same-wi-fi)**.
 
 ```bash
 ipconfig getifaddr en0
-# Ejemplo: 192.168.1.42
+# e.g. 192.168.1.42
 ```
-
-2. En `.env`, pon la misma URL que usarás en el navegador:
 
 ```
 AUTH_URL="http://192.168.1.42:3000"
 ```
 
-3. Reinicia la app (`Ctrl+C` y `./scripts/prod/start.sh`).
+Restart the app. On iPhone Safari: `http://192.168.1.42:3000`
 
-4. En el iPhone (Safari): `http://192.168.1.42:3000`
+**Different network or LAN won't work:** use [Tailscale](./remote-access.md#tailscale-setup-recommended-for-remote--stubborn-lan) — no router port forwarding.
 
-> Si cambias de red WiFi, la IP puede cambiar — actualiza `AUTH_URL`.
+## Security (recommended)
 
-## Seguridad (recomendado)
-
-| Paso | Acción |
+| Step | Action |
 |------|--------|
-| 1 | Crea tu cuenta de mamá/papá |
-| 2 | En `.env`: `ALLOW_REGISTRATION=false` |
-| 3 | No expongas el puerto 3000 a Internet sin VPN |
-| 4 | Backups semanales: `./scripts/prod/backup.sh` |
+| 1 | Create your parent account |
+| 2 | In `.env`: `ALLOW_REGISTRATION=false` |
+| 3 | Do not expose port 3000 to the public internet without a VPN |
+| 4 | Weekly backups: `./scripts/prod/backup.sh` |
 
-Para acceso fuera de casa sin abrir puertos: [Tailscale](https://tailscale.com) (gratis para uso personal).
-
-## Arranque automático al encender el Mac
+## Auto-start when the Mac boots
 
 ```bash
-# Edita rutas en el plist, luego:
+# Edit paths in the plist, then:
 cp deploy/launchd/com.memoria.plist.example ~/Library/LaunchAgents/com.memoria.plist
 launchctl load ~/Library/LaunchAgents/com.memoria.plist
 ```
 
-Asegúrate de que Docker Desktop arranque al login (Docker Desktop → Settings → General → Start Docker Desktop when you sign in).
+Ensure Docker Desktop starts at login (Docker Desktop → Settings → General → Start Docker Desktop when you sign in).
 
-## Dónde se guardan los datos
+## Where data lives
 
-| Qué | Dónde |
-|-----|-------|
-| Fotos y videos | `./storage/` (o `STORAGE_PATH` en `.env`) |
-| Base de datos | Volumen Docker `memoria_postgres` |
+| What | Where |
+|------|-------|
+| Photos and videos | `./storage/` (or `STORAGE_PATH` in `.env`) |
+| Database | Docker volume `memoria_postgres` |
 | Backups | `./backups/memoria-YYYYMMDD-HHMMSS/` |
 
-## Exportar PDF
+## PDF export
 
 ```bash
 npx playwright install chromium
 ```
 
-Luego usa **Exportar → PDF** en la app.
+Then use **Export → PDF** in the app.
 
-## Comandos npm
+## npm commands
 
-| Comando | Descripción |
+| Command | Description |
 |---------|-------------|
-| `npm run prod:setup` | Alias de setup-mac.sh |
-| `npm run prod:start` | Alias de start.sh |
-| `npm run prod:stop` | Alias de stop.sh |
+| `npm run prod:setup` | Alias for setup-mac.sh |
+| `npm run prod:start` | Alias for start.sh |
+| `npm run prod:stop` | Alias for stop.sh |
 | `npm run prod:backup` | Backup DB + storage |
-| `npm run db:migrate:deploy` | Migraciones en producción |
+| `npm run db:migrate:deploy` | Production migrations |
 
-## Solución de problemas
+## Troubleshooting
 
-**Login falla desde el iPhone**  
-`AUTH_URL` en `.env` debe coincidir exactamente con la URL del navegador (incluido `http://` y puerto).
+**Login fails from iPhone**  
+`AUTH_URL` in `.env` must match the browser URL exactly (including `http://` and port). See [remote-access.md](./remote-access.md).
 
-**No carga fotos**  
-Verifica que `storage/` existe y tiene permisos de escritura.
+**Photos won't load**  
+Check that `storage/` exists and is writable.
 
-**Postgres no arranca**  
+**Postgres won't start**  
 `docker compose -f docker-compose.prod.yml --env-file .env logs postgres`
 
-**Puerto 3000 ocupado**  
-Cambia `PORT=3001` en `.env` y actualiza `AUTH_URL`.
+**Port 3000 in use**  
+Set `PORT=3001` in `.env` and update `AUTH_URL`.
 
-## Arquitectura
+## Architecture
 
 ```
 ┌─────────────────────────────────────────┐
-│  MacBook M1 (siempre encendido)         │
+│  MacBook M1 (always on)                 │
 │                                         │
 │  ┌─────────────┐    ┌────────────────┐  │
 │  │ Docker      │    │ Node.js        │  │
@@ -132,14 +126,14 @@ Cambia `PORT=3001` en `.env` y actualiza `AUTH_URL`.
 └─────────┼──────────────────┼────────────┘
           │                  │
      iPhone/iPad         localhost
-     (misma WiFi)        Safari
+     LAN or Tailscale    Safari
 ```
 
-## Desarrollo vs producción
+## Development vs production
 
-| | Desarrollo | Producción Mac |
-|---|------------|----------------|
-| Comando | `npm run dev` | `./scripts/prod/start.sh` |
+| | Development | Mac production |
+|---|-------------|----------------|
+| Command | `npm run dev` | `./scripts/prod/start.sh` |
 | Compose | `docker-compose.local.yml` | `docker-compose.prod.yml` |
-| Registro | abierto | `ALLOW_REGISTRATION=false` |
+| Registration | open | `ALLOW_REGISTRATION=false` |
 | Build | hot reload | `next build` + `next start` |

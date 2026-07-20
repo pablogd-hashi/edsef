@@ -1,10 +1,10 @@
-# Memoria — Diarios digitales familiares
+# Memoria — Family digital yearbooks
 
-Aplicación web privada para crear, conservar y exportar diarios anuales de tus hijos. Diseñada para preservación a largo plazo con formatos abiertos y exportación completa.
+Private web app to create, preserve, and export annual diaries for your children. Built for long-term preservation with open formats and full export.
 
-## Producción en MacBook (M1+)
+## Production on MacBook (M1+)
 
-Para correr en tu Mac como servidor familiar (laptop siempre encendida):
+Run on your Mac as a family server (laptop stays on):
 
 ```bash
 chmod +x scripts/prod/*.sh
@@ -12,9 +12,11 @@ chmod +x scripts/prod/*.sh
 ./scripts/prod/start.sh
 ```
 
-Guía completa: **[docs/production-mac.md](docs/production-mac.md)**
+Full guide: **[docs/production-mac.md](docs/production-mac.md)**
 
-## Desarrollo local
+**Phone can't connect?** See [docs/remote-access.md](docs/remote-access.md) (LAN checklist + Tailscale).
+
+## Local development
 
 ```bash
 cp .env.example .env
@@ -25,51 +27,52 @@ npm run db:seed
 npm run dev
 ```
 
-Guía: [docs/local-setup.md](docs/local-setup.md)
+Guide: [docs/local-setup.md](docs/local-setup.md)
 
-## Características
+## Features
 
-- Múltiples hijos con años de vida independientes
-- Editor por secciones (hitos, historias, timeline, carta al futuro)
-- Fotos y videos con almacenamiento local en disco
-- Edición inline para mamá/papá (OWNER/PARENT)
-- Exportación PDF, HTML offline, JSON y ZIP
-- Docker Compose para Postgres + Redis
+- Multiple children with independent life years
+- Section-based editor (milestones, stories, timeline, future letter)
+- Photos and videos with local disk storage
+- Inline editing for parents (OWNER/PARENT)
+- PDF, offline HTML, JSON, and ZIP export
+- Docker Compose for Postgres + Redis
 
 ## Stack
 
 - **Frontend/Backend:** Next.js 16, React 19, TypeScript, Tailwind CSS
-- **Base de datos:** PostgreSQL + Prisma
+- **Database:** PostgreSQL + Prisma
 - **Auth:** Auth.js (next-auth v5)
-- **Storage:** filesystem local (`./storage`)
+- **Storage:** local filesystem (`./storage`)
 - **Tests:** Vitest + Playwright
 
-### Credenciales demo
+### Demo credentials
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
 | Email | `demo@memoria.app` |
-| Contraseña | `demo1234` |
+| Password | `demo1234` |
 
 ## Scripts
 
-| Comando | Descripción |
+| Command | Description |
 |---------|-------------|
-| `npm run dev` | Servidor de desarrollo |
-| `npm run build` | Build de producción |
-| `npm run prod:setup` | Setup inicial Mac producción |
-| `npm run prod:start` | Arrancar en producción |
-| `npm run prod:backup` | Backup DB + fotos |
-| `npm run prod:update` | Actualizar tras git pull |
-| `npm run test` | Tests unitarios |
+| `npm run dev` | Dev server (listens on `0.0.0.0` for LAN) |
+| `npm run build` | Production build |
+| `npm run prod:setup` | Initial Mac production setup |
+| `npm run prod:start` | Start production server |
+| `npm run prod:backup` | Backup DB + photos |
+| `npm run prod:update` | Update after `git pull` |
+| `npm run test` | Unit tests |
 
-## Documentación
+## Documentation
 
-- [Producción MacBook](docs/production-mac.md)
-- [Setup local](docs/local-setup.md)
-- [Arquitectura](docs/architecture.md)
-- [Modelo de datos](docs/data-model.md)
+- [Mac production](docs/production-mac.md)
+- [Remote access (LAN + Tailscale)](docs/remote-access.md)
+- [Local setup](docs/local-setup.md)
+- [Architecture](docs/architecture.md)
+- [Data model](docs/data-model.md)
 
-## Licencia
+## License
 
-Privado — uso familiar.
+Private — family use only.
