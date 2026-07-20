@@ -9,6 +9,7 @@ import { MapPin, ImageIcon } from "lucide-react";
 import { MilestoneMediaGallery } from "@/components/yearbook/milestone-media";
 import { MediaUpload } from "@/components/yearbook/media-upload";
 import { EditableField } from "@/components/ui/editable-field";
+import { TimelineAddEvent } from "@/components/yearbook/timeline-add-event";
 
 export interface TimelineItem {
   id: string;
@@ -114,11 +115,15 @@ export function InteractiveTimeline({
   childId,
   yearbookId,
   canEdit = false,
+  periodStart,
+  periodEnd,
 }: {
   items: TimelineItem[];
   childId: string;
   yearbookId: string;
   canEdit?: boolean;
+  periodStart?: Date | string | null;
+  periodEnd?: Date | string | null;
 }) {
   const router = useRouter();
 
@@ -141,8 +146,34 @@ export function InteractiveTimeline({
   const [activeMonth, setActiveMonth] = useState(months[0]?.month ?? null);
   const activeGroup = months.find((g) => g.month === activeMonth);
 
+  const periodEndDate = periodEnd ? new Date(periodEnd) : new Date();
+  const defaultYear = periodEndDate.getFullYear();
+
   return (
     <div className="space-y-10">
+      {canEdit && (
+        <TimelineAddEvent
+          childId={childId}
+          yearbookId={yearbookId}
+          periodStart={periodStart}
+          periodEnd={periodEnd}
+          defaultMonth={activeMonth ?? undefined}
+          defaultYear={defaultYear}
+        />
+      )}
+
+      {months.length === 0 ? (
+        canEdit ? (
+          <p className="text-center text-muted text-sm py-6">
+            Elige una fecha arriba y guarda el primer momento del año.
+          </p>
+        ) : (
+          <p className="text-center text-muted text-sm py-6">
+            Aún no hay momentos en la línea temporal.
+          </p>
+        )
+      ) : (
+        <>
       {/* Horizontal month timeline with previews */}
       <div className="relative">
         <div className="absolute left-0 right-0 top-[calc(50%+28px)] h-px bg-gradient-to-r from-transparent via-border to-transparent pointer-events-none hidden sm:block" />
@@ -289,6 +320,8 @@ export function InteractiveTimeline({
           </motion.div>
         )}
       </AnimatePresence>
+        </>
+      )}
     </div>
   );
 }
