@@ -97,6 +97,7 @@ export const exportOptionsSchema = z.object({
 export const importApplySchema = z.object({
   childId: z.string().cuid(),
   yearbookId: z.string().cuid(),
+  replaceExisting: z.boolean().default(true),
   preview: z.object({
     detectedTitle: z.string().optional(),
     yearRange: z
@@ -108,7 +109,7 @@ export const importApplySchema = z.object({
     summary: z.object({
       context: z.string().optional(),
       location: z.string().optional(),
-      favoriteMusic: z.string().optional(),
+      subtitle: z.string().optional(),
       highlights: z.array(z.string()).optional(),
     }),
     milestones: z.array(
@@ -130,12 +131,22 @@ export const importApplySchema = z.object({
         url: z.string().optional(),
       })
     ),
-    timeline: z.array(
+    parentsBeforeBirth: z.array(
       z.object({
         title: z.string(),
         description: z.string().optional(),
         month: z.number().int().min(1).max(12),
         year: z.number().int(),
+        category: z.literal("PARENTS_BEFORE_BIRTH"),
+      })
+    ),
+    parentsDuringYear: z.array(
+      z.object({
+        title: z.string(),
+        description: z.string().optional(),
+        month: z.number().int().min(1).max(12),
+        year: z.number().int(),
+        category: z.literal("PARENTS_DURING_YEAR"),
       })
     ),
     parentNotes: z.array(
@@ -146,9 +157,9 @@ export const importApplySchema = z.object({
         year: z.number().int(),
       })
     ),
-    links: z.array(
+    videos: z.array(
       z.object({
-        label: z.string().optional(),
+        title: z.string(),
         url: z.string(),
       })
     ),

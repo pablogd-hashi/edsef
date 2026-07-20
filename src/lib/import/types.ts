@@ -1,3 +1,9 @@
+export type TimelineCategory =
+  | "PARENTS_BEFORE_BIRTH"
+  | "PARENTS_DURING_YEAR"
+  | "VIDEO"
+  | "GENERAL";
+
 export interface ImportMilestone {
   title: string;
   description?: string;
@@ -19,6 +25,7 @@ export interface ImportTimelineItem {
   description?: string;
   month: number;
   year: number;
+  category: TimelineCategory;
 }
 
 export interface ImportParentNote {
@@ -28,15 +35,15 @@ export interface ImportParentNote {
   year: number;
 }
 
-export interface ImportLink {
-  label?: string;
+export interface ImportVideo {
+  title: string;
   url: string;
 }
 
 export interface ImportSummary {
   context?: string;
   location?: string;
-  favoriteMusic?: string;
+  subtitle?: string;
   highlights?: string[];
 }
 
@@ -47,9 +54,10 @@ export interface ImportPreview {
   milestones: ImportMilestone[];
   stories: ImportStory[];
   music: ImportMusic[];
-  timeline: ImportTimelineItem[];
+  parentsBeforeBirth: ImportTimelineItem[];
+  parentsDuringYear: ImportTimelineItem[];
   parentNotes: ImportParentNote[];
-  links: ImportLink[];
+  videos: ImportVideo[];
 }
 
 export interface ImportApplyResult {
@@ -57,6 +65,21 @@ export interface ImportApplyResult {
   milestones: number;
   stories: number;
   music: number;
-  timeline: number;
+  parentsBeforeBirth: number;
+  parentsDuringYear: number;
   parentNotes: number;
+  videos: number;
+  replaced: boolean;
 }
+
+export const YEARBOOK_SECTIONS = [
+  { id: "cover", label: "Cover" },
+  { id: "summary", label: "Summary" },
+  { id: "milestones", label: "What you achieved" },
+  { id: "music", label: "Music" },
+  { id: "stories", label: "Stories" },
+  { id: "videos", label: "Videos" },
+  { id: "notes", label: "Parent notes" },
+  { id: "before-birth", label: "Before you were born" },
+  { id: "this-year", label: "This year" },
+] as const;
