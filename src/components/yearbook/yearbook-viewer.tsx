@@ -77,7 +77,7 @@ export function YearbookViewer({
                 (s.id === "stories" && yearbook.stories.length > 0) ||
                 (s.id === "music" && yearbook.music.length > 0) ||
                 (s.id === "notes" && yearbook.parentNotes.length > 0) ||
-                (s.id === "timeline" && yearbook.timeline.length > 0) ||
+                (s.id === "timeline" && (yearbook.timeline.length > 0 || canEdit)) ||
                 (s.id === "letter" && yearbook.futureLetter);
 
               if (!hasContent) return null;
@@ -190,7 +190,7 @@ export function YearbookViewer({
         )}
 
         {/* Timeline */}
-        {yearbook.timeline.length > 0 && (
+        {(yearbook.timeline.length > 0 || canEdit) && (
           <section id="section-timeline">
             <FadeIn>
               <SectionTitle subtitle="Mes a mes, paso a paso">
@@ -210,6 +210,8 @@ export function YearbookViewer({
                 childId={childId}
                 yearbookId={yearbookId}
                 canEdit={canEdit}
+                periodStart={yearbook.periodStart}
+                periodEnd={yearbook.periodEnd}
               />
             </FadeIn>
           </section>
