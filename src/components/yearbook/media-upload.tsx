@@ -1,0 +1,112 @@
+"use client";
+
+import { useId, useState } from "react";
+import { Upload, Loader2, Image as ImageIcon, Film } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
+
+interface MediaUploadProps {
+  childId: string;
+  yearbookId: string;
+  milestoneId?: string;
+  timelineEntryId?: string;
+  onUploaded?: () => void;
+  className?: string;
+}
+
+// iOS Safari works best with a <label> + visible-ish input (not display:none)
+const ACCEPT =
+  "image/*,video/*,.heic,.heif,.HEIC,.HEIF,.mov,.MOV,.m4v,.M4V";
+
+export function MediaUpload({
+  childId,
+  yearbookId,
+  milestoneId,
+  timelineEntryId,
+  onUploaded,
+  className,
+}: MediaUploadProps) {
+  const inputId = useId();
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const [progress, setProgress] = useState("");
+
+  async function handleFiles(files: FileList | null) {
+    if (!files?.length) return;
+    setError("");
+    setUploading(true);
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setProgress(`Subiendo ${i + 1}/${files.length}: ${file.name || "foto"}`);
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("childId", childId);
+      formData.append("yearbookId", yearbookId);
+      if (milestoneId) formData.append("milestoneId", milestoneId);
+      if (timelineEntryId) formData.append("timelineEntryId", timelineEntryId);
+
+      const res = await fetch("/api/media/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error ?? "Error al subir");
+        setUploading(false);
+        return;
+      }
+    }
+
+    setUploading(false);
+    setProgress("");
+    onUploaded?.();
+  }
+
+  return (
+    <div className={className}>
+      <input
+        id={inputId}
+        type="file"
+        accept={ACCEPT}
+        multiple
+        className="sr-only"
+        disabled={uploading}
+        onChange={(e) => {
+          handleFiles(e.target.files);
+          e.target.value = "";
+        }}
+      />
+
+      <label
+        htmlFor={inputId}
+        className={cn(
+          buttonVariants("outline", "sm"),
+          "w-full border-dashed py-6 flex-col gap-2 h-auto cursor-pointer touch-manipulation min-h-[88px]",
+          uploading && "opacity-60 pointer-events-none"
+        )}
+      >
+        {uploading ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : (
+          <Upload className="h-5 w-5" />
+        )}
+        <span className="text-sm text-center px-2">
+          {uploading ? progress : "Toca para subir fotos o videos"}
+        </span>
+        <span className="text-xs text-muted font-normal flex items-center gap-3">
+          <span className="flex items-center gap-1">
+            <ImageIcon className="h-3 w-3" /> Fotos (incl. HEIC)
+          </span>
+          <span className="flex items-center gap-1">
+            <Film className="h-3 w-3" /> Videos
+          </span>
+        </span>
+      </label>
+
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+    </div>
+  );
+}
