@@ -14,7 +14,15 @@ compose ps
 
 echo
 echo "HTTP:"
-curl -sf "http://127.0.0.1:$PORT/api/ping" 2>/dev/null && echo || echo "App not responding on :$PORT (run ./scripts/prod/start.sh?)"
+PING=$(curl -sf "http://127.0.0.1:$PORT/api/ping" 2>/dev/null || true)
+if [[ -n "$PING" ]]; then
+  echo "$PING"
+  if echo "$PING" | grep -q '"db":false'; then
+    echo "⚠ Database not ready — run: npx prisma migrate deploy"
+  fi
+else
+  echo "App not responding on :$PORT (run ./scripts/prod/start.sh?)"
+fi
 
 echo
 IP=$(lan_ip)

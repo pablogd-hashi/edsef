@@ -56,3 +56,34 @@ wait_postgres() {
   done
   die "Postgres did not become ready in time"
 }
+
+# Fingerprint sources so start.sh rebuilds after git pull without manual steps.
+source_fingerprint() {
+  local git_head="nogit"
+  if git rev-parse HEAD >/dev/null 2>&1; then
+    git_head=$(git rev-parse HEAD)
+  fi
+  local lock_hash="nolock"
+  if [[ -f package-lock.json ]]; then
+    lock_hash=$(sha256sum package-lock.json | awk '{print $1}')
+  fi
+  local schema_hash="noschema"
+  if [[ -f prisma/schema.prisma ]]; then
+    schema_hash=$(sha256sum prisma/schema.prisma | awk '{print $1}')
+  fi
+  echo "${git_head}:${lock_hash}:${schema_hash}"
+}
+
+needs_build() {
+  [[ ! -d .next ]] && return 0
+  local marker=".next/.source-fingerprint"
+  local current
+  current=$(source_fingerprint)
+  [[ -f "$marker" ]] && [[ "$(cat "$marker")" == "$current" ]] && return 1
+  return 0
+}
+
+write_build_fingerprint() {
+  mkdir -p .next
+  source_fingerprint > .next/.source-fingerprint
+}
