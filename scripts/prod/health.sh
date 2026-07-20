@@ -18,7 +18,7 @@ PING=$(curl -sf "http://127.0.0.1:$PORT/api/ping" 2>/dev/null || true)
 if [[ -n "$PING" ]]; then
   echo "$PING"
   if echo "$PING" | grep -q '"db":false'; then
-    echo "⚠ Database not ready — run: npx prisma migrate deploy"
+    echo "⚠ Database not ready — run: npm run db:migrate:deploy"
   fi
 else
   echo "App not responding on :$PORT (run ./scripts/prod/start.sh?)"

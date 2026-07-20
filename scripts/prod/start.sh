@@ -14,7 +14,7 @@ compose up -d
 wait_postgres
 
 log "Database migrations"
-npx prisma migrate deploy
+prisma_cmd migrate deploy
 
 if needs_build; then
   log "Building app (new install or code changed since last build)..."

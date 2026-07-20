@@ -13,7 +13,7 @@ log "Dependencies"
 npm ci
 
 log "Migrations"
-npx prisma migrate deploy
+prisma_cmd migrate deploy
 
 log "Build"
 npm run build

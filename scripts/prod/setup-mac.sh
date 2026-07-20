@@ -56,7 +56,7 @@ compose up -d
 wait_postgres
 
 log "Applying migrations"
-npx prisma migrate deploy
+prisma_cmd migrate deploy
 
 if [[ "${1:-}" == "--seed" ]]; then
   log "Running seed (no demo data — see prisma/seed.ts)"
