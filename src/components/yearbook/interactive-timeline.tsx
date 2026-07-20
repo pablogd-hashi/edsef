@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getMonthAbbrev } from "@/lib/age";
 import { MapPin, ChevronDown } from "lucide-react";
 import { MilestoneMediaGallery } from "@/components/yearbook/milestone-media";
 import { MediaUpload } from "@/components/yearbook/media-upload";
+import { EditableField } from "@/components/ui/editable-field";
 
 export interface TimelineItem {
   id: string;
@@ -18,6 +19,18 @@ export interface TimelineItem {
   ageLabel?: string | null;
   location?: { name: string; city?: string | null } | null;
   media?: { media: { id: string; type: string; title?: string | null } }[];
+}
+
+async function patchTimeline(id: string, data: Record<string, string>) {
+  const res = await fetch(`/api/timeline/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error ?? "Error al guardar");
+  }
 }
 
 export function InteractiveTimeline({
@@ -135,11 +148,28 @@ export function InteractiveTimeline({
                       className="overflow-hidden"
                     >
                       <div className="pl-14 pr-3 pb-4">
-                        {item.description && (
-                          <p className="text-muted leading-relaxed">
-                            {item.description}
-                          </p>
-                        )}
+                        <EditableField
+                          value={item.title}
+                          canEdit={canEdit}
+                          placeholder="Título"
+                          className="font-medium text-foreground mb-2"
+                          onSave={async (title) => {
+                            await patchTimeline(item.id, { title });
+                            router.refresh();
+                          }}
+                        />
+                        <EditableField
+                          value={item.description ?? ""}
+                          canEdit={canEdit}
+                          multiline
+                          as="p"
+                          placeholder="Descripción del momento"
+                          className="text-muted leading-relaxed"
+                          onSave={async (description) => {
+                            await patchTimeline(item.id, { description });
+                            router.refresh();
+                          }}
+                        />
                         {item.location && (
                           <p className="mt-2 flex items-center gap-1.5 text-sm text-accent-dark">
                             <MapPin className="h-3.5 w-3.5" />
@@ -147,7 +177,7 @@ export function InteractiveTimeline({
                             {item.location.city && `, ${item.location.city}`}
                           </p>
                         )}
-                        <MilestoneMediaGallery media={item.media ?? []} />
+                        <MilestoneMediaGallery media={item.media ?? []} canEdit={canEdit} />
                         {canEdit && (
                           <MediaUpload
                             className="mt-4"
@@ -181,7 +211,7 @@ export function InteractiveTimeline({
           {active.description && (
             <p className="mt-2 text-muted leading-relaxed">{active.description}</p>
           )}
-          <MilestoneMediaGallery media={active.media ?? []} />
+          <MilestoneMediaGallery media={active.media ?? []} canEdit={canEdit} />
         </motion.div>
       )}
     </div>

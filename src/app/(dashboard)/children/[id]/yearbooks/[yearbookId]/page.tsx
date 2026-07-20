@@ -20,6 +20,9 @@ export default async function YearbookPage({
   const yearbook = await yearbookService.getById(yearbookId, childId);
   if (!yearbook) notFound();
 
+  const isParent =
+    session.user.role === "OWNER" || session.user.role === "PARENT";
+
   return (
     <div className="min-h-screen bg-background">
       {/* Editor toolbar */}
@@ -68,15 +71,16 @@ export default async function YearbookPage({
         </div>
       </header>
 
-      {/* Edit mode banner */}
-      <div className="border-b border-border-light bg-cream/50">
-        <div className="mx-auto max-w-5xl px-6 py-2.5 flex items-center justify-center gap-2 text-sm text-muted">
-          <Pencil className="h-3.5 w-3.5" />
-          Modo edición — los cambios se guardan automáticamente
+      {isParent && (
+        <div className="border-b border-border-light bg-cream/50">
+          <div className="mx-auto max-w-5xl px-6 py-2.5 flex items-center justify-center gap-2 text-sm text-muted">
+            <Pencil className="h-3.5 w-3.5" />
+            Modo edición — toca cualquier texto o foto para modificar
+          </div>
         </div>
-      </div>
+      )}
 
-      <YearbookViewer yearbook={yearbook} mode="edit" />
+      <YearbookViewer yearbook={yearbook} mode="edit" canEdit={isParent} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { StaggerChildren, StaggerItem } from "@/components/ui/motion";
 import { MapPin } from "lucide-react";
 import { MilestoneMediaGallery } from "@/components/yearbook/milestone-media";
 import { MediaUpload } from "@/components/yearbook/media-upload";
+import { EditableField } from "@/components/ui/editable-field";
 
 export interface MilestoneItem {
   id: string;
@@ -14,6 +15,18 @@ export interface MilestoneItem {
   ageLabel?: string | null;
   location?: { name: string } | null;
   media?: { media: { id: string; type: string; title?: string | null } }[];
+}
+
+async function patchMilestone(id: string, data: Record<string, string>) {
+  const res = await fetch(`/api/milestones/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error ?? "Error al guardar");
+  }
 }
 
 export function MilestoneGrid({
@@ -48,19 +61,44 @@ export function MilestoneGrid({
                 {i + 1}
               </div>
               <div className="flex-1 min-w-0">
-                {m.ageLabel && (
-                  <p className="text-xs uppercase tracking-wider text-accent-dark font-medium mb-1">
-                    {m.ageLabel}
-                  </p>
-                )}
-                <h3 className="font-editorial text-xl leading-snug group-hover:text-accent-dark transition-colors">
-                  {m.title}
-                </h3>
-                {m.description && (
-                  <p className="mt-2 text-sm text-muted leading-relaxed">
-                    {m.description}
-                  </p>
-                )}
+                <EditableField
+                  value={m.ageLabel ?? ""}
+                  canEdit={canEdit}
+                  placeholder="Etiqueta de edad"
+                  className="text-xs uppercase tracking-wider text-accent-dark font-medium mb-1"
+                  inputClassName="text-xs uppercase"
+                  onSave={async (ageLabel) => {
+                    await patchMilestone(m.id, { ageLabel });
+                    router.refresh();
+                  }}
+                />
+
+                <EditableField
+                  value={m.title}
+                  canEdit={canEdit}
+                  as="h3"
+                  placeholder="Título del hito"
+                  className="font-editorial text-xl leading-snug group-hover:text-accent-dark transition-colors"
+                  inputClassName="font-editorial text-lg"
+                  onSave={async (title) => {
+                    await patchMilestone(m.id, { title });
+                    router.refresh();
+                  }}
+                />
+
+                <EditableField
+                  value={m.description ?? ""}
+                  canEdit={canEdit}
+                  multiline
+                  as="p"
+                  placeholder="Descripción del momento"
+                  className="mt-2 text-sm text-muted leading-relaxed"
+                  onSave={async (description) => {
+                    await patchMilestone(m.id, { description });
+                    router.refresh();
+                  }}
+                />
+
                 {m.location && (
                   <p className="mt-3 flex items-center gap-1 text-xs text-muted-light">
                     <MapPin className="h-3 w-3" />
@@ -68,7 +106,7 @@ export function MilestoneGrid({
                   </p>
                 )}
 
-                <MilestoneMediaGallery media={m.media ?? []} />
+                <MilestoneMediaGallery media={m.media ?? []} canEdit={canEdit} />
 
                 {canEdit && (
                   <MediaUpload

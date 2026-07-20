@@ -27,10 +27,15 @@ const SECTIONS = [
 interface YearbookViewerProps {
   yearbook: YearbookWithRelations;
   mode?: "edit" | "preview";
+  canEdit?: boolean;
 }
 
-export function YearbookViewer({ yearbook, mode = "edit" }: YearbookViewerProps) {
-  const canEdit = mode === "edit" && yearbook.status !== "PUBLISHED";
+export function YearbookViewer({
+  yearbook,
+  mode = "edit",
+  canEdit: canEditProp,
+}: YearbookViewerProps) {
+  const canEdit = canEditProp ?? (mode === "edit");
   const childId = yearbook.childId;
   const yearbookId = yearbook.id;
   const [activeSection, setActiveSection] = useState("cover");
@@ -149,8 +154,10 @@ export function YearbookViewer({ yearbook, mode = "edit" }: YearbookViewerProps)
                 {yearbook.stories.map((story) => (
                   <StoryReader
                     key={story.id}
+                    id={story.id}
                     title={story.title}
                     content={story.content as Prisma.JsonValue}
+                    canEdit={canEdit}
                   />
                 ))}
               </div>
@@ -177,7 +184,7 @@ export function YearbookViewer({ yearbook, mode = "edit" }: YearbookViewerProps)
               <SectionTitle subtitle="Palabras del corazón">
                 Notas de mamá y papá
               </SectionTitle>
-              <ParentNotes notes={yearbook.parentNotes} />
+              <ParentNotes notes={yearbook.parentNotes} canEdit={canEdit} />
             </FadeIn>
           </section>
         )}
@@ -216,10 +223,12 @@ export function YearbookViewer({ yearbook, mode = "edit" }: YearbookViewerProps)
                 Carta al futuro
               </SectionTitle>
               <FutureLetter
+                id={yearbook.futureLetter.id}
                 content={yearbook.futureLetter.content}
                 signature={yearbook.futureLetter.signature}
                 letterDate={yearbook.futureLetter.letterDate}
                 hiddenUntilAge={yearbook.futureLetter.hiddenUntilAge}
+                canEdit={canEdit}
               />
             </FadeIn>
           </section>
