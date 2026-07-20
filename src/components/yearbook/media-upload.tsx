@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useId, useState } from "react";
 import { Upload, Loader2, Image as ImageIcon, Film } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -14,6 +14,10 @@ interface MediaUploadProps {
   className?: string;
 }
 
+// iOS Safari works best with a <label> + visible-ish input (not display:none)
+const ACCEPT =
+  "image/*,video/*,.heic,.heif,.HEIC,.HEIF,.mov,.MOV,.m4v,.M4V";
+
 export function MediaUpload({
   childId,
   yearbookId,
@@ -22,7 +26,7 @@ export function MediaUpload({
   onUploaded,
   className,
 }: MediaUploadProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputId = useId();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [progress, setProgress] = useState("");
@@ -34,7 +38,7 @@ export function MediaUpload({
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      setProgress(`Subiendo ${i + 1}/${files.length}: ${file.name}`);
+      setProgress(`Subiendo ${i + 1}/${files.length}: ${file.name || "foto"}`);
 
       const formData = new FormData();
       formData.append("file", file);
@@ -64,27 +68,24 @@ export function MediaUpload({
   return (
     <div className={className}>
       <input
-        ref={inputRef}
+        id={inputId}
         type="file"
-        accept="image/*,video/*"
+        accept={ACCEPT}
         multiple
-        className="hidden"
-        onChange={(e) => handleFiles(e.target.files)}
+        className="sr-only"
+        disabled={uploading}
+        onChange={(e) => {
+          handleFiles(e.target.files);
+          e.target.value = "";
+        }}
       />
 
-      <button
-        type="button"
-        disabled={uploading}
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault();
-          handleFiles(e.dataTransfer.files);
-        }}
+      <label
+        htmlFor={inputId}
         className={cn(
           buttonVariants("outline", "sm"),
-          "w-full border-dashed py-6 flex-col gap-2 h-auto",
-          uploading && "opacity-60"
+          "w-full border-dashed py-6 flex-col gap-2 h-auto cursor-pointer touch-manipulation min-h-[88px]",
+          uploading && "opacity-60 pointer-events-none"
         )}
       >
         {uploading ? (
@@ -92,18 +93,18 @@ export function MediaUpload({
         ) : (
           <Upload className="h-5 w-5" />
         )}
-        <span className="text-sm">
-          {uploading ? progress : "Subir fotos o videos"}
+        <span className="text-sm text-center px-2">
+          {uploading ? progress : "Toca para subir fotos o videos"}
         </span>
         <span className="text-xs text-muted font-normal flex items-center gap-3">
           <span className="flex items-center gap-1">
-            <ImageIcon className="h-3 w-3" /> Fotos
+            <ImageIcon className="h-3 w-3" /> Fotos (incl. HEIC)
           </span>
           <span className="flex items-center gap-1">
             <Film className="h-3 w-3" /> Videos
           </span>
         </span>
-      </button>
+      </label>
 
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>
