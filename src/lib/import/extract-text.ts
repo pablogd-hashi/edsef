@@ -1,9 +1,14 @@
 import { extractText, getDocumentProxy } from "unpdf";
 
+/** Per-page extraction — mergePages:true flattens to one line and breaks parsing. */
 export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
   const pdf = await getDocumentProxy(new Uint8Array(buffer));
-  const { text } = await extractText(pdf, { mergePages: true });
-  return Array.isArray(text) ? text.join("\n\n") : text;
+  const { text } = await extractText(pdf, { mergePages: false });
+  const pages = Array.isArray(text) ? text : [text];
+  return pages
+    .map((page) => page.trim())
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 export async function extractTextFromFile(
@@ -25,5 +30,5 @@ export async function extractTextFromFile(
     return buffer.toString("utf-8");
   }
 
-  throw new Error("Unsupported file type. Upload a PDF or plain-text (.txt) export.");
+  throw new Error("Upload a PDF or .txt file.");
 }

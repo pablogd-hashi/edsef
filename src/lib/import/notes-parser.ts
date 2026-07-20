@@ -47,7 +47,8 @@ function normalizeText(raw: string): string {
   return raw
     .replace(/\r\n/g, "\n")
     .replace(/\u00a0/g, " ")
-    .replace(/[●⁃•]/g, "-")
+    .replace(/●/g, "\n- ")
+    .replace(/[⁃•]/g, "-")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
@@ -177,7 +178,8 @@ function inferParentAuthor(header: string): string {
 function classifyYearHeader(line: string): SectionKind {
   if (PARENT_NOTES_RE.test(line)) return "parent_notes";
   if (BEFORE_BIRTH_RE.test(line)) return "parents_before";
-  if (DURING_YEAR_RE.test(line) || /pasaron|happened/i.test(line)) return "parents_during";
+  if (DURING_YEAR_RE.test(line)) return "parents_during";
+  if (/pasaron|happened/i.test(line) && !BEFORE_BIRTH_RE.test(line)) return "parents_during";
   return "skip";
 }
 
