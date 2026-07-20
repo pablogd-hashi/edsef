@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Arranque automático al iniciar sesión en macOS.
+  Auto-start on macOS login.
 
-  1. Edita las rutas USER y WorkingDirectory
+  1. Edit USER paths and WorkingDirectory
   2. cp deploy/launchd/com.memoria.plist.example ~/Library/LaunchAgents/com.memoria.plist
   3. launchctl load ~/Library/LaunchAgents/com.memoria.plist
   4. launchctl start com.memoria

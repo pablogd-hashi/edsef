@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Actualizar código en producción (tras git pull)
+# Update production after git pull
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -9,13 +9,13 @@ source "$ROOT_DIR/scripts/prod/lib.sh"
 
 load_env
 
-log "Dependencias"
+log "Dependencies"
 npm ci
 
-log "Migraciones"
+log "Migrations"
 npx prisma migrate deploy
 
 log "Build"
 npm run build
 
-echo "✓ Actualizado. Reinicia: ./scripts/prod/start.sh"
+echo "✓ Updated. Restart: ./scripts/prod/start.sh"

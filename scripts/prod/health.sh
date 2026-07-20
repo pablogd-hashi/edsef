@@ -14,8 +14,10 @@ compose ps
 
 echo
 echo "HTTP:"
-curl -sf "http://127.0.0.1:$PORT/api/ping" 2>/dev/null && echo || echo "App no responde en :$PORT (¿./scripts/prod/start.sh?)"
+curl -sf "http://127.0.0.1:$PORT/api/ping" 2>/dev/null && echo || echo "App not responding on :$PORT (run ./scripts/prod/start.sh?)"
 
 echo
 IP=$(lan_ip)
 [[ -n "$IP" ]] && echo "LAN: http://$IP:$PORT"
+echo "AUTH_URL: ${AUTH_URL:-not set}"
+[[ "${AUTH_URL:-}" == *localhost* ]] && [[ -n "$IP" ]] && echo "⚠ AUTH_URL uses localhost — phone on Wi‑Fi needs http://$IP:$PORT (see docs/remote-access.md)"
