@@ -48,11 +48,33 @@ const MIME_EXT: Record<string, string> = {
   "image/webp": "webp",
   "image/gif": "gif",
   "image/heic": "heic",
+  "image/heif": "heif",
   "video/mp4": "mp4",
   "video/quicktime": "mov",
   "video/webm": "webm",
   "video/x-msvideo": "avi",
+  "video/x-m4v": "m4v",
 };
+
+const EXT_MIME: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+  heic: "image/heic",
+  heif: "image/heif",
+  mp4: "video/mp4",
+  mov: "video/quicktime",
+  m4v: "video/x-m4v",
+  webm: "video/webm",
+};
+
+export function inferMimeType(filename: string, mimeType?: string): string {
+  if (mimeType && mimeType !== "application/octet-stream") return mimeType;
+  const ext = path.extname(filename).replace(/^\./, "").toLowerCase();
+  return EXT_MIME[ext] ?? mimeType ?? "application/octet-stream";
+}
 
 export function sanitizeExtension(filename: string, mimeType?: string): string {
   const fromName = path.extname(filename).replace(/^\./, "").toLowerCase();

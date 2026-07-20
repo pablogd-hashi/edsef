@@ -6,6 +6,7 @@ import {
   getAssetFilePath,
   saveBuffer,
   sanitizeExtension,
+  inferMimeType,
   STORAGE_ROOT,
 } from "@/lib/storage/local";
 import sharp from "sharp";
@@ -15,10 +16,14 @@ import { mediaService } from "./media.service";
 const MAX_IMAGE = Number(process.env.MAX_IMAGE_SIZE ?? 20 * 1024 * 1024);
 const MAX_VIDEO = Number(process.env.MAX_VIDEO_SIZE ?? 500 * 1024 * 1024);
 
-function mimeToType(mime: string): MediaType {
-  if (mime.startsWith("image/")) return "IMAGE";
-  if (mime.startsWith("video/")) return "VIDEO";
-  if (mime.startsWith("audio/")) return "AUDIO";
+function mimeToType(mime: string, filename: string): MediaType {
+  const resolved = inferMimeType(filename, mime);
+  if (resolved.startsWith("image/")) return "IMAGE";
+  if (resolved.startsWith("video/")) return "VIDEO";
+  if (resolved.startsWith("audio/")) return "AUDIO";
+  const ext = path.extname(filename).replace(/^\./, "").toLowerCase();
+  if (["heic", "heif", "jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return "IMAGE";
+  if (["mov", "mp4", "m4v", "webm"].includes(ext)) return "VIDEO";
   return "DOCUMENT";
 }
 
@@ -41,8 +46,8 @@ export class LocalMediaService {
     if (!canAccess) throw new Error("Forbidden");
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const mimeType = file.type || "application/octet-stream";
-    const type = mimeToType(mimeType);
+    const mimeType = inferMimeType(file.name, file.type || undefined);
+    const type = mimeToType(mimeType, file.name);
 
     if (type === "IMAGE" && buffer.length > MAX_IMAGE) {
       throw new Error(`Imagen demasiado grande (máx ${MAX_IMAGE / 1024 / 1024}MB)`);

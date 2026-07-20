@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/config";
 import { localMediaService } from "@/lib/services/local-media.service";
 
+export const runtime = "nodejs";
+export const maxDuration = 120;
+
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id || !session.user.familyId) {
