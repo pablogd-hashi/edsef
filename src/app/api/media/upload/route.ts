@@ -12,7 +12,18 @@ export async function POST(request: Request) {
   }
 
   try {
-    const formData = await request.formData();
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch {
+      return NextResponse.json(
+        {
+          error:
+            "No se pudo leer el archivo. Si es un video grande, reinicia el servidor tras actualizar next.config (límite 500MB).",
+        },
+        { status: 413 }
+      );
+    }
     const file = formData.get("file") as File | null;
     const childId = formData.get("childId") as string;
     const yearbookId = (formData.get("yearbookId") as string) || undefined;

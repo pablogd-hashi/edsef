@@ -38,6 +38,20 @@ export function MediaUpload({
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      const maxVideo = 500 * 1024 * 1024;
+      const maxImage = 20 * 1024 * 1024;
+      const isVideo = file.type.startsWith("video/") || /\.(mov|mp4|m4v|webm)$/i.test(file.name);
+      const limit = isVideo ? maxVideo : maxImage;
+      if (file.size > limit) {
+        setError(
+          isVideo
+            ? `Video demasiado grande (máx ${Math.round(maxVideo / 1024 / 1024)}MB)`
+            : `Imagen demasiado grande (máx ${Math.round(maxImage / 1024 / 1024)}MB)`
+        );
+        setUploading(false);
+        return;
+      }
+
       setProgress(`Subiendo ${i + 1}/${files.length}: ${file.name || "foto"}`);
 
       const formData = new FormData();
