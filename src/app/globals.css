@@ -1,0 +1,153 @@
+@import "tailwindcss";
+
+:root {
+  --background: #faf7f2;
+  --foreground: #1c1917;
+  --muted: #78716c;
+  --muted-light: #a8a29e;
+  --accent: #b8956c;
+  --accent-light: #d4bc94;
+  --accent-dark: #8b6f47;
+  --card: #ffffff;
+  --card-hover: #fffdf9;
+  --border: #e7e0d5;
+  --border-light: #f0ebe3;
+  --cream: #f5f0e8;
+  --warm-shadow: 0 4px 24px -4px rgba(28, 25, 23, 0.08);
+  --warm-shadow-lg: 0 12px 48px -8px rgba(28, 25, 23, 0.12);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-light: var(--muted-light);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-accent-dark: var(--accent-dark);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-border: var(--border);
+  --color-border-light: var(--border-light);
+  --color-cream: var(--cream);
+  --font-sans: var(--font-dm-sans);
+  --font-serif: var(--font-playfair);
+  --font-display: var(--font-cormorant);
+}
+
+* {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.font-display {
+  font-family: var(--font-display), Georgia, serif;
+}
+
+.font-editorial {
+  font-family: var(--font-serif), Georgia, serif;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.warm-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--cream) 0%,
+    var(--background) 50%,
+    color-mix(in srgb, var(--accent-light) 15%, var(--background)) 100%
+  );
+}
+
+.hero-pattern {
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    var(--border) 1px,
+    transparent 0
+  );
+  background-size: 32px 32px;
+}
+
+.prose-yearbook {
+  max-width: 42rem;
+  line-height: 1.8;
+}
+
+.prose-yearbook p {
+  margin-bottom: 1.25em;
+  color: var(--muted);
+}
+
+.prose-yearbook blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1.5rem;
+  margin: 2rem 0;
+  font-family: var(--font-serif), Georgia, serif;
+  font-style: italic;
+  font-size: 1.125rem;
+  color: var(--foreground);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out forwards;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Timeline scrollbar */
+.timeline-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.timeline-scroll::-webkit-scrollbar-track {
+  background: var(--border-light);
+  border-radius: 2px;
+}
+.timeline-scroll::-webkit-scrollbar-thumb {
+  background: var(--accent-light);
+  border-radius: 2px;
+}
+
+/* Preview reading mode */
+.preview-mode {
+  background: var(--card);
+}
+
+.preview-mode section {
+  scroll-margin-top: 5rem;
+}
