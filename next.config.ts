@@ -13,8 +13,10 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
+    // Required for video uploads through middleware/proxy (default 10MB truncates body)
+    proxyClientMaxBodySize: "500mb",
     serverActions: {
-      bodySizeLimit: "50mb",
+      bodySizeLimit: "500mb",
     },
   },
 };
