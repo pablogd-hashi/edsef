@@ -7,7 +7,7 @@ export const createChildSchema = z.object({
   themeColor: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/)
-    .default("#C4A77D"),
+    .default("#D946EF"),
   titleFont: z.string().default("serif"),
   description: z.string().max(2000).optional(),
 });

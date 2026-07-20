@@ -214,7 +214,7 @@ model Child {
   nickname       String?
   birthDate      DateTime    @db.Date
   profilePhotoId String?
-  themeColor     String      @default("#C4A77D")
+  themeColor     String      @default("#D946EF")
   titleFont      String      @default("serif")
   description    String?     @db.Text
   status         ChildStatus @default(ACTIVE)

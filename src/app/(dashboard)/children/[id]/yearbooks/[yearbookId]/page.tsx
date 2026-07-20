@@ -7,6 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Eye, Download, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChildTheme } from "@/components/theme/child-theme";
 
 export default async function YearbookPage({
   params,
@@ -24,7 +25,7 @@ export default async function YearbookPage({
     session.user.role === "OWNER" || session.user.role === "PARENT";
 
   return (
-    <div className="min-h-screen bg-background">
+    <ChildTheme themeColor={yearbook.child.themeColor} className="min-h-screen bg-background">
       {/* Editor toolbar */}
       <header className="sticky top-0 z-50 border-b border-border/60 glass">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 sm:px-6 py-3">
@@ -81,6 +82,6 @@ export default async function YearbookPage({
       )}
 
       <YearbookViewer yearbook={yearbook} mode="edit" canEdit={isParent} />
-    </div>
+    </ChildTheme>
   );
 }

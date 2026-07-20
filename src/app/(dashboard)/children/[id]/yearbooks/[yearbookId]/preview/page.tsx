@@ -6,6 +6,7 @@ import { YearbookViewer } from "@/components/yearbook/yearbook-viewer";
 import { buttonVariants } from "@/components/ui/button";
 import { ArrowLeft, Pencil, Download, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChildTheme } from "@/components/theme/child-theme";
 
 export default async function PreviewPage({
   params,
@@ -20,7 +21,7 @@ export default async function PreviewPage({
   if (!yearbook) notFound();
 
   return (
-    <div className="min-h-screen bg-card preview-mode">
+    <ChildTheme themeColor={yearbook.child.themeColor} className="min-h-screen bg-card preview-mode">
       {/* Minimal preview chrome */}
       <header className="fixed top-0 inset-x-0 z-50 glass border-b border-border/40">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 sm:px-6 py-3">
@@ -77,6 +78,6 @@ export default async function PreviewPage({
           Back to {yearbook.child.nickname ?? yearbook.child.fullName}
         </Link>
       </div>
-    </div>
+    </ChildTheme>
   );
 }
