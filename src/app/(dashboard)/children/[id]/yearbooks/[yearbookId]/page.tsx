@@ -5,9 +5,10 @@ import { redirect, notFound } from "next/navigation";
 import { YearbookViewer } from "@/components/yearbook/yearbook-viewer";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Eye, Download, Pencil } from "lucide-react";
+import { ArrowLeft, Eye, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChildTheme } from "@/components/theme/child-theme";
+import { ImportNotesDialog } from "@/components/yearbook/import-notes-dialog";
 
 export default async function YearbookPage({
   params,
@@ -54,6 +55,13 @@ export default async function YearbookPage({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {isParent && (
+              <ImportNotesDialog
+                childId={childId}
+                yearbookId={yearbookId}
+                yearbookTitle={yearbook.title}
+              />
+            )}
             <Link
               href={`/children/${childId}/yearbooks/${yearbookId}/preview`}
               className={cn(buttonVariants("outline", "sm"), "hidden sm:inline-flex")}
@@ -75,8 +83,7 @@ export default async function YearbookPage({
       {isParent && (
         <div className="border-b border-border-light bg-cream/50">
           <div className="mx-auto max-w-5xl px-6 py-2.5 flex items-center justify-center gap-2 text-sm text-muted">
-            <Pencil className="h-3.5 w-3.5" />
-            Edit mode — tap any text or photo to change it
+            Edit mode — tap any text or photo to change it. Use Import notes for PDF / Apple Notes exports.
           </div>
         </div>
       )}
