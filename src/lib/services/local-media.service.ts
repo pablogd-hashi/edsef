@@ -150,6 +150,21 @@ export class LocalMediaService {
     return updated;
   }
 
+  async delete(userId: string, mediaId: string): Promise<void> {
+    const asset = await mediaService.getById(mediaId);
+    if (!asset) throw new Error("No encontrado");
+
+    const canEdit = await accessService.assertParentAccess(userId, asset.childId);
+    if (!canEdit) throw new Error("Forbidden");
+
+    await prisma.milestoneMedia.deleteMany({ where: { mediaId } });
+    await prisma.timelineEntryMedia.deleteMany({ where: { mediaId } });
+    await prisma.mediaAsset.update({
+      where: { id: mediaId },
+      data: { deletedAt: new Date() },
+    });
+  }
+
   resolvePath(storageKey: string): string {
     return path.join(STORAGE_ROOT, storageKey);
   }

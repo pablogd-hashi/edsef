@@ -45,6 +45,29 @@ export const createTimelineEntrySchema = z.object({
   locationId: z.string().cuid().optional(),
 });
 
+export const updateMilestoneSchema = createMilestoneSchema
+  .omit({ yearbookId: true })
+  .partial();
+
+export const updateTimelineEntrySchema = createTimelineEntrySchema
+  .omit({ yearbookId: true })
+  .partial();
+
+export const updateStorySchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  content: z.union([z.string().max(50000), z.record(z.string(), z.unknown())]).optional(),
+});
+
+export const updateParentNoteSchema = z.object({
+  content: z.string().min(1).max(5000).optional(),
+  author: z.string().min(1).max(100).optional(),
+});
+
+export const updateFutureLetterSchema = z.object({
+  content: z.string().min(1).max(10000).optional(),
+  signature: z.string().max(200).optional().nullable(),
+});
+
 export const createStorySchema = z.object({
   yearbookId: z.string().cuid(),
   title: z.string().min(1).max(200),

@@ -41,6 +41,24 @@ export class AccessService {
     return !!member;
   }
 
+  /** Mamá o papá (OWNER/PARENT) pueden editar contenido del año */
+  async assertParentAccess(userId: string, childId: string): Promise<boolean> {
+    const child = await prisma.child.findUnique({
+      where: { id: childId },
+      select: { familyId: true },
+    });
+    if (!child) return false;
+
+    const member = await prisma.familyMember.findFirst({
+      where: {
+        userId,
+        familyId: child.familyId,
+        role: { in: ["OWNER", "PARENT"] },
+      },
+    });
+    return !!member;
+  }
+
   async createInvitation(
     familyId: string,
     email: string,
