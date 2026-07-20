@@ -12,6 +12,7 @@ import { ArrowLeft, Plus, Eye, BookOpen, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChildTheme } from "@/components/theme/child-theme";
 import { ChildThemePicker } from "@/components/children/child-theme-picker";
+import { DeleteYearbookButton } from "@/components/children/delete-yearbook-button";
 
 export default async function ChildPage({
   params,
@@ -156,6 +157,13 @@ export default async function ChildPage({
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
+                        {isParent && (
+                          <DeleteYearbookButton
+                            childId={id}
+                            yearbookId={yearbook.id}
+                            yearbookTitle={yearbook.title}
+                          />
+                        )}
                         <Link
                           href={`/children/${id}/yearbooks/${yearbook.id}/preview`}
                           className={cn(buttonVariants("ghost", "sm"))}

@@ -3,8 +3,10 @@ import { formatDate } from "@/lib/age";
 import { MapPin } from "lucide-react";
 
 interface SummaryContent {
+  subtitle?: string;
   location?: string;
   context?: string;
+  highlights?: string[];
   trips?: string[];
   favoriteMusic?: string;
   likes?: string;
@@ -58,6 +60,12 @@ export function CoverHero({
           {yearbook.customCoverTitle ?? yearbook.title}
         </h1>
 
+        {(yearbook.summaryContent as SummaryContent | null)?.subtitle && (
+          <p className="mt-3 text-xl text-muted italic font-editorial">
+            {(yearbook.summaryContent as SummaryContent).subtitle}
+          </p>
+        )}
+
         <p className="mt-4 text-lg text-muted">
           {yearbook.ageLabel}
           {yearbook.periodStart && yearbook.periodEnd && (
@@ -108,6 +116,22 @@ export function SummarySection({
           <p className="text-foreground leading-relaxed">{item.value}</p>
         </div>
       ))}
+
+      {content.highlights && content.highlights.length > 0 && (
+        <div className="sm:col-span-2 rounded-xl border border-border-light bg-card p-6">
+          <p className="text-xs uppercase tracking-wider text-accent-dark mb-3">
+            Highlights
+          </p>
+          <ul className="space-y-2 text-foreground leading-relaxed">
+            {content.highlights.map((h) => (
+              <li key={h} className="flex gap-2">
+                <span className="text-accent-dark">·</span>
+                <span>{h}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {content.quotes && content.quotes.length > 0 && (
         <div className="sm:col-span-2 rounded-xl border border-border-light bg-card p-6">

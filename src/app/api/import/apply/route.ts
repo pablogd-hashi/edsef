@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { childId, yearbookId, preview } = parsed.data;
+  const { childId, yearbookId, preview, replaceExisting } = parsed.data;
 
   const auth = await requireParentSession(childId);
   if (auth.error) return auth.error;
@@ -23,7 +23,8 @@ export async function POST(request: Request) {
       yearbookId,
       childId,
       preview,
-      auth.session!.user!.id
+      auth.session!.user!.id,
+      replaceExisting
     );
     return NextResponse.json({ ok: true, result });
   } catch (e) {

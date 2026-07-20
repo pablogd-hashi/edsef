@@ -66,6 +66,13 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+enum TimelineCategory {
+  PARENTS_BEFORE_BIRTH
+  PARENTS_DURING_YEAR
+  VIDEO
+  GENERAL
+}
+
 // ─── Enums ─────────────────────────────────────────────────────────────────
 
 enum FamilyRole {
@@ -331,14 +338,15 @@ model Milestone {
 }
 
 model TimelineEntry {
-  id          String    @id @default(cuid())
+  id          String            @id @default(cuid())
   yearbookId  String
   title       String
-  description String?   @db.Text
-  eventDate   DateTime  @db.Date
+  description String?           @db.Text
+  eventDate   DateTime          @db.Date
   month       Int?
   ageLabel    String?
-  order       Int       @default(0)
+  category    TimelineCategory  @default(GENERAL)
+  order       Int               @default(0)
   locationId  String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

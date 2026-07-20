@@ -75,7 +75,7 @@ export function ImportNotesDialog({
       const res = await fetch("/api/import/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ childId, yearbookId, preview }),
+        body: JSON.stringify({ childId, yearbookId, preview, replaceExisting: true }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Import failed");
@@ -91,16 +91,26 @@ export function ImportNotesDialog({
 
   const counts = preview
     ? {
-        timeline: preview.timeline.length,
-        stories: preview.stories.length,
+        summary: preview.summary.highlights?.length ?? 0,
         milestones: preview.milestones.length,
         music: preview.music.length,
+        stories: preview.stories.length,
+        videos: preview.videos.length,
         notes: preview.parentNotes.length,
+        beforeBirth: preview.parentsBeforeBirth.length,
+        thisYear: preview.parentsDuringYear.length,
       }
     : null;
 
   const totalItems = counts
-    ? counts.timeline + counts.stories + counts.milestones + counts.music + counts.notes
+    ? counts.summary +
+      counts.milestones +
+      counts.music +
+      counts.stories +
+      counts.videos +
+      counts.notes +
+      counts.beforeBirth +
+      counts.thisYear
     : 0;
 
   return (
@@ -141,9 +151,9 @@ export function ImportNotesDialog({
 
             <div className="px-6 py-5 space-y-5">
               <div className="rounded-xl bg-accent/5 border border-accent/15 px-4 py-3 text-sm text-muted leading-relaxed">
-                Works with Apple Notes, Google Keep, or PDF exports. We detect months,
-                bullet lists, stories, milestones, and music — then map them to your
-                yearbook sections.
+                Maps your PDF into clear sections: Summary, Milestones, Music, Stories,
+                Videos, Parent notes, Before you were born, and This year. Replaces
+                existing content in this yearbook.
               </div>
 
               <div>
@@ -208,12 +218,8 @@ export function ImportNotesDialog({
                     <p className="text-sm font-medium mb-3">Ready to import</p>
                     <dl className="grid grid-cols-2 gap-2 text-sm">
                       <div className="flex justify-between gap-2">
-                        <dt className="text-muted">Timeline</dt>
-                        <dd className="font-medium">{counts.timeline}</dd>
-                      </div>
-                      <div className="flex justify-between gap-2">
-                        <dt className="text-muted">Stories</dt>
-                        <dd className="font-medium">{counts.stories}</dd>
+                        <dt className="text-muted">Summary</dt>
+                        <dd className="font-medium">{counts.summary}</dd>
                       </div>
                       <div className="flex justify-between gap-2">
                         <dt className="text-muted">Milestones</dt>
@@ -224,8 +230,24 @@ export function ImportNotesDialog({
                         <dd className="font-medium">{counts.music}</dd>
                       </div>
                       <div className="flex justify-between gap-2">
+                        <dt className="text-muted">Stories</dt>
+                        <dd className="font-medium">{counts.stories}</dd>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <dt className="text-muted">Videos</dt>
+                        <dd className="font-medium">{counts.videos}</dd>
+                      </div>
+                      <div className="flex justify-between gap-2">
                         <dt className="text-muted">Parent notes</dt>
                         <dd className="font-medium">{counts.notes}</dd>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <dt className="text-muted">Before birth</dt>
+                        <dd className="font-medium">{counts.beforeBirth}</dd>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <dt className="text-muted">This year</dt>
+                        <dd className="font-medium">{counts.thisYear}</dd>
                       </div>
                     </dl>
                     {preview.detectedTitle && (

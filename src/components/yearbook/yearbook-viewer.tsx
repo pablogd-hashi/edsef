@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import { YEARBOOK_SECTIONS } from "@/lib/import/types";
 import type { YearbookWithRelations } from "@/lib/services/yearbook.service";
 import { CoverHero, SummarySection } from "./cover-hero";
 import { MilestoneGrid } from "./milestone-grid";
@@ -9,20 +8,11 @@ import { InteractiveTimeline } from "./interactive-timeline";
 import { StoryReader } from "./story-reader";
 import { MusicPlaylist } from "./music-playlist";
 import { ParentNotes } from "./parent-notes";
-import { FutureLetter } from "./future-letter";
 import { FadeIn, SectionTitle } from "@/components/ui/motion";
-import type { Prisma } from "@prisma/client";
-
-const SECTIONS = [
-  { id: "cover", label: "Cover" },
-  { id: "summary", label: "Summary" },
-  { id: "milestones", label: "Milestones" },
-  { id: "stories", label: "Stories" },
-  { id: "music", label: "Music" },
-  { id: "notes", label: "Notes" },
-  { id: "timeline", label: "Timeline" },
-  { id: "letter", label: "Letter" },
-] as const;
+import type { Prisma, TimelineCategory } from "@prisma/client";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
+import { ExternalLink } from "lucide-react";
 
 interface YearbookViewerProps {
   yearbook: YearbookWithRelations;
@@ -30,15 +20,82 @@ interface YearbookViewerProps {
   canEdit?: boolean;
 }
 
+function filterTimeline(
+  items: YearbookWithRelations["timeline"],
+  categories: TimelineCategory[]
+) {
+  return items
+    .filter((t) => categories.includes(t.category))
+    .map((t) => ({
+      id: t.id,
+      title: t.title,
+      description: t.description,
+      eventDate: t.eventDate,
+      month: t.month,
+      ageLabel: t.ageLabel,
+      location: t.location,
+      media: t.media,
+    }));
+}
+
+function VideoLinks({
+  items,
+}: {
+  items: { id: string; title: string; description?: string | null }[];
+}) {
+  return (
+    <div className="space-y-3">
+      {items.map((item) => (
+        <a
+          key={item.id}
+          href={item.description ?? "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 hover:border-accent-light transition-colors"
+        >
+          <ExternalLink className="h-4 w-4 text-accent-dark shrink-0" />
+          <span className="text-sm font-medium">{item.title}</span>
+        </a>
+      ))}
+    </div>
+  );
+}
+
 export function YearbookViewer({
   yearbook,
   mode = "edit",
   canEdit: canEditProp,
 }: YearbookViewerProps) {
-  const canEdit = canEditProp ?? (mode === "edit");
+  const canEdit = canEditProp ?? mode === "edit";
   const childId = yearbook.childId;
   const yearbookId = yearbook.id;
   const [activeSection, setActiveSection] = useState("cover");
+
+  const summary = yearbook.summaryContent as Record<string, unknown> | null;
+  const hasSummary =
+    summary &&
+    (summary.context ||
+      summary.location ||
+      (Array.isArray(summary.highlights) && summary.highlights.length > 0));
+
+  const videos = filterTimeline(yearbook.timeline, ["VIDEO"]);
+  const beforeBirth = filterTimeline(yearbook.timeline, ["PARENTS_BEFORE_BIRTH"]);
+  const thisYear = filterTimeline(yearbook.timeline, [
+    "PARENTS_DURING_YEAR",
+    "GENERAL",
+  ]);
+
+  const sectionContent: Record<string, boolean> = {
+    cover: true,
+    summary: !!hasSummary,
+    milestones: yearbook.milestones.length > 0,
+    music: yearbook.music.length > 0,
+    stories: yearbook.stories.length > 0,
+    videos: videos.length > 0,
+    notes: yearbook.parentNotes.length > 0,
+    "before-birth": beforeBirth.length > 0,
+    "this-year": thisYear.length > 0 || canEdit,
+  };
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -52,7 +109,7 @@ export function YearbookViewer({
       { rootMargin: "-20% 0px -60% 0px" }
     );
 
-    for (const s of SECTIONS) {
+    for (const s of YEARBOOK_SECTIONS) {
       const el = document.getElementById(`section-${s.id}`);
       if (el) observer.observe(el);
     }
@@ -60,28 +117,13 @@ export function YearbookViewer({
     return () => observer.disconnect();
   }, []);
 
-  const summary = yearbook.summaryContent as Record<string, unknown> | null;
-  const hasSummary = summary && Object.keys(summary).length > 0;
-
   return (
     <div className={cn(mode === "preview" && "preview-mode")}>
-      {/* Sticky section nav */}
       <nav className="sticky top-[57px] z-40 border-b border-border/60 glass">
         <div className="mx-auto max-w-4xl overflow-x-auto timeline-scroll px-4">
           <div className="flex gap-1 py-2">
-            {SECTIONS.map((s) => {
-              const hasContent =
-                s.id === "cover" ||
-                (s.id === "summary" && hasSummary) ||
-                (s.id === "milestones" && yearbook.milestones.length > 0) ||
-                (s.id === "stories" && yearbook.stories.length > 0) ||
-                (s.id === "music" && yearbook.music.length > 0) ||
-                (s.id === "notes" && yearbook.parentNotes.length > 0) ||
-                (s.id === "timeline" && (yearbook.timeline.length > 0 || canEdit)) ||
-                (s.id === "letter" && yearbook.futureLetter);
-
-              if (!hasContent) return null;
-
+            {YEARBOOK_SECTIONS.map((s) => {
+              if (!sectionContent[s.id]) return null;
               return (
                 <a
                   key={s.id}
@@ -102,28 +144,23 @@ export function YearbookViewer({
       </nav>
 
       <div className="mx-auto max-w-4xl px-6 py-8 md:py-12 space-y-20 md:space-y-28">
-        {/* Cover */}
         <section id="section-cover">
           <CoverHero yearbook={yearbook} immersive={mode === "preview"} />
         </section>
 
-        {/* Summary */}
         {hasSummary && (
           <section id="section-summary">
             <FadeIn>
-              <SectionTitle subtitle="A look at the year">
-                Summary
-              </SectionTitle>
+              <SectionTitle subtitle="The year at a glance">Summary</SectionTitle>
               <SummarySection content={summary} />
             </FadeIn>
           </section>
         )}
 
-        {/* Milestones */}
         {yearbook.milestones.length > 0 && (
           <section id="section-milestones">
             <FadeIn>
-              <SectionTitle subtitle="Moments that shaped the journey">
+              <SectionTitle subtitle="What you achieved this year">
                 Milestones
               </SectionTitle>
               <MilestoneGrid
@@ -143,13 +180,19 @@ export function YearbookViewer({
           </section>
         )}
 
-        {/* Stories */}
+        {yearbook.music.length > 0 && (
+          <section id="section-music">
+            <FadeIn>
+              <SectionTitle subtitle="Songs that marked the year">Music</SectionTitle>
+              <MusicPlaylist tracks={yearbook.music} />
+            </FadeIn>
+          </section>
+        )}
+
         {yearbook.stories.length > 0 && (
           <section id="section-stories">
             <FadeIn>
-              <SectionTitle subtitle="Stories worth telling">
-                Stories
-              </SectionTitle>
+              <SectionTitle subtitle="Stories worth telling">Stories</SectionTitle>
               <div className="space-y-16">
                 {yearbook.stories.map((story) => (
                   <StoryReader
@@ -165,48 +208,32 @@ export function YearbookViewer({
           </section>
         )}
 
-        {/* Music */}
-        {yearbook.music.length > 0 && (
-          <section id="section-music">
+        {videos.length > 0 && (
+          <section id="section-videos">
             <FadeIn>
-              <SectionTitle subtitle="The soundtrack of the year">
-                Music
-              </SectionTitle>
-              <MusicPlaylist tracks={yearbook.music} />
+              <SectionTitle subtitle="Videos from this year">Videos</SectionTitle>
+              <VideoLinks items={videos} />
             </FadeIn>
           </section>
         )}
 
-        {/* Parent notes */}
         {yearbook.parentNotes.length > 0 && (
           <section id="section-notes">
             <FadeIn>
-              <SectionTitle subtitle="Words from the heart">
-                Parent notes
-              </SectionTitle>
+              <SectionTitle subtitle="Notes from mom and dad">Parent notes</SectionTitle>
               <ParentNotes notes={yearbook.parentNotes} canEdit={canEdit} />
             </FadeIn>
           </section>
         )}
 
-        {/* Timeline */}
-        {(yearbook.timeline.length > 0 || canEdit) && (
-          <section id="section-timeline">
+        {beforeBirth.length > 0 && (
+          <section id="section-before-birth">
             <FadeIn>
-              <SectionTitle subtitle="Month by month, step by step">
-                Timeline
+              <SectionTitle subtitle="What mom and dad were up to before you arrived">
+                Before you were born
               </SectionTitle>
               <InteractiveTimeline
-                items={yearbook.timeline.map((t) => ({
-                  id: t.id,
-                  title: t.title,
-                  description: t.description,
-                  eventDate: t.eventDate,
-                  month: t.month,
-                  ageLabel: t.ageLabel,
-                  location: t.location,
-                  media: t.media,
-                }))}
+                items={beforeBirth}
                 childId={childId}
                 yearbookId={yearbookId}
                 canEdit={canEdit}
@@ -217,20 +244,19 @@ export function YearbookViewer({
           </section>
         )}
 
-        {/* Future letter */}
-        {yearbook.futureLetter && (
-          <section id="section-letter">
+        {(thisYear.length > 0 || canEdit) && (
+          <section id="section-this-year">
             <FadeIn>
-              <SectionTitle subtitle="For when you're older">
-                Future letter
+              <SectionTitle subtitle="Month by month — family life this year">
+                This year
               </SectionTitle>
-              <FutureLetter
-                id={yearbook.futureLetter.id}
-                content={yearbook.futureLetter.content}
-                signature={yearbook.futureLetter.signature}
-                letterDate={yearbook.futureLetter.letterDate}
-                hiddenUntilAge={yearbook.futureLetter.hiddenUntilAge}
+              <InteractiveTimeline
+                items={thisYear}
+                childId={childId}
+                yearbookId={yearbookId}
                 canEdit={canEdit}
+                periodStart={yearbook.periodStart}
+                periodEnd={yearbook.periodEnd}
               />
             </FadeIn>
           </section>

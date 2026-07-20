@@ -156,6 +156,16 @@ export class YearbookService {
       data: { status: "PUBLISHED", updatedById: userId },
     });
   }
+
+  async softDelete(yearbookId: string, childId: string, userId: string): Promise<void> {
+    const updated = await prisma.yearbook.updateMany({
+      where: { id: yearbookId, childId, deletedAt: null },
+      data: { deletedAt: new Date(), updatedById: userId },
+    });
+    if (updated.count === 0) {
+      throw new Error("Yearbook not found");
+    }
+  }
 }
 
 export const yearbookService = new YearbookService();

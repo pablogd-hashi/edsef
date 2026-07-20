@@ -1,12 +1,13 @@
 import { parseMonthName } from "./months";
 import type {
-  ImportLink,
   ImportMilestone,
   ImportMusic,
   ImportParentNote,
   ImportPreview,
   ImportStory,
   ImportTimelineItem,
+  ImportVideo,
+  TimelineCategory,
 } from "./types";
 
 const URL_RE = /https?:\/\/[^\s)]+/gi;
@@ -14,9 +15,26 @@ const PAGE_MARKER_RE = /^--\s*\d+\s+of\s+\d+\s*--$/i;
 const YEAR_HEADER_RE = /^(\d{4})\s*[-–—]/;
 const NUMBERED_MILESTONE_RE = /^(\d+)\.\s+(.+)$/;
 const BULLET_RE = /^[-*•⁃]\s*(.+)$/;
-const MUSIC_HEADER_RE = /musica|música|music\s+you\s+liked|favorite\s+music/i;
 
-type SectionKind = "general" | "music" | "parent_notes" | "monthly";
+const MUSIC_HEADER_RE = /musica que te gustaba|música que te gustaba|music you liked|favorite music/i;
+const ACHIEVEMENTS_HEADER_RE = /lo que lograste|what you achieved|achievements this year/i;
+const SUMMARY_HEADER_RE = /^un resumen|^a summary/i;
+const BEFORE_BIRTH_RE = /antes que.*nacier|before you were born|before.*born/i;
+const DURING_YEAR_RE = /en este a[nñ]o|this year|pasaron.*este a[nñ]o/i;
+const PARENT_NOTES_RE = /notas de mam|mom'?s? notes|algunas notas|parent notes|primer a[nñ]o con/i;
+const VIDEO_HEADER_RE = /segundo de cada|video|videito|1se\b/i;
+const STORY_TITLE_HINTS = /dia que naciste|day you were born|el dia que|birth story/i;
+
+type SectionKind =
+  | "summary"
+  | "milestones"
+  | "music"
+  | "story"
+  | "parent_notes"
+  | "parents_before"
+  | "parents_during"
+  | "video"
+  | "skip";
 
 interface ParserState {
   currentYear: number | null;
@@ -34,22 +52,15 @@ function normalizeText(raw: string): string {
     .trim();
 }
 
-function splitLines(text: string): string[] {
-  const raw = normalizeText(text)
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0 && !PAGE_MARKER_RE.test(l));
-  return mergeBrokenLines(raw);
-}
-
 function isLikelyStoryTitle(line: string): boolean {
   if (line.length > 90 || line.length < 4) return false;
   if (BULLET_RE.test(line) || NUMBERED_MILESTONE_RE.test(line)) return false;
   if (URL_RE.test(line)) return false;
   if (parseMonthName(line)) return false;
   if (YEAR_HEADER_RE.test(line)) return false;
-  if (MUSIC_HEADER_RE.test(line)) return false;
-  return true;
+  if (MUSIC_HEADER_RE.test(line) || ACHIEVEMENTS_HEADER_RE.test(line)) return false;
+  if (STORY_TITLE_HINTS.test(line)) return true;
+  return line.split(/\s+/).length <= 8 && !line.endsWith(".");
 }
 
 function shouldMergeLines(previous: string, current: string): boolean {
@@ -58,7 +69,8 @@ function shouldMergeLines(previous: string, current: string): boolean {
     parseMonthName(current) ||
     NUMBERED_MILESTONE_RE.test(current) ||
     BULLET_RE.test(current) ||
-    MUSIC_HEADER_RE.test(current)
+    MUSIC_HEADER_RE.test(current) ||
+    ACHIEVEMENTS_HEADER_RE.test(current)
   ) {
     return false;
   }
@@ -96,24 +108,25 @@ function mergeBrokenLines(lines: string[]): string[] {
   return merged;
 }
 
+function splitLines(text: string): string[] {
+  const raw = normalizeText(text)
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && !PAGE_MARKER_RE.test(l));
+  return mergeBrokenLines(raw);
+}
+
 function detectYearRange(text: string, title?: string): { start: number; end: number } | undefined {
   if (title) {
     const rangeInTitle = title.match(/(\d{4})\s*[-–—]\s*(\d{4})/);
     if (rangeInTitle) {
       return { start: Number(rangeInTitle[1]), end: Number(rangeInTitle[2]) };
     }
-    const singleYear = title.match(/\b(19|20)\d{2}\b/);
-    if (singleYear) {
-      const y = Number(singleYear[0]);
-      return { start: y, end: y };
-    }
   }
-
   const headerYears = [...text.matchAll(/^(\d{4})\s*[-–—]/gm)].map((m) => Number(m[1]));
   if (headerYears.length > 0) {
     return { start: Math.min(...headerYears), end: Math.max(...headerYears) };
   }
-
   return undefined;
 }
 
@@ -124,13 +137,21 @@ function detectTitle(lines: string[]): string | undefined {
   return first;
 }
 
+function detectSubtitle(lines: string[]): string | undefined {
+  const second = lines[1];
+  if (!second || second.length > 60 || BULLET_RE.test(second)) return undefined;
+  if (YEAR_HEADER_RE.test(second) || URL_RE.test(second)) return undefined;
+  return second;
+}
+
 function parseMusicLine(line: string): { title: string; artist?: string } {
   const cleaned = line.replace(/^[-*]\s*/, "").trim();
   const colonParts = cleaned.split(":");
   if (colonParts.length >= 2) {
-    const title = colonParts[0].trim();
-    const artist = colonParts.slice(1).join(":").trim();
-    return { title, artist: artist || undefined };
+    return {
+      title: colonParts[0].trim(),
+      artist: colonParts.slice(1).join(":").trim() || undefined,
+    };
   }
   const dashParts = cleaned.split(/\s[-–—]\s/);
   if (dashParts.length >= 2) {
@@ -153,16 +174,24 @@ function inferParentAuthor(header: string): string {
   return "Parent";
 }
 
-function addTimelineItem(
-  items: ImportTimelineItem[],
+function classifyYearHeader(line: string): SectionKind {
+  if (PARENT_NOTES_RE.test(line)) return "parent_notes";
+  if (BEFORE_BIRTH_RE.test(line)) return "parents_before";
+  if (DURING_YEAR_RE.test(line) || /pasaron|happened/i.test(line)) return "parents_during";
+  return "skip";
+}
+
+function addTimeline(
+  target: ImportTimelineItem[],
   title: string,
   year: number,
   month: number,
+  category: TimelineCategory,
   description?: string
 ) {
-  const cleanTitle = title.slice(0, 200);
-  if (!cleanTitle) return;
-  items.push({ title: cleanTitle, description, month, year });
+  const clean = title.slice(0, 200).trim();
+  if (!clean) return;
+  target.push({ title: clean, description, month, year, category });
 }
 
 export function parseNotesDocument(text: string): ImportPreview {
@@ -172,43 +201,34 @@ export function parseNotesDocument(text: string): ImportPreview {
     milestones: [],
     stories: [],
     music: [],
-    timeline: [],
+    parentsBeforeBirth: [],
+    parentsDuringYear: [],
     parentNotes: [],
-    links: [],
+    videos: [],
   };
 
   preview.detectedTitle = detectTitle(lines);
+  preview.summary.subtitle = detectSubtitle(lines);
   preview.yearRange = detectYearRange(text, preview.detectedTitle);
 
   const state: ParserState = {
     currentYear: preview.yearRange?.start ?? null,
     currentMonth: null,
-    section: "general",
-    parentAuthor: "Parent",
+    section: "summary",
+    parentAuthor: "Mom",
   };
 
   let storyTitle: string | null = null;
   let storyParagraphs: string[] = [];
-  let summaryBullets: string[] = [];
+  let pendingVideoTitle: string | null = null;
 
   const flushStory = () => {
     const content = storyParagraphs.join("\n\n").trim();
-    if (storyTitle && content.length >= 80) {
+    if (storyTitle && content.length >= 60) {
       preview.stories.push({ title: storyTitle, content });
     }
     storyTitle = null;
     storyParagraphs = [];
-  };
-
-  const flushSummaryBullets = () => {
-    if (summaryBullets.length === 0) return;
-    const joined = summaryBullets.join("\n");
-    if (!preview.summary.context) {
-      preview.summary.context = joined;
-    } else {
-      preview.summary.highlights = [...(preview.summary.highlights ?? []), ...summaryBullets];
-    }
-    summaryBullets = [];
   };
 
   for (let i = 0; i < lines.length; i++) {
@@ -216,27 +236,35 @@ export function parseNotesDocument(text: string): ImportPreview {
     const urls = extractUrls(line);
     const lineWithoutUrls = stripUrls(line);
 
-    for (const url of urls) {
-      preview.links.push({ label: lineWithoutUrls || undefined, url });
+    if (SUMMARY_HEADER_RE.test(line)) {
+      state.section = "summary";
+      continue;
+    }
+
+    if (ACHIEVEMENTS_HEADER_RE.test(line)) {
+      flushStory();
+      state.section = "milestones";
+      continue;
     }
 
     if (MUSIC_HEADER_RE.test(line)) {
       flushStory();
-      flushSummaryBullets();
       state.section = "music";
+      continue;
+    }
+
+    if (VIDEO_HEADER_RE.test(line) && !URL_RE.test(line)) {
+      flushStory();
+      state.section = "video";
+      pendingVideoTitle = lineWithoutUrls || "Video";
       continue;
     }
 
     const yearMatch = line.match(YEAR_HEADER_RE);
     if (yearMatch) {
       flushStory();
-      flushSummaryBullets();
       state.currentYear = Number(yearMatch[1]);
-      state.section = /nota|notes|mam[aá]|mom|journal/i.test(line)
-        ? "parent_notes"
-        : /pasaron|happened|events/i.test(line)
-          ? "monthly"
-          : "general";
+      state.section = classifyYearHeader(line);
       state.parentAuthor = inferParentAuthor(line);
       continue;
     }
@@ -245,19 +273,29 @@ export function parseNotesDocument(text: string): ImportPreview {
     if (month) {
       flushStory();
       state.currentMonth = month;
-      if (state.section === "general") state.section = "monthly";
       continue;
     }
 
+    for (const url of urls) {
+      if (state.section === "video" || /drive\.google|youtube|youtu\.be/i.test(url)) {
+        preview.videos.push({
+          title: pendingVideoTitle ?? (lineWithoutUrls.slice(0, 120) || "Video"),
+          url,
+        });
+        pendingVideoTitle = null;
+        continue;
+      }
+    }
+
     const milestoneMatch = line.match(NUMBERED_MILESTONE_RE);
-    if (milestoneMatch) {
+    if (milestoneMatch && (state.section === "milestones" || state.section === "summary")) {
       flushStory();
       const body = milestoneMatch[2].trim();
-      const [title, ...rest] = body.split(/[:.]\s+/, 2);
-      preview.milestones.push({
-        title: title.trim(),
-        description: rest.join(". ").trim() || undefined,
-      });
+      const colon = body.indexOf(":");
+      const title = colon > 0 ? body.slice(0, colon).trim() : body;
+      const description = colon > 0 ? body.slice(colon + 1).trim() : undefined;
+      preview.milestones.push({ title, description });
+      state.section = "milestones";
       continue;
     }
 
@@ -265,40 +303,45 @@ export function parseNotesDocument(text: string): ImportPreview {
     if (bulletMatch) {
       flushStory();
       const content = bulletMatch[1].trim();
-      const year = state.currentYear ?? new Date().getFullYear();
+      const year = state.currentYear ?? preview.yearRange?.start ?? new Date().getFullYear();
       const month = state.currentMonth ?? 1;
 
-      if (state.section === "music") {
-        const parsed = parseMusicLine(content);
-        preview.music.push(parsed);
-        continue;
+      switch (state.section) {
+        case "music":
+          preview.music.push(parseMusicLine(content));
+          break;
+        case "parent_notes":
+          preview.parentNotes.push({
+            author: state.parentAuthor,
+            content,
+            month,
+            year,
+          });
+          break;
+        case "parents_before":
+          addTimeline(preview.parentsBeforeBirth, content, year, month, "PARENTS_BEFORE_BIRTH");
+          break;
+        case "parents_during":
+          addTimeline(preview.parentsDuringYear, content, year, month, "PARENTS_DURING_YEAR");
+          break;
+        case "summary":
+          preview.summary.highlights = [...(preview.summary.highlights ?? []), content];
+          break;
+        default:
+          if (state.currentMonth) {
+            addTimeline(preview.parentsDuringYear, content, year, month, "PARENTS_DURING_YEAR");
+          } else {
+            preview.summary.highlights = [...(preview.summary.highlights ?? []), content];
+          }
       }
-
-      if (state.section === "parent_notes") {
-        preview.parentNotes.push({
-          author: state.parentAuthor,
-          content,
-          month,
-          year,
-        });
-        continue;
-      }
-
-      if (state.section === "monthly" || state.currentMonth) {
-        addTimelineItem(preview.timeline, content, year, month);
-        continue;
-      }
-
-      summaryBullets.push(content);
       continue;
     }
 
-    // Long narrative block detection
     if (isLikelyStoryTitle(line) && !storyTitle) {
       const nextLine = lines[i + 1] ?? "";
-      if (nextLine.length > 60 || /^[A-ZÁÉÍÓÚÑ]/.test(nextLine)) {
+      if (nextLine.length > 40) {
         flushStory();
-        state.section = "general";
+        state.section = "story";
         storyTitle = line;
         continue;
       }
@@ -310,42 +353,21 @@ export function parseNotesDocument(text: string): ImportPreview {
     }
 
     if (
-      lineWithoutUrls.length > 120 &&
+      state.section === "summary" &&
+      lineWithoutUrls.length > 20 &&
       !URL_RE.test(line) &&
-      state.section === "general" &&
-      preview.stories.length === 0
+      !SUMMARY_HEADER_RE.test(line)
     ) {
-      flushStory();
-      storyTitle = "Imported story";
-      storyParagraphs.push(lineWithoutUrls);
+      preview.summary.context = preview.summary.context
+        ? `${preview.summary.context}\n${lineWithoutUrls}`
+        : lineWithoutUrls;
     }
   }
 
   flushStory();
-  flushSummaryBullets();
 
   if (preview.music.length > 0) {
-    preview.summary.favoriteMusic = preview.music
-      .map((m) => (m.artist ? `${m.title} — ${m.artist}` : m.title))
-      .join("\n");
-  }
-
-  if (preview.milestones.length > 0 && !preview.summary.highlights?.length) {
-    preview.summary.highlights = preview.milestones.map((m) => m.title);
-  }
-
-  // Standalone link lines become timeline items
-  for (const link of preview.links) {
-    if (preview.timeline.some((t) => t.description?.includes(link.url))) continue;
-    if (link.label && link.label.length > 80) continue;
-    const year = preview.yearRange?.start ?? new Date().getFullYear();
-    addTimelineItem(
-      preview.timeline,
-      link.label?.slice(0, 120) || "Imported link",
-      year,
-      1,
-      link.url
-    );
+    preview.summary.highlights = preview.summary.highlights ?? [];
   }
 
   return preview;
