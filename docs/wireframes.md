@@ -32,14 +32,14 @@
 │                                                              │
 │  ┌─────────────────┐  ┌─────────────────┐                   │
 │  │  [foto]         │  │  [foto]         │                   │
-│  │  Bianca         │  │  (vacío)        │                   │
+│  │  Emma         │  │  (vacío)        │                   │
 │  │  1 año creado   │  │  Añade otro     │                   │
 │  │  Última edición │  │  hijo           │                   │
 │  │  hace 2 días    │  │                 │                   │
 │  └─────────────────┘  └─────────────────┘                   │
 │                                                              │
 │  Acciones rápidas                                            │
-│  [ Continuar Año 1 de Bianca ]  [ Crear backup ]           │
+│  [ Continuar Año 1 de Emma ]  [ Crear backup ]           │
 │                                                              │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -48,10 +48,10 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ ← Mis hijos    Bianca                    [Editar] [Archivar] │
+│ ← Mis hijos    Emma                    [Editar] [Archivar] │
 ├──────────────────────────────────────────────────────────────┤
 │  [foto grande]                                               │
-│  Bianca · Nacida 15 mar 2024 · Ámsterdam                    │
+│  Emma · Nacida 15 mar 2024 · Ámsterdam                    │
 │  Tema: ● #C4A77D                                             │
 │                                                              │
 │  Años de vida                          [ + Nuevo año ]       │
@@ -72,11 +72,11 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ ← Bianca   Año 1                    [Vista previa] [Publicar]│
+│ ← Emma   Año 1                    [Vista previa] [Publicar]│
 ├──────────────┬───────────────────────────────────────────────┤
 │ Secciones    │  Portada                                      │
 │              │  ─────────────────────────────────────────    │
-│ ≡ Portada    │  Título: El primer año de Bianca              │
+│ ≡ Portada    │  Título: El primer año de Emma              │
 │ ≡ Resumen    │  [ Cambiar foto de portada ]                  │
 │ ≡ Hitos      │                                               │
 │ ≡ Historias  │  Guardado automático · hace 3 s               │
@@ -176,7 +176,7 @@
 │              │    [FOTO PORTADA]       │                     │
 │              │                         │                     │
 │              │   El primer año de      │                     │
-│              │        Bianca           │                     │
+│              │        Emma           │                     │
 │              │      2024 · Año 1       │                     │
 │              └─────────────────────────┘                     │
 │                                                              │
@@ -197,7 +197,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ Exportar — Año 1 de Bianca                                   │
+│ Exportar — Año 1 de Emma                                   │
 ├──────────────────────────────────────────────────────────────┤
 │                                                              │
 │  Formato                                                     │
@@ -254,7 +254,7 @@ Paso 1/12  Crear hijo  →  Paso 2  Primer año  →  ...  →  Exportar
 │                                                              │
 │  Cuéntanos sobre tu hijo/a                                   │
 │                                                              │
-│  Nombre completo  [ Bianca                    ]              │
+│  Nombre completo  [ Emma                    ]              │
 │  Apodo            [                           ]              │
 │  Fecha nacimiento [ 15/03/2024                ]              │
 │  Foto de perfil   [ Subir foto ]                             │

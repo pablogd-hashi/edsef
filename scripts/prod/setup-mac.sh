@@ -59,11 +59,8 @@ log "Applying migrations"
 npx prisma migrate deploy
 
 if [[ "${1:-}" == "--seed" ]]; then
-  log "Loading demo data (Bianca)"
+  log "Running seed (no demo data — see prisma/seed.ts)"
   npm run db:seed
-  echo
-  echo "  Demo: demo@memoria.app / demo1234"
-  echo "  Change the password or create your account and set ALLOW_REGISTRATION=false"
 fi
 
 log "Production build"

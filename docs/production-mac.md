@@ -17,10 +17,10 @@ cd edsef
 chmod +x scripts/prod/*.sh
 
 # Creates .env with random secrets, migrates DB, builds
-./scripts/prod/setup-mac.sh --seed
+./scripts/prod/setup-mac.sh
 ```
 
-The `--seed` flag loads the Bianca demo. Without it, create your account at `/register` before setting `ALLOW_REGISTRATION=false`.
+On first visit, create your account at `/register`, then add children from the dashboard. Set `ALLOW_REGISTRATION=false` in `.env` after that.
 
 ## Start / stop
 

@@ -12,7 +12,7 @@
 - Vista previa
 - Export PDF, HTML, JSON, ZIP
 - Backups manuales
-- Seed de ejemplo (Bianca, Año 1)
+- Example seed (generic placeholder only — removed; register first)
 - Docker Compose local
 - Tests básicos (Vitest + Playwright)
 
@@ -41,7 +41,7 @@
 - [x] Estructura de carpetas y servicios (stubs)
 - [x] Configuración Auth.js
 - [x] ADRs iniciales
-- [x] Seed Bianca (datos de ejemplo)
+- [x] Empty seed (no personal demo data)
 - [x] README y `.env.example`
 
 **Criterio de done:** `docker compose up` + `npm run dev` arranca sin errores.
