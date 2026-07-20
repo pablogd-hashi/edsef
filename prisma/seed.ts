@@ -384,9 +384,27 @@ async function main() {
   }
 
   const musicTracks = [
-    { id: "seed-music-1", title: "As It Was", artist: "Harry Styles", order: 0 },
-    { id: "seed-music-2", title: "Don't Start Now", artist: "Dua Lipa", order: 1 },
-    { id: "seed-music-3", title: "Chuchuwua", artist: "Piñon Fijo", order: 2 },
+    {
+      id: "seed-music-1",
+      title: "As It Was",
+      artist: "Harry Styles",
+      youtubeUrl: "https://music.youtube.com/search?q=Harry+Styles+As+It+Was",
+      order: 0,
+    },
+    {
+      id: "seed-music-2",
+      title: "Don't Start Now",
+      artist: "Dua Lipa",
+      youtubeUrl: "https://music.youtube.com/search?q=Dua+Lipa+Don%27t+Start+Now",
+      order: 1,
+    },
+    {
+      id: "seed-music-3",
+      title: "Chuchuwua",
+      artist: "Piñon Fijo",
+      youtubeUrl: "https://music.youtube.com/search?q=Pi%C3%B1on+Fijo+Chuchuwua",
+      order: 2,
+    },
   ];
 
   for (const track of musicTracks) {
