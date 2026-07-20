@@ -1,14 +1,9 @@
-type PdfParseResult = { text: string; numpages: number; info: Record<string, unknown> };
+import { extractText, getDocumentProxy } from "unpdf";
 
-type PdfParseFn = (
-  dataBuffer: Buffer,
-  options?: Record<string, unknown>
-) => Promise<PdfParseResult>;
-
-/** pdf-parse's index.js runs debug code on ESM import — use the lib entry only. */
-export async function loadPdfParser(): Promise<PdfParseFn> {
-  const mod = await import("pdf-parse/lib/pdf-parse.js");
-  return (mod.default ?? mod) as PdfParseFn;
+export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
+  const pdf = await getDocumentProxy(new Uint8Array(buffer));
+  const { text } = await extractText(pdf, { mergePages: true });
+  return Array.isArray(text) ? text.join("\n\n") : text;
 }
 
 export async function extractTextFromFile(
@@ -19,9 +14,7 @@ export async function extractTextFromFile(
   const lower = filename.toLowerCase();
 
   if (mimeType === "application/pdf" || lower.endsWith(".pdf")) {
-    const pdfParse = await loadPdfParser();
-    const result = await pdfParse(buffer);
-    return result.text ?? "";
+    return extractTextFromPdf(buffer);
   }
 
   if (
