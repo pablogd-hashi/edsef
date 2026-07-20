@@ -71,15 +71,3 @@ export interface ImportApplyResult {
   videos: number;
   replaced: boolean;
 }
-
-export const YEARBOOK_SECTIONS = [
-  { id: "cover", label: "Cover" },
-  { id: "summary", label: "Summary" },
-  { id: "milestones", label: "What you achieved" },
-  { id: "music", label: "Music" },
-  { id: "stories", label: "Stories" },
-  { id: "videos", label: "Videos" },
-  { id: "notes", label: "Parent notes" },
-  { id: "before-birth", label: "Before you were born" },
-  { id: "this-year", label: "This year" },
-] as const;
