@@ -113,10 +113,6 @@ export default function LoginPage() {
             <LoginForm />
           </Suspense>
         </div>
-
-        <p className="mt-6 text-center text-xs text-muted-light">
-          Demo: demo@memoria.app · demo1234
-        </p>
       </div>
     </div>
   );
