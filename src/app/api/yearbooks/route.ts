@@ -6,14 +6,14 @@ import { createYearbookSchema } from "@/lib/validators";
 export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user?.familyId) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
   const childId = searchParams.get("childId");
 
   if (!childId) {
-    return NextResponse.json({ error: "childId requerido" }, { status: 400 });
+    return NextResponse.json({ error: "childId required" }, { status: 400 });
   }
 
   const yearbooks = await yearbookService.listByChild(childId);
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await request.json();
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Datos inválidos", details: parsed.error.flatten() },
+      { error: "Invalid data", details: parsed.error.flatten() },
       { status: 400 }
     );
   }

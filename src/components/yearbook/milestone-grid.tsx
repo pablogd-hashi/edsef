@@ -25,7 +25,7 @@ async function patchMilestone(id: string, data: Record<string, string>) {
   });
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.error ?? "Error al guardar");
+    throw new Error(err.error ?? "Failed to save");
   }
 }
 
@@ -77,7 +77,7 @@ export function MilestoneGrid({
                   value={m.title}
                   canEdit={canEdit}
                   as="h3"
-                  placeholder="Título del hito"
+                  placeholder="Milestone title"
                   className="font-editorial text-xl leading-snug group-hover:text-accent-dark transition-colors"
                   inputClassName="font-editorial text-lg"
                   onSave={async (title) => {
@@ -91,7 +91,7 @@ export function MilestoneGrid({
                   canEdit={canEdit}
                   multiline
                   as="p"
-                  placeholder="Descripción del momento"
+                  placeholder="Moment description"
                   className="mt-2 text-sm text-muted leading-relaxed"
                   onSave={async (description) => {
                     await patchMilestone(m.id, { description });

@@ -33,7 +33,7 @@ function LoginForm() {
     setLoading(false);
 
     if (result?.error) {
-      setError("Email o contraseña incorrectos");
+      setError("Incorrect email or password");
       return;
     }
 
@@ -45,7 +45,7 @@ function LoginForm() {
     <form onSubmit={handleSubmit} className="space-y-5">
       {registered && (
         <div className="rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3 text-sm text-emerald-700">
-          Cuenta creada. Ya puedes iniciar sesión.
+          Account created. You can sign in now.
         </div>
       )}
       {error && (
@@ -62,12 +62,12 @@ function LoginForm() {
           onChange={(e) => setEmail(e.target.value)}
           required
           className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
-          placeholder="tu@email.com"
+          placeholder="you@email.com"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1.5">Contraseña</label>
+        <label className="block text-sm font-medium mb-1.5">Password</label>
         <input
           type="password"
           value={password}
@@ -82,13 +82,13 @@ function LoginForm() {
         disabled={loading}
         className={cn(buttonVariants("primary", "md"), "w-full")}
       >
-        {loading ? "Entrando..." : "Iniciar sesión"}
+        {loading ? "Signing in..." : "Sign in"}
       </button>
 
       <p className="text-center text-sm text-muted">
-        ¿Primera vez?{" "}
+        First time here?{" "}
         <Link href="/register" className="text-accent-dark hover:underline font-medium">
-          Crear cuenta
+          Create account
         </Link>
       </p>
     </form>
@@ -104,14 +104,12 @@ export default function LoginPage() {
             <BookOpen className="h-6 w-6 text-accent-dark" />
             <span className="font-editorial text-xl">Memoria</span>
           </Link>
-          <h1 className="font-display text-4xl font-light tracking-tight">
-            Bienvenido
-          </h1>
-          <p className="mt-2 text-muted">Conserva los años de tus hijos</p>
+          <h1 className="font-display text-4xl font-light tracking-tight">Welcome</h1>
+          <p className="mt-2 text-muted">Preserve your children&apos;s years</p>
         </div>
 
         <div className="rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-8 shadow-[var(--warm-shadow)]">
-          <Suspense fallback={<div className="text-center text-muted py-8">Cargando...</div>}>
+          <Suspense fallback={<div className="text-center text-muted py-8">Loading...</div>}>
             <LoginForm />
           </Suspense>
         </div>

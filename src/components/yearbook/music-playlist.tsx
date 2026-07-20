@@ -33,7 +33,7 @@ export function MusicPlaylist({ tracks }: { tracks: MusicItem[] }) {
               {track.artist && (
                 <p className="text-sm text-muted truncate">{track.artist}</p>
               )}
-              <p className="text-xs text-muted-light mt-0.5">Abrir en YouTube Music</p>
+              <p className="text-xs text-muted-light mt-0.5">Open in YouTube Music</p>
             </div>
             <div className="flex items-center gap-2 shrink-0 text-muted group-hover:text-accent-dark">
               <span className="text-sm font-editorial hidden sm:inline">

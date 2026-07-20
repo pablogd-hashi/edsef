@@ -23,9 +23,9 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Memoria — Diarios familiares",
+  title: "Memoria — Family yearbooks",
   description:
-    "Crea y conserva diarios digitales anuales para tus hijos. Exporta, respalda y preserva recuerdos para el futuro.",
+    "Create and preserve annual digital diaries for your children. Export, back up, and keep memories for the future.",
   robots: { index: false, follow: false },
 };
 
@@ -43,7 +43,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="es"
+      lang="en"
       className={`${playfair.variable} ${cormorant.variable} ${dmSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">

@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   });
 
   if (!yearbook) {
-    return NextResponse.json({ error: "Año no encontrado" }, { status: 404 });
+    return NextResponse.json({ error: "Yearbook not found" }, { status: 404 });
   }
 
   const entry = await timelineService.create(

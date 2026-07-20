@@ -10,7 +10,7 @@ export async function PATCH(
   const { id } = await params;
   const entry = await getChildIdFromTimeline(id);
   if (!entry) {
-    return NextResponse.json({ error: "Entrada no encontrada" }, { status: 404 });
+    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
   }
 
   const auth = await requireParentSession(entry.yearbook.childId);

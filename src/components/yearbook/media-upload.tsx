@@ -67,14 +67,14 @@ export function MediaUpload({
       if (file.size > limit) {
         setError(
           isVideo
-            ? `Video demasiado grande (máx ${Math.round(maxVideo / 1024 / 1024)}MB)`
-            : `Imagen demasiado grande (máx ${Math.round(maxImage / 1024 / 1024)}MB)`
+            ? `Video too large (max ${Math.round(maxVideo / 1024 / 1024)}MB)`
+            : `Image too large (max ${Math.round(maxImage / 1024 / 1024)}MB)`
         );
         setUploading(false);
         return;
       }
 
-      setProgress(`Subiendo ${i + 1}/${files.length}: ${file.name || "archivo"}`);
+      setProgress(`Uploading ${i + 1}/${files.length}: ${file.name || "file"}`);
 
       const formData = new FormData();
       formData.append("file", file);
@@ -90,7 +90,7 @@ export function MediaUpload({
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error ?? "Error al subir");
+        setError(data.error ?? "Upload failed");
         setUploading(false);
         return;
       }
@@ -131,7 +131,7 @@ export function MediaUpload({
           ) : (
             <>
               <p className="text-xs text-center text-muted">
-                Se abre la biblioteca de Fotos de Apple
+                Opens the Apple Photos library
               </p>
               <div className="grid grid-cols-2 gap-2">
                 <label
@@ -142,7 +142,7 @@ export function MediaUpload({
                   )}
                 >
                   <ImageIcon className="h-5 w-5" />
-                  <span className="text-sm">Fotos</span>
+                  <span className="text-sm">Photos</span>
                 </label>
                 <label
                   htmlFor={videoInputId}
@@ -182,7 +182,7 @@ export function MediaUpload({
           <Upload className="h-5 w-5" />
         )}
         <span className="text-sm text-center px-2">
-          {uploading ? progress : "Subir fotos o videos"}
+          {uploading ? progress : "Upload photos or videos"}
         </span>
       </label>
 

@@ -10,7 +10,7 @@ import path from "path";
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id || !session.user.familyId) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await request.json();
@@ -21,17 +21,17 @@ export async function POST(request: Request) {
   };
 
   if (!yearbookId || !childId) {
-    return NextResponse.json({ error: "yearbookId y childId requeridos" }, { status: 400 });
+    return NextResponse.json({ error: "yearbookId and childId required" }, { status: 400 });
   }
 
   const canAccess = await accessService.assertChildAccess(session.user.id, childId);
   if (!canAccess) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   const yearbook = await yearbookService.getById(yearbookId, childId);
   if (!yearbook) {
-    return NextResponse.json({ error: "Año no encontrado" }, { status: 404 });
+    return NextResponse.json({ error: "Yearbook not found" }, { status: 404 });
   }
 
   try {
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     }
 
     if (!existsSync(downloadPath)) {
-      return NextResponse.json({ error: "Export no generado" }, { status: 500 });
+      return NextResponse.json({ error: "Export not generated" }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
   } catch (e) {
     console.error("Export error:", e);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Error en exportación" },
+      { error: e instanceof Error ? e.message : "Export failed" },
       { status: 500 }
     );
   }

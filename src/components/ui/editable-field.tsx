@@ -22,7 +22,7 @@ export function EditableField({
   multiline = false,
   className,
   inputClassName,
-  placeholder = "Toca para editar",
+  placeholder = "Tap to edit",
   as: Tag = "span",
 }: EditableFieldProps) {
   const [editing, setEditing] = useState(false);

@@ -30,14 +30,14 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "Error al registrarse");
+        setError(data.error ?? "Registration failed");
         setLoading(false);
         return;
       }
 
       router.push("/login?registered=1");
     } catch {
-      setError("Error de conexión");
+      setError("Connection error");
       setLoading(false);
     }
   }
@@ -50,10 +50,8 @@ export default function RegisterPage() {
             <BookOpen className="h-6 w-6 text-accent-dark" />
             <span className="font-editorial text-xl">Memoria</span>
           </Link>
-          <h1 className="font-display text-4xl font-light tracking-tight">
-            Crear cuenta
-          </h1>
-          <p className="mt-2 text-muted">Empieza a conservar recuerdos</p>
+          <h1 className="font-display text-4xl font-light tracking-tight">Create account</h1>
+          <p className="mt-2 text-muted">Start preserving memories</p>
         </div>
 
         <div className="rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-8 shadow-[var(--warm-shadow)]">
@@ -65,7 +63,7 @@ export default function RegisterPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Tu nombre</label>
+              <label className="block text-sm font-medium mb-1.5">Your name</label>
               <input
                 type="text"
                 value={name}
@@ -87,7 +85,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Contraseña</label>
+              <label className="block text-sm font-medium mb-1.5">Password</label>
               <input
                 type="password"
                 value={password}
@@ -96,7 +94,7 @@ export default function RegisterPage() {
                 minLength={8}
                 className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
               />
-              <p className="mt-1.5 text-xs text-muted-light">Mínimo 8 caracteres</p>
+              <p className="mt-1.5 text-xs text-muted-light">At least 8 characters</p>
             </div>
 
             <button
@@ -104,13 +102,13 @@ export default function RegisterPage() {
               disabled={loading}
               className={cn(buttonVariants("primary", "md"), "w-full")}
             >
-              {loading ? "Creando cuenta..." : "Crear cuenta"}
+              {loading ? "Creating account..." : "Create account"}
             </button>
 
             <p className="text-center text-sm text-muted">
-              ¿Ya tienes cuenta?{" "}
+              Already have an account?{" "}
               <Link href="/login" className="text-accent-dark hover:underline font-medium">
-                Iniciar sesión
+                Sign in
               </Link>
             </p>
           </form>

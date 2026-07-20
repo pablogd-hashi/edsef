@@ -32,7 +32,7 @@ async function patchTimeline(id: string, data: Record<string, string>) {
   });
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.error ?? "Error al guardar");
+    throw new Error(err.error ?? "Failed to save");
   }
 }
 
@@ -165,11 +165,11 @@ export function InteractiveTimeline({
       {months.length === 0 ? (
         canEdit ? (
           <p className="text-center text-muted text-sm py-6">
-            Elige una fecha arriba y guarda el primer momento del año.
+            Pick a date above and save the first moment of the year.
           </p>
         ) : (
           <p className="text-center text-muted text-sm py-6">
-            Aún no hay momentos en la línea temporal.
+            No timeline moments yet.
           </p>
         )
       ) : (
@@ -219,7 +219,7 @@ export function InteractiveTimeline({
                     {getMonthName(month)}
                   </p>
                   <p className="text-[10px] text-muted-light mt-1">
-                    {monthItems.length} {monthItems.length === 1 ? "momento" : "momentos"}
+                    {monthItems.length} {monthItems.length === 1 ? "moment" : "moments"}
                   </p>
                 </div>
               </button>
@@ -256,7 +256,7 @@ export function InteractiveTimeline({
 
                     <div className="rounded-2xl border border-border-light bg-card p-5 sm:p-6">
                       <time className="text-xs text-muted-light uppercase tracking-wider">
-                        {date.toLocaleDateString("es", {
+                        {date.toLocaleDateString("en-US", {
                           day: "numeric",
                           month: "long",
                           year: "numeric",
@@ -272,7 +272,7 @@ export function InteractiveTimeline({
                         value={item.title}
                         canEdit={canEdit}
                         as="h4"
-                        placeholder="Título"
+                        placeholder="Title"
                         className="font-medium text-lg mt-2"
                         onSave={async (title) => {
                           await patchTimeline(item.id, { title });
@@ -285,7 +285,7 @@ export function InteractiveTimeline({
                         canEdit={canEdit}
                         multiline
                         as="p"
-                        placeholder="Descripción del momento"
+                        placeholder="Moment description"
                         className="text-muted leading-relaxed mt-2"
                         onSave={async (description) => {
                           await patchTimeline(item.id, { description });

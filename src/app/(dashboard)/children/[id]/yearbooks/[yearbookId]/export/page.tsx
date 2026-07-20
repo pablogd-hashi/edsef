@@ -28,7 +28,7 @@ export default async function ExportPage({
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="font-editorial text-xl">Exportar</h1>
+            <h1 className="font-editorial text-xl">Export</h1>
             <p className="text-sm text-muted">
               {yearbook.title} · {yearbook.child.fullName}
             </p>

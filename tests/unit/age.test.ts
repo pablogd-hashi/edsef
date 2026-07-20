@@ -8,35 +8,35 @@ describe("calculateAge", () => {
     const result = calculateAge(birthDate, new Date("2024-09-15"));
     expect(result.years).toBe(0);
     expect(result.months).toBe(6);
-    expect(result.label).toBe("6 meses");
+    expect(result.label).toBe("6 months");
   });
 
   it("calculates years and months", () => {
     const result = calculateAge(birthDate, new Date("2026-06-15"));
     expect(result.years).toBe(2);
     expect(result.months).toBe(3);
-    expect(result.label).toBe("2 años y 3 meses");
+    expect(result.label).toBe("2 years and 3 months");
   });
 
   it("handles exactly one year", () => {
     const result = calculateAge(birthDate, new Date("2025-03-15"));
     expect(result.years).toBe(1);
     expect(result.months).toBe(0);
-    expect(result.label).toBe("1 año");
+    expect(result.label).toBe("1 year");
   });
 });
 
 describe("formatDate", () => {
-  it("formats date in Spanish", () => {
+  it("formats date in English", () => {
     const formatted = formatDate(new Date("2024-03-15"));
     expect(formatted).toContain("2024");
-    expect(formatted).toContain("marzo");
+    expect(formatted).toContain("March");
   });
 });
 
 describe("getMonthName", () => {
-  it("returns Spanish month name", () => {
-    expect(getMonthName(3)).toBe("marzo");
-    expect(getMonthName(12)).toBe("diciembre");
+  it("returns English month name", () => {
+    expect(getMonthName(3)).toBe("March");
+    expect(getMonthName(12)).toBe("December");
   });
 });

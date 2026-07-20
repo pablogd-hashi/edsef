@@ -30,7 +30,7 @@ export function FutureLetter({
     });
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.error ?? "Error al guardar");
+      throw new Error(err.error ?? "Failed to save");
     }
   }
 
@@ -39,19 +39,19 @@ export function FutureLetter({
       {hiddenUntilAge && (
         <div className="mb-4 flex items-center gap-2 text-sm text-muted">
           <Lock className="h-4 w-4" />
-          Visible a partir de los {hiddenUntilAge} años
+          Visible from age {hiddenUntilAge}
         </div>
       )}
       <div className="rounded-2xl border border-accent/20 bg-gradient-to-b from-cream to-card p-8 md:p-12 shadow-[var(--warm-shadow)]">
         <p className="text-xs uppercase tracking-[0.2em] text-accent-dark mb-6">
-          Carta al futuro · {formatDate(new Date(letterDate), "d MMMM yyyy")}
+          Future letter · {formatDate(new Date(letterDate), "d MMMM yyyy")}
         </p>
         <EditableField
           value={content}
           canEdit={canEdit}
           multiline
           as="p"
-          placeholder="Escribe la carta..."
+          placeholder="Write the letter..."
           className="font-editorial text-lg md:text-xl leading-[1.9] text-foreground/90 whitespace-pre-line"
           inputClassName="font-editorial text-base"
           onSave={async (newContent) => {
@@ -64,7 +64,7 @@ export function FutureLetter({
             <EditableField
               value={signature ?? ""}
               canEdit
-              placeholder="Firma (ej: Mamá y Papá)"
+              placeholder="Signature (e.g. Mom & Dad)"
               className="text-right"
               onSave={async (newSignature) => {
                 await patchLetter({ signature: newSignature || null });
