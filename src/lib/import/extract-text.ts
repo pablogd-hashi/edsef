@@ -1,3 +1,16 @@
+type PdfParseResult = { text: string; numpages: number; info: Record<string, unknown> };
+
+type PdfParseFn = (
+  dataBuffer: Buffer,
+  options?: Record<string, unknown>
+) => Promise<PdfParseResult>;
+
+/** pdf-parse's index.js runs debug code on ESM import — use the lib entry only. */
+export async function loadPdfParser(): Promise<PdfParseFn> {
+  const mod = await import("pdf-parse/lib/pdf-parse.js");
+  return (mod.default ?? mod) as PdfParseFn;
+}
+
 export async function extractTextFromFile(
   buffer: Buffer,
   mimeType: string,
@@ -5,11 +18,8 @@ export async function extractTextFromFile(
 ): Promise<string> {
   const lower = filename.toLowerCase();
 
-  if (
-    mimeType === "application/pdf" ||
-    lower.endsWith(".pdf")
-  ) {
-    const pdfParse = (await import("pdf-parse")).default;
+  if (mimeType === "application/pdf" || lower.endsWith(".pdf")) {
+    const pdfParse = await loadPdfParser();
     const result = await pdfParse(buffer);
     return result.text ?? "";
   }
