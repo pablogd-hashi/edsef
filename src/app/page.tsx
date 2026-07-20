@@ -65,7 +65,7 @@ export default function HomePage() {
 
           <FadeIn delay={0.4}>
             <p className="mt-8 text-sm text-muted-light">
-              Demo: demo@memoria.app · demo1234
+              Private family archive — your data stays on your server
             </p>
           </FadeIn>
         </div>

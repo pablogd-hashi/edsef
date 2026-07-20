@@ -17,9 +17,9 @@ describe("tiptap helpers", () => {
     const text = tiptapToPlainText({
       type: "doc",
       content: [
-        { type: "paragraph", content: [{ type: "text", text: "Bianca nació" }] },
+        { type: "paragraph", content: [{ type: "text", text: "A special day" }] },
       ],
     });
-    expect(text).toBe("Bianca nació");
+    expect(text).toBe("A special day");
   });
 });
