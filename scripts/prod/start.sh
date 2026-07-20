@@ -13,9 +13,15 @@ log "Postgres + Redis"
 compose up -d
 wait_postgres
 
-if [[ ! -d .next ]]; then
-  log "Initial build..."
+log "Database migrations"
+npx prisma migrate deploy
+
+if needs_build; then
+  log "Building app (new install or code changed since last build)..."
   npm run build
+  write_build_fingerprint
+else
+  log "Using existing build"
 fi
 
 export NODE_ENV=production

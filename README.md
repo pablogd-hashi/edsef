@@ -62,6 +62,7 @@ Guide: [docs/local-setup.md](docs/local-setup.md)
 | `npm run build` | Production build |
 | `npm run prod:setup` | Initial Mac production setup |
 | `npm run prod:start` | Start production server |
+| `npm run prod:update` | Rebuild after git pull |
 | `npm run prod:backup` | Backup DB + photos |
 | `npm run test` | Unit tests |
 

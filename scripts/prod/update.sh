@@ -17,5 +17,6 @@ npx prisma migrate deploy
 
 log "Build"
 npm run build
+write_build_fingerprint
 
 echo "✓ Updated. Restart: ./scripts/prod/start.sh"

@@ -1,10 +1,28 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db/prisma";
 
 /** Public health check for production scripts and local monitoring */
 export async function GET() {
-  return NextResponse.json({
-    ok: true,
-    service: "memoria",
-    timestamp: new Date().toISOString(),
-  });
+  const timestamp = new Date().toISOString();
+
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return NextResponse.json({
+      ok: true,
+      db: true,
+      service: "memoria",
+      timestamp,
+    });
+  } catch {
+    return NextResponse.json(
+      {
+        ok: false,
+        db: false,
+        service: "memoria",
+        timestamp,
+        error: "Database unavailable — run ./scripts/prod/setup-mac.sh or check Docker",
+      },
+      { status: 503 }
+    );
+  }
 }

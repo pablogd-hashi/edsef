@@ -65,6 +65,7 @@ fi
 
 log "Production build"
 npm run build
+write_build_fingerprint
 
 echo
 echo "════════════════════════════════════════════"
