@@ -93,6 +93,7 @@ Then use **Export → PDF** in the app.
 |---------|-------------|
 | `npm run prod:setup` | Alias for setup-mac.sh |
 | `npm run prod:start` | Alias for start.sh |
+| `npm run prod:update` | Rebuild after git pull |
 | `npm run prod:stop` | Alias for stop.sh |
 | `npm run prod:backup` | Backup DB + storage |
 | `npm run db:migrate:deploy` | Production migrations |
@@ -110,6 +111,12 @@ Check that `storage/` exists and is writable.
 
 **Port 3000 in use**  
 Set `PORT=3001` in `.env` and update `AUTH_URL`.
+
+**404 on pages like `/children/new` after git pull**  
+Production serves a built bundle. Run `npm run prod:update` (or restart with `./scripts/prod/start.sh`, which rebuilds when code changes).
+
+**Database errors (P1000, P2021, tables missing)**  
+Ensure `DATABASE_URL` matches `POSTGRES_*` in `.env`, then run `npx prisma migrate deploy`. First-time setup: `./scripts/prod/setup-mac.sh`.
 
 ## Architecture
 

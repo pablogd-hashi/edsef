@@ -46,6 +46,7 @@ prisma/*.db
 
 # Local media & exports (root folder only)
 /storage/
+/backups/
 exports/
 
 # TypeScript
