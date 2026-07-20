@@ -46,6 +46,7 @@ prisma/*.db
 
 # Exports temp
 tmp/
+storage/
 exports/
 
 # TypeScript

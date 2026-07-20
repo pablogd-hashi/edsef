@@ -30,6 +30,9 @@ interface YearbookViewerProps {
 }
 
 export function YearbookViewer({ yearbook, mode = "edit" }: YearbookViewerProps) {
+  const canEdit = mode === "edit" && yearbook.status !== "PUBLISHED";
+  const childId = yearbook.childId;
+  const yearbookId = yearbook.id;
   const [activeSection, setActiveSection] = useState("cover");
 
   useEffect(() => {
@@ -125,7 +128,11 @@ export function YearbookViewer({ yearbook, mode = "edit" }: YearbookViewerProps)
                   description: m.description,
                   ageLabel: m.ageLabel,
                   location: m.location,
+                  media: m.media,
                 }))}
+                childId={childId}
+                yearbookId={yearbookId}
+                canEdit={canEdit}
               />
             </FadeIn>
           </section>
@@ -191,7 +198,11 @@ export function YearbookViewer({ yearbook, mode = "edit" }: YearbookViewerProps)
                   month: t.month,
                   ageLabel: t.ageLabel,
                   location: t.location,
+                  media: t.media,
                 }))}
+                childId={childId}
+                yearbookId={yearbookId}
+                canEdit={canEdit}
               />
             </FadeIn>
           </section>

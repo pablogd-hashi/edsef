@@ -1,8 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { StaggerChildren, StaggerItem } from "@/components/ui/motion";
 import { MapPin } from "lucide-react";
+import { MilestoneMediaGallery } from "@/components/yearbook/milestone-media";
+import { MediaUpload } from "@/components/yearbook/media-upload";
 
 export interface MilestoneItem {
   id: string;
@@ -10,9 +13,22 @@ export interface MilestoneItem {
   description?: string | null;
   ageLabel?: string | null;
   location?: { name: string } | null;
+  media?: { media: { id: string; type: string; title?: string | null } }[];
 }
 
-export function MilestoneGrid({ milestones }: { milestones: MilestoneItem[] }) {
+export function MilestoneGrid({
+  milestones,
+  childId,
+  yearbookId,
+  canEdit = false,
+}: {
+  milestones: MilestoneItem[];
+  childId: string;
+  yearbookId: string;
+  canEdit?: boolean;
+}) {
+  const router = useRouter();
+
   return (
     <StaggerChildren className="grid gap-5 sm:grid-cols-2">
       {milestones.map((m, i) => (
@@ -41,7 +57,7 @@ export function MilestoneGrid({ milestones }: { milestones: MilestoneItem[] }) {
                   {m.title}
                 </h3>
                 {m.description && (
-                  <p className="mt-2 text-sm text-muted leading-relaxed line-clamp-3">
+                  <p className="mt-2 text-sm text-muted leading-relaxed">
                     {m.description}
                   </p>
                 )}
@@ -50,6 +66,18 @@ export function MilestoneGrid({ milestones }: { milestones: MilestoneItem[] }) {
                     <MapPin className="h-3 w-3" />
                     {m.location.name}
                   </p>
+                )}
+
+                <MilestoneMediaGallery media={m.media ?? []} />
+
+                {canEdit && (
+                  <MediaUpload
+                    className="mt-4"
+                    childId={childId}
+                    yearbookId={yearbookId}
+                    milestoneId={m.id}
+                    onUploaded={() => router.refresh()}
+                  />
                 )}
               </div>
             </div>
