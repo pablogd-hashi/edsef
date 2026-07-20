@@ -41,7 +41,7 @@ export class AccessService {
     return !!member;
   }
 
-  /** Mamá o papá (OWNER/PARENT) pueden editar contenido del año */
+  /** Parents (OWNER/PARENT) can edit yearbook content */
   async assertParentAccess(userId: string, childId: string): Promise<boolean> {
     const child = await prisma.child.findUnique({
       where: { id: childId },

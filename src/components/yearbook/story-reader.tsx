@@ -79,7 +79,7 @@ export function StoryReader({
     });
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.error ?? "Error al guardar");
+      throw new Error(err.error ?? "Failed to save");
     }
   }
 
@@ -89,7 +89,7 @@ export function StoryReader({
         value={title}
         canEdit={canEdit}
         as="h3"
-        placeholder="Título de la historia"
+        placeholder="Story title"
         className="font-display text-3xl md:text-4xl mb-8 tracking-tight"
         inputClassName="font-display text-2xl"
         onSave={async (newTitle) => {
@@ -103,7 +103,7 @@ export function StoryReader({
           canEdit
           multiline
           as="p"
-          placeholder="Escribe la historia aquí..."
+          placeholder="Write the story here..."
           className="prose-yearbook text-muted leading-[1.85] whitespace-pre-line"
           onSave={async (newContent) => {
             await patchStory({ content: newContent });

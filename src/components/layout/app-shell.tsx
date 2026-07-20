@@ -26,7 +26,7 @@ export function AppShell({ children, userName, className }: AppShellProps) {
               className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm text-muted hover:text-foreground hover:bg-cream transition-colors"
             >
               <Activity className="h-4 w-4" />
-              <span className="hidden sm:inline">Salud</span>
+              <span className="hidden sm:inline">Health</span>
             </Link>
             {userName && (
               <span className="ml-2 hidden sm:inline text-sm text-muted border-l border-border pl-4">

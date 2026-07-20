@@ -33,7 +33,7 @@ export default async function PreviewPage({
             </Link>
             <div>
               <p className="text-xs uppercase tracking-[0.15em] text-accent-dark">
-                Vista previa
+                Preview
               </p>
               <p className="text-sm font-medium truncate max-w-[200px] sm:max-w-none">
                 {yearbook.customCoverTitle ?? yearbook.title}
@@ -47,14 +47,14 @@ export default async function PreviewPage({
               className={cn(buttonVariants("ghost", "sm"))}
             >
               <Pencil className="h-4 w-4" />
-              <span className="hidden sm:inline">Editar</span>
+              <span className="hidden sm:inline">Edit</span>
             </Link>
             <Link
               href={`/children/${childId}/yearbooks/${yearbookId}/export`}
               className={cn(buttonVariants("secondary", "sm"))}
             >
               <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Exportar</span>
+              <span className="hidden sm:inline">Export</span>
             </Link>
           </div>
         </div>
@@ -74,7 +74,7 @@ export default async function PreviewPage({
           )}
         >
           <ArrowLeft className="h-4 w-4" />
-          Volver a {yearbook.child.nickname ?? yearbook.child.fullName}
+          Back to {yearbook.child.nickname ?? yearbook.child.fullName}
         </Link>
       </div>
     </div>

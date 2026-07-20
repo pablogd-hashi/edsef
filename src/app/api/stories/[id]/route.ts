@@ -11,7 +11,7 @@ export async function PATCH(
   const { id } = await params;
   const story = await getChildIdFromStory(id);
   if (!story) {
-    return NextResponse.json({ error: "Historia no encontrada" }, { status: 404 });
+    return NextResponse.json({ error: "Story not found" }, { status: 404 });
   }
 
   const auth = await requireParentSession(story.yearbook.childId);

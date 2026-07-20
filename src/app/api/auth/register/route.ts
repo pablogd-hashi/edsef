@@ -6,7 +6,7 @@ import { registerSchema } from "@/lib/validators";
 export async function POST(request: Request) {
   if (process.env.ALLOW_REGISTRATION === "false") {
     return NextResponse.json(
-      { error: "El registro está deshabilitado en este servidor." },
+      { error: "Registration is disabled on this server." },
       { status: 403 },
     );
   }
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Datos inválidos", details: parsed.error.flatten() },
+        { error: "Invalid data", details: parsed.error.flatten() },
         { status: 400 }
       );
     }
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
     if (existing) {
       return NextResponse.json(
-        { error: "Este email ya está registrado" },
+        { error: "This email is already registered" },
         { status: 409 }
       );
     }
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       });
 
       const family = await tx.family.create({
-        data: { name: `Familia de ${parsed.data.name}` },
+        data: { name: `${parsed.data.name}'s family` },
       });
 
       await tx.familyMember.create({
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Registration error:", error);
     return NextResponse.json(
-      { error: "Error interno del servidor" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

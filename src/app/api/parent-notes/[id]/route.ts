@@ -10,7 +10,7 @@ export async function PATCH(
   const { id } = await params;
   const note = await getChildIdFromParentNote(id);
   if (!note) {
-    return NextResponse.json({ error: "Nota no encontrada" }, { status: 404 });
+    return NextResponse.json({ error: "Note not found" }, { status: 404 });
   }
 
   const auth = await requireParentSession(note.yearbook.childId);

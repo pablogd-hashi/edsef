@@ -27,10 +27,10 @@ export default async function HealthPage() {
 
         <FadeIn>
           <h1 className="font-display text-4xl font-light tracking-tight mb-2">
-            Salud del archivo
+            Archive health
           </h1>
           <p className="text-muted text-lg mb-10">
-            Verificación de integridad y backups
+            Integrity checks and backups
           </p>
         </FadeIn>
 
@@ -49,12 +49,12 @@ export default async function HealthPage() {
             )}
             <div>
               <p className="font-editorial text-xl">
-                {isHealthy ? "Todo en orden" : "Requiere atención"}
+                {isHealthy ? "All good" : "Needs attention"}
               </p>
               <p className="text-sm text-muted mt-0.5">
                 {isHealthy
-                  ? "Todos los archivos tienen checksum y están procesados"
-                  : "Hay archivos pendientes de verificación"}
+                  ? "All files have checksums and are processed"
+                  : "Some files are pending verification"}
               </p>
             </div>
           </div>
@@ -62,25 +62,25 @@ export default async function HealthPage() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            { label: "Archivos totales", value: String(health.totalFiles), icon: HardDrive },
-            { label: "Espacio usado", value: formatBytes(health.totalSize), icon: HardDrive },
+            { label: "Total files", value: String(health.totalFiles), icon: HardDrive },
+            { label: "Storage used", value: formatBytes(health.totalSize), icon: HardDrive },
             {
-              label: "Sin checksum",
+              label: "Missing checksum",
               value: String(health.withoutChecksum),
               warn: health.withoutChecksum > 0,
             },
-            { label: "En procesamiento", value: String(health.pendingProcessing) },
+            { label: "Processing", value: String(health.pendingProcessing) },
             {
-              label: "Último backup",
+              label: "Last backup",
               value: health.lastBackup
-                ? new Date(health.lastBackup).toLocaleDateString("es")
-                : "Nunca",
+                ? new Date(health.lastBackup).toLocaleDateString("en-US")
+                : "Never",
             },
             {
-              label: "Última exportación",
+              label: "Last export",
               value: health.lastExport
-                ? new Date(health.lastExport).toLocaleDateString("es")
-                : "Nunca",
+                ? new Date(health.lastExport).toLocaleDateString("en-US")
+                : "Never",
             },
           ].map((stat, i) => (
             <FadeIn key={stat.label} delay={0.05 * i}>
@@ -104,13 +104,13 @@ export default async function HealthPage() {
           <section className="mt-12 rounded-2xl border border-border bg-gradient-to-br from-cream to-card p-8">
             <div className="flex items-center gap-3 mb-6">
               <Shield className="h-5 w-5 text-accent-dark" />
-              <h2 className="font-editorial text-xl">Estrategia 3-2-1</h2>
+              <h2 className="font-editorial text-xl">3-2-1 strategy</h2>
             </div>
             <div className="space-y-3">
               {[
-                { done: true, text: "Copia en servidor (base de datos + almacenamiento)" },
-                { done: false, text: "Copia secundaria S3 (configurable en producción)" },
-                { done: false, text: "Copia offline (exportar ZIP manualmente)" },
+                { done: true, text: "Server copy (database + storage)" },
+                { done: false, text: "Secondary S3 copy (configurable in production)" },
+                { done: false, text: "Offline copy (export ZIP manually)" },
               ].map((item) => (
                 <div key={item.text} className="flex items-center gap-3 text-sm">
                   <div

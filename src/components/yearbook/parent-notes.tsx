@@ -29,7 +29,7 @@ export function ParentNotes({
     });
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.error ?? "Error al guardar");
+      throw new Error(err.error ?? "Failed to save");
     }
   }
 
@@ -45,7 +45,7 @@ export function ParentNotes({
             <EditableField
               value={note.author}
               canEdit={canEdit}
-              placeholder="Autor"
+              placeholder="Author"
               className="inline text-xs uppercase tracking-wider text-accent-dark"
               onSave={async (author) => {
                 await patchNote(note.id, { author });

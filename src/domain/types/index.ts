@@ -16,20 +16,20 @@ export interface ExportManifestFile {
 }
 
 export const SECTION_LABELS: Record<string, string> = {
-  COVER: "Portada",
-  SUMMARY: "Resumen del año",
-  MILESTONES: "Hitos",
-  STORIES: "Historias",
+  COVER: "Cover",
+  SUMMARY: "Year summary",
+  MILESTONES: "Milestones",
+  STORIES: "Stories",
   VIDEOS: "Videos",
-  MUSIC: "Música",
-  PARENT_NOTES: "Notas de mamá y papá",
-  TIMELINE: "Línea temporal",
-  FUTURE_LETTER: "Carta al futuro",
-  ATTACHMENTS: "Archivos importantes",
+  MUSIC: "Music",
+  PARENT_NOTES: "Parent notes",
+  TIMELINE: "Timeline",
+  FUTURE_LETTER: "Future letter",
+  ATTACHMENTS: "Important files",
 };
 
 export const TEMPLATE_LABELS: Record<string, string> = {
   EDITORIAL: "Editorial",
   TIMELINE: "Timeline",
-  ALBUM: "Álbum",
+  ALBUM: "Album",
 };

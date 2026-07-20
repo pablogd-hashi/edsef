@@ -10,12 +10,12 @@ export async function GET(
   const { id } = await params;
 
   if (!session?.user?.familyId) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const child = await childrenService.getById(id, session.user.familyId);
   if (!child) {
-    return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   return NextResponse.json(child);

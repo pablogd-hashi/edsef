@@ -23,18 +23,18 @@ export default async function DashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">
             <div>
               <p className="text-sm uppercase tracking-[0.15em] text-accent-dark mb-2">
-                Tu familia
+                Your family
               </p>
               <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight">
-                Mis hijos
+                My children
               </h1>
               <p className="mt-2 text-muted text-lg">
-                Cada hijo tiene su propio espacio y sus años de vida
+                Each child has their own space and life years
               </p>
             </div>
             <Link href="/children/new" className={buttonVariants("secondary", "md")}>
               <Plus className="h-4 w-4" />
-              Añadir hijo
+              Add child
             </Link>
           </div>
         </FadeIn>
@@ -45,14 +45,14 @@ export default async function DashboardPage() {
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10">
                 <Heart className="h-8 w-8 text-accent-dark" />
               </div>
-              <h2 className="font-editorial text-2xl mb-3">Aún no hay hijos</h2>
+              <h2 className="font-editorial text-2xl mb-3">No children yet</h2>
               <p className="text-muted mb-8 max-w-md mx-auto leading-relaxed">
-                Crea el perfil de tu primer hijo para empezar su diario anual con
-                fotos, hitos, historias y una línea temporal interactiva.
+                Create your first child&apos;s profile to start their annual diary with
+                photos, milestones, stories, and an interactive timeline.
               </p>
               <Link href="/children/new" className={buttonVariants("primary", "md")}>
                 <Plus className="h-4 w-4" />
-                Crear primer hijo
+                Create first child
               </Link>
             </div>
           </FadeIn>
@@ -80,12 +80,10 @@ export default async function DashboardPage() {
                       <div className="mt-3 flex items-center gap-2 flex-wrap">
                         <Badge variant="accent">
                           {child.yearbooks.length}{" "}
-                          {child.yearbooks.length === 1 ? "año" : "años"}
+                          {child.yearbooks.length === 1 ? "year" : "years"}
                         </Badge>
                         {child._count.mediaAssets > 0 && (
-                          <Badge>
-                            {child._count.mediaAssets} archivos
-                          </Badge>
+                          <Badge>{child._count.mediaAssets} files</Badge>
                         )}
                       </div>
                     </div>
@@ -95,29 +93,27 @@ export default async function DashboardPage() {
               </StaggerItem>
             ))}
 
-            {/* Add child card */}
             <StaggerItem>
               <Link
                 href="/children/new"
                 className="flex h-full min-h-[140px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-cream/30 p-6 text-muted hover:border-accent-light hover:text-accent-dark hover:bg-cream/50 transition-all duration-300"
               >
                 <Plus className="h-6 w-6 mb-2" />
-                <span className="text-sm font-medium">Añadir hijo</span>
+                <span className="text-sm font-medium">Add child</span>
               </Link>
             </StaggerItem>
           </StaggerChildren>
         )}
 
-        {/* Quick actions */}
         {children.length > 0 && children[0].yearbooks.length > 0 && (
           <FadeIn delay={0.2}>
             <div className="mt-12 rounded-2xl border border-border bg-gradient-to-r from-cream to-card p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <BookOpen className="h-5 w-5 text-accent-dark" />
                 <div>
-                  <p className="font-medium">Continuar editando</p>
+                  <p className="font-medium">Continue editing</p>
                   <p className="text-sm text-muted">
-                    {children[0].yearbooks[0].title} de{" "}
+                    {children[0].yearbooks[0].title} —{" "}
                     {children[0].nickname ?? children[0].fullName}
                   </p>
                 </div>
@@ -126,7 +122,7 @@ export default async function DashboardPage() {
                 href={`/children/${children[0].id}/yearbooks/${children[0].yearbooks[0].id}`}
                 className={cn(buttonVariants("outline", "sm"))}
               >
-                Abrir año
+                Open year
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

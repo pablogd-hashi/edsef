@@ -50,10 +50,10 @@ export class LocalMediaService {
     const type = mimeToType(mimeType, file.name);
 
     if (type === "IMAGE" && buffer.length > MAX_IMAGE) {
-      throw new Error(`Imagen demasiado grande (máx ${MAX_IMAGE / 1024 / 1024}MB)`);
+      throw new Error(`Image too large (max ${MAX_IMAGE / 1024 / 1024}MB)`);
     }
     if (type === "VIDEO" && buffer.length > MAX_VIDEO) {
-      throw new Error(`Video demasiado grande (máx ${MAX_VIDEO / 1024 / 1024}MB)`);
+      throw new Error(`Video too large (max ${MAX_VIDEO / 1024 / 1024}MB)`);
     }
 
     const ext = sanitizeExtension(file.name, mimeType);
@@ -152,7 +152,7 @@ export class LocalMediaService {
 
   async delete(userId: string, mediaId: string): Promise<void> {
     const asset = await mediaService.getById(mediaId);
-    if (!asset) throw new Error("No encontrado");
+    if (!asset) throw new Error("Not found");
 
     const canEdit = await accessService.assertParentAccess(userId, asset.childId);
     if (!canEdit) throw new Error("Forbidden");

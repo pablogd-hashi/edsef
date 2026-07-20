@@ -8,7 +8,7 @@ export const maxDuration = 120;
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id || !session.user.familyId) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "No se pudo leer el archivo. Si es un video grande, reinicia el servidor tras actualizar next.config (límite 500MB).",
+            "Could not read the file. For large videos, restart the server after updating next.config (500MB limit).",
         },
         { status: 413 }
       );
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const title = (formData.get("title") as string) || undefined;
 
     if (!file || !childId) {
-      return NextResponse.json({ error: "file y childId requeridos" }, { status: 400 });
+      return NextResponse.json({ error: "file and childId required" }, { status: 400 });
     }
 
     const asset = await localMediaService.upload(session.user.id, session.user.familyId, {
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       thumbnailUrl: `/api/media/${asset.id}/file?variant=thumbnail`,
     });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Error al subir";
+    const message = e instanceof Error ? e.message : "Upload failed";
     const status = message === "Forbidden" ? 403 : 500;
     return NextResponse.json({ error: message }, { status });
   }
