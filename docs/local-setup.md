@@ -40,3 +40,7 @@ ALLOW_REGISTRATION=false
 ```
 
 Esto bloquea el registro público; solo login con usuarios existentes.
+
+## Producción en MacBook
+
+Para uso real en tu Mac M1 (servidor siempre encendido), ver **[production-mac.md](./production-mac.md)**.

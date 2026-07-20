@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Arranque automático al iniciar sesión en macOS.
+
+  1. Edita las rutas USER y WorkingDirectory
+  2. cp deploy/launchd/com.memoria.plist.example ~/Library/LaunchAgents/com.memoria.plist
+  3. launchctl load ~/Library/LaunchAgents/com.memoria.plist
+  4. launchctl start com.memoria
+
+  Logs: ~/Library/Logs/memoria.log
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.memoria</string>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/TU_USUARIO/edsef</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/TU_USUARIO/edsef/scripts/prod/start.sh</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/TU_USUARIO/Library/Logs/memoria.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/TU_USUARIO/Library/Logs/memoria.error.log</string>
+</dict>
+</plist>

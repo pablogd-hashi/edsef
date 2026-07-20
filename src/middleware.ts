@@ -10,7 +10,7 @@ export default auth((req) => {
 
   const isPublic = publicRoutes.some(
     (route) => pathname === route || pathname.startsWith("/api/auth")
-  );
+  ) || pathname === "/api/ping";
   const isAuthRoute = authRoutes.includes(pathname);
 
   if (isAuthRoute && isLoggedIn) {
