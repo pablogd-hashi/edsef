@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Primer arranque en MacBook (M1+): crea .env, levanta DB, migra y build.
+# First-time MacBook (M1+) setup: create .env, start DB, migrate, build.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -8,7 +8,7 @@ cd "$ROOT_DIR"
 source "$ROOT_DIR/scripts/prod/lib.sh"
 
 echo "╔══════════════════════════════════════════╗"
-echo "║  Memoria — setup producción (Mac)        ║"
+echo "║  Memoria — production setup (Mac)        ║"
 echo "╚══════════════════════════════════════════╝"
 echo
 
@@ -18,65 +18,68 @@ require_cmd docker
 require_cmd openssl
 
 NODE_MAJOR=$(node -p "process.versions.node.split('.')[0]")
-[[ "$NODE_MAJOR" -ge 20 ]] || die "Necesitas Node.js 20+ (tienes $(node -v))"
+[[ "$NODE_MAJOR" -ge 20 ]] || die "Node.js 20+ required (you have $(node -v))"
 
 if [[ ! -f "$ENV_FILE" ]]; then
-  log "Creando $ENV_FILE desde .env.production.example"
+  log "Creating $ENV_FILE from .env.production.example"
   cp .env.production.example "$ENV_FILE"
 
   PG_PASS=$(openssl rand -base64 24 | tr -d '/+=' | head -c 32)
   AUTH_SEC=$(openssl rand -base64 32)
 
   if [[ "$(uname)" == "Darwin" ]]; then
-    sed -i '' "s/CAMBIA_ESTA_CLAVE_SEGURA/$PG_PASS/g" "$ENV_FILE"
-    sed -i '' "s/CAMBIA_ESTE_SECRETO_MIN_32_CARACTERES/$AUTH_SEC/g" "$ENV_FILE"
+    sed -i '' "s/CHANGE_THIS_SECURE_PASSWORD/$PG_PASS/g" "$ENV_FILE"
+    sed -i '' "s/CHANGE_THIS_SECRET_MIN_32_CHARACTERS/$AUTH_SEC/g" "$ENV_FILE"
   else
-    sed -i "s/CAMBIA_ESTA_CLAVE_SEGURA/$PG_PASS/g" "$ENV_FILE"
-    sed -i "s/CAMBIA_ESTE_SECRETO_MIN_32_CARACTERES/$AUTH_SEC/g" "$ENV_FILE"
+    sed -i "s/CHANGE_THIS_SECURE_PASSWORD/$PG_PASS/g" "$ENV_FILE"
+    sed -i "s/CHANGE_THIS_SECRET_MIN_32_CHARACTERS/$AUTH_SEC/g" "$ENV_FILE"
   fi
 
   IP=$(lan_ip)
   if [[ -n "$IP" ]]; then
-    log "Detectada IP LAN: $IP (puedes usarla en AUTH_URL para iPhone)"
+    set_auth_url "http://$IP:3000"
+    log "Set AUTH_URL to http://$IP:3000 for iPhone/LAN access"
   fi
 else
-  log "Usando $ENV_FILE existente"
+  log "Using existing $ENV_FILE"
 fi
 
 load_env
 
 mkdir -p "${STORAGE_PATH:-./storage}"
 
-log "Instalando dependencias (npm ci)"
+log "Installing dependencies (npm ci)"
 npm ci
 
-log "Levantando Postgres + Redis"
+log "Starting Postgres + Redis"
 compose up -d
 wait_postgres
 
-log "Aplicando migraciones"
+log "Applying migrations"
 npx prisma migrate deploy
 
 if [[ "${1:-}" == "--seed" ]]; then
-  log "Cargando datos demo (Bianca)"
+  log "Loading demo data (Bianca)"
   npm run db:seed
   echo
   echo "  Demo: demo@memoria.app / demo1234"
-  echo "  Cambia la contraseña o crea tu cuenta y pon ALLOW_REGISTRATION=false"
+  echo "  Change the password or create your account and set ALLOW_REGISTRATION=false"
 fi
 
-log "Build de producción"
+log "Production build"
 npm run build
 
 echo
 echo "════════════════════════════════════════════"
-echo "  Setup listo."
+echo "  Setup complete."
 echo
-echo "  Arrancar:  ./scripts/prod/start.sh"
-echo "  Parar:     ./scripts/prod/stop.sh"
+echo "  Start:     ./scripts/prod/start.sh"
+echo "  Stop:      ./scripts/prod/stop.sh"
 echo "  Backup:    ./scripts/prod/backup.sh"
 echo
 IP=$(lan_ip)
 echo "  Local:     http://localhost:${PORT:-3000}"
-[[ -n "$IP" ]] && echo "  Red WiFi:  http://${IP}:${PORT:-3000}"
+[[ -n "$IP" ]] && echo "  LAN:       http://${IP}:${PORT:-3000}"
+echo "  AUTH_URL:  ${AUTH_URL:-not set}"
+echo "  Phone help: docs/remote-access.md"
 echo "════════════════════════════════════════════"

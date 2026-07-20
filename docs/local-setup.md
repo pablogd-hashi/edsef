@@ -1,6 +1,6 @@
-# Memoria — modo local (sin MinIO)
+# Memoria — local mode (no MinIO)
 
-Servicios mínimos para correr en casa: PostgreSQL + Redis + la app con almacenamiento en disco.
+Minimal stack for running at home: PostgreSQL + Redis + the app with on-disk storage.
 
 ```bash
 cp .env.example .env
@@ -11,36 +11,46 @@ npm run db:seed
 npm run dev
 ```
 
-Credenciales demo: `demo@memoria.app` / `demo1234`
+Demo credentials: `demo@memoria.app` / `demo1234`
 
-## Almacenamiento
+## Storage
 
-Las fotos y videos se guardan en `./storage/` (configurable con `STORAGE_PATH`).
-No se usa S3/MinIO en este modo.
+Photos and videos are stored in `./storage/` (override with `STORAGE_PATH`).
+S3/MinIO is not used in this mode.
 
-## Exportación para Bianca
+## Export for long-term archive
 
-1. Entra al año → **Exportar** → elige **ZIP completo**
-2. El ZIP contiene:
-   - `html/index.html` — abre esto en el navegador (offline)
-   - `html/assets/images/` — fotos referenciadas por nombre
-   - `html/assets/videos/` — videos reproducibles con `<video>`
-   - `pdf/yearbook.pdf` — versión imprimible (sin videos embebidos)
-   - `data/yearbook.json` — datos en formato abierto
-   - `manifest.json` — checksums para verificar integridad
+1. Open a year → **Export** → choose **Full ZIP**
+2. The ZIP contains:
+   - `html/index.html` — open in a browser (offline)
+   - `html/assets/images/` — photos referenced by filename
+   - `html/assets/videos/` — videos playable with `<video>`
+   - `pdf/yearbook.pdf` — printable version (no embedded videos)
+   - `data/yearbook.json` — open data format
+   - `manifest.json` — checksums for integrity
 
-3. Copia el ZIP a un USB. Bianca abre `html/index.html` y ve todo renderizado.
+3. Copy the ZIP to USB. Open `html/index.html` to view everything offline.
 
-## Seguridad local
+## Local security
 
-Tras crear tu cuenta, pon en `.env`:
+After creating your account, set in `.env`:
 
 ```
 ALLOW_REGISTRATION=false
 ```
 
-Esto bloquea el registro público; solo login con usuarios existentes.
+This blocks public registration; only existing users can sign in.
 
-## Producción en MacBook
+## Access from iPhone (dev)
 
-Para uso real en tu Mac M1 (servidor siempre encendido), ver **[production-mac.md](./production-mac.md)**.
+1. Mac and phone on the **same Wi‑Fi**
+2. Find your Mac's LAN IP: `ipconfig getifaddr en0`
+3. In `.env`: `AUTH_URL="http://192.168.x.x:3000"` (your IP)
+4. Restart `npm run dev`
+5. On iPhone Safari: `http://192.168.x.x:3000`
+
+If that still fails, see **[remote-access.md](./remote-access.md)**.
+
+## MacBook production
+
+For real use on an always-on M1 Mac, see **[production-mac.md](./production-mac.md)**.
