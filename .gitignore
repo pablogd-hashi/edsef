@@ -44,9 +44,8 @@ Thumbs.db
 # Prisma
 prisma/*.db
 
-# Exports temp
-tmp/
-storage/
+# Local media & exports (root folder only)
+/storage/
 exports/
 
 # TypeScript
