@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, useSyncExternalStore } from "react";
 import { Upload, Loader2, Image as ImageIcon, Film } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -14,9 +14,27 @@ interface MediaUploadProps {
   className?: string;
 }
 
-// iOS Safari works best with a <label> + visible-ish input (not display:none)
-const ACCEPT =
-  "image/*,video/*,.heic,.heif,.HEIC,.HEIF,.mov,.MOV,.m4v,.M4V";
+/** Wildcards only — file extensions in accept make iOS open Files/Browse instead of Photos */
+const ACCEPT_ALL = "image/*,video/*";
+const ACCEPT_PHOTOS = "image/*";
+const ACCEPT_VIDEOS = "video/*";
+
+function subscribe() {
+  return () => {};
+}
+
+function getAppleTouchSnapshot() {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  const isIOS =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  return isIOS;
+}
+
+function useAppleTouchDevice() {
+  return useSyncExternalStore(subscribe, getAppleTouchSnapshot, () => false);
+}
 
 export function MediaUpload({
   childId,
@@ -26,7 +44,10 @@ export function MediaUpload({
   onUploaded,
   className,
 }: MediaUploadProps) {
-  const inputId = useId();
+  const photoInputId = useId();
+  const videoInputId = useId();
+  const allInputId = useId();
+  const isAppleTouch = useAppleTouchDevice();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [progress, setProgress] = useState("");
@@ -40,7 +61,8 @@ export function MediaUpload({
       const file = files[i];
       const maxVideo = 500 * 1024 * 1024;
       const maxImage = 20 * 1024 * 1024;
-      const isVideo = file.type.startsWith("video/") || /\.(mov|mp4|m4v|webm)$/i.test(file.name);
+      const isVideo =
+        file.type.startsWith("video/") || /\.(mov|mp4|m4v|webm)$/i.test(file.name);
       const limit = isVideo ? maxVideo : maxImage;
       if (file.size > limit) {
         setError(
@@ -52,7 +74,7 @@ export function MediaUpload({
         return;
       }
 
-      setProgress(`Subiendo ${i + 1}/${files.length}: ${file.name || "foto"}`);
+      setProgress(`Subiendo ${i + 1}/${files.length}: ${file.name || "archivo"}`);
 
       const formData = new FormData();
       formData.append("file", file);
@@ -79,23 +101,75 @@ export function MediaUpload({
     onUploaded?.();
   }
 
+  const inputProps = {
+    multiple: true as const,
+    className: "sr-only" as const,
+    disabled: uploading,
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      handleFiles(e.target.files);
+      e.target.value = "";
+    },
+  };
+
+  if (isAppleTouch) {
+    return (
+      <div className={className}>
+        <input id={photoInputId} type="file" accept={ACCEPT_PHOTOS} {...inputProps} />
+        <input id={videoInputId} type="file" accept={ACCEPT_VIDEOS} {...inputProps} />
+
+        <div
+          className={cn(
+            "rounded-xl border border-dashed border-border p-4 space-y-3",
+            uploading && "opacity-60 pointer-events-none"
+          )}
+        >
+          {uploading ? (
+            <div className="flex flex-col items-center gap-2 py-4">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="text-sm text-center px-2">{progress}</span>
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-center text-muted">
+                Se abre la biblioteca de Fotos de Apple
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <label
+                  htmlFor={photoInputId}
+                  className={cn(
+                    buttonVariants("outline", "sm"),
+                    "flex-col gap-1.5 h-auto py-4 cursor-pointer touch-manipulation"
+                  )}
+                >
+                  <ImageIcon className="h-5 w-5" />
+                  <span className="text-sm">Fotos</span>
+                </label>
+                <label
+                  htmlFor={videoInputId}
+                  className={cn(
+                    buttonVariants("outline", "sm"),
+                    "flex-col gap-1.5 h-auto py-4 cursor-pointer touch-manipulation"
+                  )}
+                >
+                  <Film className="h-5 w-5" />
+                  <span className="text-sm">Videos</span>
+                </label>
+              </div>
+            </>
+          )}
+        </div>
+
+        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      </div>
+    );
+  }
+
   return (
     <div className={className}>
-      <input
-        id={inputId}
-        type="file"
-        accept={ACCEPT}
-        multiple
-        className="sr-only"
-        disabled={uploading}
-        onChange={(e) => {
-          handleFiles(e.target.files);
-          e.target.value = "";
-        }}
-      />
+      <input id={allInputId} type="file" accept={ACCEPT_ALL} {...inputProps} />
 
       <label
-        htmlFor={inputId}
+        htmlFor={allInputId}
         className={cn(
           buttonVariants("outline", "sm"),
           "w-full border-dashed py-6 flex-col gap-2 h-auto cursor-pointer touch-manipulation min-h-[88px]",
@@ -108,15 +182,7 @@ export function MediaUpload({
           <Upload className="h-5 w-5" />
         )}
         <span className="text-sm text-center px-2">
-          {uploading ? progress : "Toca para subir fotos o videos"}
-        </span>
-        <span className="text-xs text-muted font-normal flex items-center gap-3">
-          <span className="flex items-center gap-1">
-            <ImageIcon className="h-3 w-3" /> Fotos (incl. HEIC)
-          </span>
-          <span className="flex items-center gap-1">
-            <Film className="h-3 w-3" /> Videos
-          </span>
+          {uploading ? progress : "Subir fotos o videos"}
         </span>
       </label>
 
