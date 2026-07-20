@@ -57,6 +57,18 @@ wait_postgres() {
   die "Postgres did not become ready in time"
 }
 
+require_node_modules() {
+  if [[ ! -x "$ROOT_DIR/node_modules/.bin/prisma" ]]; then
+    die "Dependencies not installed. Run: npm ci  (or ./scripts/prod/setup-mac.sh)"
+  fi
+}
+
+# Use the project's Prisma 6 CLI — never npx prisma (downloads Prisma 7+).
+prisma_cmd() {
+  require_node_modules
+  npm exec -- prisma "$@"
+}
+
 # Fingerprint sources so start.sh rebuilds after git pull without manual steps.
 source_fingerprint() {
   local git_head="nogit"

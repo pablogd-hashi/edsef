@@ -48,7 +48,7 @@ Set `ALLOW_REGISTRATION=false` in `.env` once your account exists.
 cp .env.example .env
 docker compose -f docker-compose.local.yml up -d
 npm install
-npx prisma migrate deploy
+npm run db:migrate:deploy
 npm run dev
 ```
 

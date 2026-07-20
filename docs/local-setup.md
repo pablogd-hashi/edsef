@@ -6,7 +6,7 @@ Minimal stack: PostgreSQL + Redis in Docker, app on your machine with files in `
 cp .env.example .env
 docker compose -f docker-compose.local.yml up -d
 npm install
-npx prisma migrate deploy
+npm run db:migrate:deploy
 npm run dev
 ```
 

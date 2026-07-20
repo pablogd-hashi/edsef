@@ -116,7 +116,7 @@ Set `PORT=3001` in `.env` and update `AUTH_URL`.
 Production serves a built bundle. Run `npm run prod:update` (or restart with `./scripts/prod/start.sh`, which rebuilds when code changes).
 
 **Database errors (P1000, P2021, tables missing)**  
-Ensure `DATABASE_URL` matches `POSTGRES_*` in `.env`, then run `npx prisma migrate deploy`. First-time setup: `./scripts/prod/setup-mac.sh`.
+Ensure `DATABASE_URL` matches `POSTGRES_*` in `.env`, then run `npm run db:migrate:deploy`. First-time setup: `./scripts/prod/setup-mac.sh`.
 
 ## Architecture
 
