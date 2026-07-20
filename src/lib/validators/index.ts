@@ -94,6 +94,67 @@ export const exportOptionsSchema = z.object({
   includeQrCodes: z.boolean().default(false),
 });
 
+export const importApplySchema = z.object({
+  childId: z.string().cuid(),
+  yearbookId: z.string().cuid(),
+  preview: z.object({
+    detectedTitle: z.string().optional(),
+    yearRange: z
+      .object({
+        start: z.number().int(),
+        end: z.number().int(),
+      })
+      .optional(),
+    summary: z.object({
+      context: z.string().optional(),
+      location: z.string().optional(),
+      favoriteMusic: z.string().optional(),
+      highlights: z.array(z.string()).optional(),
+    }),
+    milestones: z.array(
+      z.object({
+        title: z.string(),
+        description: z.string().optional(),
+      })
+    ),
+    stories: z.array(
+      z.object({
+        title: z.string(),
+        content: z.string(),
+      })
+    ),
+    music: z.array(
+      z.object({
+        title: z.string(),
+        artist: z.string().optional(),
+        url: z.string().optional(),
+      })
+    ),
+    timeline: z.array(
+      z.object({
+        title: z.string(),
+        description: z.string().optional(),
+        month: z.number().int().min(1).max(12),
+        year: z.number().int(),
+      })
+    ),
+    parentNotes: z.array(
+      z.object({
+        author: z.string(),
+        content: z.string(),
+        month: z.number().int().min(1).max(12),
+        year: z.number().int(),
+      })
+    ),
+    links: z.array(
+      z.object({
+        label: z.string().optional(),
+        url: z.string(),
+      })
+    ),
+  }),
+});
+
 export type CreateChildInput = z.infer<typeof createChildSchema>;
 export type CreateYearbookInput = z.infer<typeof createYearbookSchema>;
 export type CreateMilestoneInput = z.infer<typeof createMilestoneSchema>;
