@@ -10,6 +10,8 @@ import { FadeIn, StaggerChildren, StaggerItem } from "@/components/ui/motion";
 import { calculateAge, formatDate } from "@/lib/age";
 import { ArrowLeft, Plus, Eye, BookOpen, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChildTheme } from "@/components/theme/child-theme";
+import { ChildThemePicker } from "@/components/children/child-theme-picker";
 
 export default async function ChildPage({
   params,
@@ -26,8 +28,12 @@ export default async function ChildPage({
   const yearbooks = await yearbookService.listByChild(id);
   const age = calculateAge(child.birthDate);
 
+  const isParent =
+    session.user.role === "OWNER" || session.user.role === "PARENT";
+
   return (
     <AppShell userName={session.user.name}>
+      <ChildTheme themeColor={child.themeColor}>
       {/* Hero */}
       <div
         className="relative border-b border-border overflow-hidden"
@@ -72,6 +78,11 @@ export default async function ChildPage({
                     {child.description}
                   </p>
                 )}
+                <ChildThemePicker
+                  childId={child.id}
+                  currentColor={child.themeColor}
+                  canEdit={isParent}
+                />
               </div>
             </div>
           </FadeIn>
@@ -167,6 +178,7 @@ export default async function ChildPage({
           </StaggerChildren>
         )}
       </main>
+      </ChildTheme>
     </AppShell>
   );
 }

@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 export function Avatar({
   name,
-  color = "#C4A77D",
+  color = "#D946EF",
   size = "md",
   className,
 }: {

@@ -86,7 +86,7 @@ async function main() {
       fullName: "Bianca",
       nickname: "Bianqui",
       birthDate: new Date("2021-11-07"),
-      themeColor: "#B8956C",
+      themeColor: "#EC4899",
       titleFont: "serif",
       description:
         "Nacida en Ámsterdam, cerca de las 22hs. Vivíamos en Diemen. Su primer año estuvo lleno de descubrimientos, viajes y primeras veces — todo en medio de una pandemia.",

@@ -276,23 +276,23 @@ function generateOfflineHtml(
 function generateExportCss(): string {
   return `
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: Georgia, serif; background: #faf7f2; color: #1c1917; line-height: 1.75; }
+body { font-family: Georgia, serif; background: #fdf4ff; color: #1e1b2e; line-height: 1.75; }
 .cover { text-align: center; padding: 4rem 1.5rem; min-height: 60vh; display: flex; flex-direction: column; justify-content: center; }
 .cover h1 { font-size: 2.5rem; font-weight: 400; margin: 1rem 0; }
-.child-name { text-transform: uppercase; letter-spacing: 0.2em; font-size: 0.85rem; color: #8b6f47; }
+.child-name { text-transform: uppercase; letter-spacing: 0.2em; font-size: 0.85rem; color: #a21caf; }
 .age { color: #78716c; font-size: 1.1rem; }
 section { max-width: 42rem; margin: 0 auto; padding: 3rem 1.5rem; border-top: 1px solid #e7e0d5; }
 h2 { font-size: 1.75rem; font-weight: 400; margin-bottom: 2rem; }
 .milestone { margin-bottom: 2.5rem; }
-.age-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: #8b6f47; }
+.age-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: #a21caf; }
 .milestone h3 { font-size: 1.35rem; margin: 0.25rem 0 0.5rem; }
 .media-grid { display: grid; gap: 1rem; margin-top: 1rem; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 img, video { width: 100%; border-radius: 8px; display: block; }
-blockquote { border-left: 3px solid #b8956c; padding-left: 1.25rem; margin: 1.5rem 0; font-style: italic; }
+blockquote { border-left: 3px solid #d946ef; padding-left: 1.25rem; margin: 1.5rem 0; font-style: italic; }
 .timeline-item { margin-bottom: 1.5rem; padding-left: 1rem; border-left: 2px solid #e7e0d5; }
 .timeline-item time { font-size: 0.85rem; color: #78716c; }
 .letter-body { font-style: italic; font-size: 1.1rem; }
-.signature { text-align: right; margin-top: 2rem; color: #8b6f47; }
+.signature { text-align: right; margin-top: 2rem; color: #a21caf; }
 .summary-grid { display: grid; gap: 1rem; }
 .summary-item { background: #fff; padding: 1rem; border-radius: 8px; border: 1px solid #e7e0d5; }
 footer { text-align: center; padding: 2rem; color: #78716c; font-size: 0.85rem; }
