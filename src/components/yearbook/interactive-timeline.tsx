@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getMonthAbbrev } from "@/lib/age";
 import { MapPin, ChevronDown } from "lucide-react";
+import { MilestoneMediaGallery } from "@/components/yearbook/milestone-media";
+import { MediaUpload } from "@/components/yearbook/media-upload";
 
 export interface TimelineItem {
   id: string;
@@ -14,9 +17,21 @@ export interface TimelineItem {
   month?: number | null;
   ageLabel?: string | null;
   location?: { name: string; city?: string | null } | null;
+  media?: { media: { id: string; type: string; title?: string | null } }[];
 }
 
-export function InteractiveTimeline({ items }: { items: TimelineItem[] }) {
+export function InteractiveTimeline({
+  items,
+  childId,
+  yearbookId,
+  canEdit = false,
+}: {
+  items: TimelineItem[];
+  childId: string;
+  yearbookId: string;
+  canEdit?: boolean;
+}) {
+  const router = useRouter();
   const [activeId, setActiveId] = useState<string | null>(items[0]?.id ?? null);
   const active = items.find((i) => i.id === activeId);
 
@@ -26,7 +41,6 @@ export function InteractiveTimeline({ items }: { items: TimelineItem[] }) {
 
   return (
     <div className="space-y-8">
-      {/* Month pills - horizontal scroll */}
       <div className="timeline-scroll flex gap-2 overflow-x-auto pb-2 -mx-2 px-2">
         {months.map((month) => {
           const monthItems = items.filter((i) => i.month === month);
@@ -48,7 +62,6 @@ export function InteractiveTimeline({ items }: { items: TimelineItem[] }) {
         })}
       </div>
 
-      {/* Vertical timeline */}
       <div className="relative">
         <div className="absolute left-[19px] top-2 bottom-2 w-px bg-gradient-to-b from-accent via-border to-transparent" />
 
@@ -113,7 +126,7 @@ export function InteractiveTimeline({ items }: { items: TimelineItem[] }) {
                 </button>
 
                 <AnimatePresence>
-                  {isActive && item.description && (
+                  {isActive && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
@@ -122,15 +135,27 @@ export function InteractiveTimeline({ items }: { items: TimelineItem[] }) {
                       className="overflow-hidden"
                     >
                       <div className="pl-14 pr-3 pb-4">
-                        <p className="text-muted leading-relaxed">
-                          {item.description}
-                        </p>
+                        {item.description && (
+                          <p className="text-muted leading-relaxed">
+                            {item.description}
+                          </p>
+                        )}
                         {item.location && (
                           <p className="mt-2 flex items-center gap-1.5 text-sm text-accent-dark">
                             <MapPin className="h-3.5 w-3.5" />
                             {item.location.name}
                             {item.location.city && `, ${item.location.city}`}
                           </p>
+                        )}
+                        <MilestoneMediaGallery media={item.media ?? []} />
+                        {canEdit && (
+                          <MediaUpload
+                            className="mt-4"
+                            childId={childId}
+                            yearbookId={yearbookId}
+                            timelineEntryId={item.id}
+                            onUploaded={() => router.refresh()}
+                          />
                         )}
                       </div>
                     </motion.div>
@@ -142,7 +167,6 @@ export function InteractiveTimeline({ items }: { items: TimelineItem[] }) {
         </div>
       </div>
 
-      {/* Active card highlight */}
       {active && (
         <motion.div
           key={active.id}
@@ -157,6 +181,7 @@ export function InteractiveTimeline({ items }: { items: TimelineItem[] }) {
           {active.description && (
             <p className="mt-2 text-muted leading-relaxed">{active.description}</p>
           )}
+          <MilestoneMediaGallery media={active.media ?? []} />
         </motion.div>
       )}
     </div>

@@ -17,6 +17,14 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
+  // Block open registration when disabled (local/private installs)
+  if (
+    pathname === "/register" &&
+    process.env.ALLOW_REGISTRATION === "false"
+  ) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+
   if (!isPublic && !isLoggedIn) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname);

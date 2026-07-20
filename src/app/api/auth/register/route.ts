@@ -4,6 +4,13 @@ import { prisma } from "@/lib/db/prisma";
 import { registerSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
+  if (process.env.ALLOW_REGISTRATION === "false") {
+    return NextResponse.json(
+      { error: "El registro está deshabilitado en este servidor." },
+      { status: 403 },
+    );
+  }
+
   try {
     const body = await request.json();
     const parsed = registerSchema.safeParse(body);
