@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth/config";
-import { mediaService } from "@/lib/services";
+import { mediaService, backupService } from "@/lib/services";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
+import { BackupControls } from "@/components/health/backup-controls";
 import { formatBytes } from "@/lib/utils";
 import { FadeIn } from "@/components/ui/motion";
 import { ArrowLeft, CheckCircle, AlertCircle, HardDrive, Shield } from "lucide-react";
@@ -11,8 +12,21 @@ export default async function HealthPage() {
   const session = await auth();
   if (!session?.user?.familyId) redirect("/login");
 
-  const health = await mediaService.getHealthStats(session.user.familyId);
+  const [health, jobs] = await Promise.all([
+    mediaService.getHealthStats(session.user.familyId),
+    backupService.listByFamily(session.user.familyId),
+  ]);
   const isHealthy = health.status === "healthy";
+  const isOwner = session.user.role === "OWNER";
+
+  const serializedJobs = jobs.map((j) => ({
+    id: j.id,
+    status: j.status,
+    createdAt: j.createdAt.toISOString(),
+    completedAt: j.completedAt?.toISOString() ?? null,
+    resultSize: j.resultSize?.toString() ?? null,
+    error: j.error,
+  }));
 
   return (
     <AppShell userName={session.user.name}>
@@ -102,6 +116,16 @@ export default async function HealthPage() {
 
         <FadeIn delay={0.3}>
           <section className="mt-12 rounded-2xl border border-border bg-gradient-to-br from-cream to-card p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <Shield className="h-5 w-5 text-accent-dark" />
+              <h2 className="font-editorial text-xl">Backups</h2>
+            </div>
+            <BackupControls jobs={serializedJobs} isOwner={isOwner} />
+          </section>
+        </FadeIn>
+
+        <FadeIn delay={0.35}>
+          <section className="mt-8 rounded-2xl border border-border bg-gradient-to-br from-cream to-card p-8">
             <div className="flex items-center gap-3 mb-6">
               <Shield className="h-5 w-5 text-accent-dark" />
               <h2 className="font-editorial text-xl">3-2-1 strategy</h2>

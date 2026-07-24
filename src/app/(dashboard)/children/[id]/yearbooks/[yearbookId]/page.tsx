@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth/config";
 import { yearbookService } from "@/lib/services";
 import { redirect, notFound } from "next/navigation";
 import { YearbookViewer } from "@/components/yearbook/yearbook-viewer";
+import { SectionEditor, buildSectionEditorState } from "@/components/yearbook/section-editor";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Eye, Download } from "lucide-react";
@@ -82,8 +83,13 @@ export default async function YearbookPage({
 
       {isParent && (
         <div className="border-b border-border-light bg-cream/50">
-          <div className="mx-auto max-w-5xl px-6 py-2.5 flex items-center justify-center gap-2 text-sm text-muted">
-            Edit mode — tap any text or photo to change it. Use Import notes for PDF / Apple Notes exports.
+          <div className="mx-auto max-w-5xl px-6 py-2.5 flex items-center justify-center gap-4 text-sm text-muted">
+            <span>Edit mode — tap any text or photo to change it</span>
+            <SectionEditor
+              yearbookId={yearbookId}
+              childId={childId}
+              sections={buildSectionEditorState(yearbook.sections)}
+            />
           </div>
         </div>
       )}

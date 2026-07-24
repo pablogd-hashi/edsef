@@ -106,7 +106,11 @@ export function MilestoneGrid({
                   </p>
                 )}
 
-                <MilestoneMediaGallery media={m.media ?? []} canEdit={canEdit} />
+                <MilestoneMediaGallery
+                  media={m.media ?? []}
+                  canEdit={canEdit}
+                  milestoneId={m.id}
+                />
 
                 {canEdit && (
                   <MediaUpload
