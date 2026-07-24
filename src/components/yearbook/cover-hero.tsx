@@ -1,6 +1,7 @@
 import type { YearbookWithRelations } from "@/lib/services/yearbook.service";
 import { formatDate } from "@/lib/age";
 import { MapPin } from "lucide-react";
+import { CoverTitleEditor } from "./summary-editor";
 
 interface SummaryContent {
   subtitle?: string;
@@ -18,11 +19,17 @@ interface SummaryContent {
 export function CoverHero({
   yearbook,
   immersive = false,
+  canEdit = false,
 }: {
   yearbook: YearbookWithRelations;
   immersive?: boolean;
+  canEdit?: boolean;
 }) {
   const { child } = yearbook;
+  const photo =
+    yearbook.coverPhoto ??
+    (child as { profilePhoto?: { id: string } | null }).profilePhoto;
+  const photoUrl = photo ? `/api/media/${photo.id}/file?variant=web` : null;
 
   return (
     <section
@@ -37,28 +44,48 @@ export function CoverHero({
         }}
       />
       <div className="relative z-10 px-6">
-        <div
-          className={`mx-auto mb-8 flex items-center justify-center rounded-3xl font-editorial text-white shadow-[var(--warm-shadow-lg)] ${
-            immersive ? "h-40 w-40 text-6xl" : "h-28 w-28 text-4xl"
-          }`}
-          style={{
-            background: `linear-gradient(135deg, ${child.themeColor}, color-mix(in srgb, ${child.themeColor} 70%, #000))`,
-          }}
-        >
-          {child.nickname?.[0] ?? child.fullName[0]}
-        </div>
+        {photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={photoUrl}
+            alt={child.fullName}
+            className={`mx-auto mb-8 rounded-3xl object-cover shadow-[var(--warm-shadow-lg)] ${
+              immersive ? "h-40 w-40" : "h-28 w-28"
+            }`}
+          />
+        ) : (
+          <div
+            className={`mx-auto mb-8 flex items-center justify-center rounded-3xl font-editorial text-white shadow-[var(--warm-shadow-lg)] ${
+              immersive ? "h-40 w-40 text-6xl" : "h-28 w-28 text-4xl"
+            }`}
+            style={{
+              background: `linear-gradient(135deg, ${child.themeColor}, color-mix(in srgb, ${child.themeColor} 70%, #000))`,
+            }}
+          >
+            {child.nickname?.[0] ?? child.fullName[0]}
+          </div>
+        )}
 
         <p className="text-sm uppercase tracking-[0.2em] text-accent-dark mb-3">
           {child.fullName}
         </p>
 
-        <h1
-          className={`font-display font-light tracking-tight text-balance ${
-            immersive ? "text-5xl md:text-7xl" : "text-4xl md:text-5xl"
-          }`}
-        >
-          {yearbook.customCoverTitle ?? yearbook.title}
-        </h1>
+        {canEdit ? (
+          <CoverTitleEditor
+            yearbookId={yearbook.id}
+            childId={yearbook.childId}
+            title={yearbook.customCoverTitle ?? yearbook.title}
+            canEdit
+          />
+        ) : (
+          <h1
+            className={`font-display font-light tracking-tight text-balance ${
+              immersive ? "text-5xl md:text-7xl" : "text-4xl md:text-5xl"
+            }`}
+          >
+            {yearbook.customCoverTitle ?? yearbook.title}
+          </h1>
+        )}
 
         {(yearbook.summaryContent as SummaryContent | null)?.subtitle && (
           <p className="mt-3 text-xl text-muted italic font-editorial">
@@ -103,6 +130,8 @@ export function SummarySection({
     { label: "Fears", value: content.fears },
   ].filter((i) => i.value);
 
+  if (!items.length && !content.highlights?.length) return null;
+
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {items.map((item) => (
@@ -130,42 +159,6 @@ export function SummarySection({
               </li>
             ))}
           </ul>
-        </div>
-      )}
-
-      {content.quotes && content.quotes.length > 0 && (
-        <div className="sm:col-span-2 rounded-xl border border-border-light bg-card p-6">
-          <p className="text-xs uppercase tracking-wider text-accent-dark mb-3">
-            Quotes of the year
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {content.quotes.map((q) => (
-              <span
-                key={q}
-                className="rounded-full bg-accent/10 px-4 py-1.5 font-editorial italic text-accent-dark"
-              >
-                &ldquo;{q}&rdquo;
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {content.importantPeople && content.importantPeople.length > 0 && (
-        <div className="sm:col-span-2 rounded-xl border border-border-light bg-card p-6">
-          <p className="text-xs uppercase tracking-wider text-accent-dark mb-3">
-            Important people
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {content.importantPeople.map((p) => (
-              <span
-                key={p}
-                className="rounded-full border border-border px-4 py-1.5 text-sm"
-              >
-                {p}
-              </span>
-            ))}
-          </div>
         </div>
       )}
     </div>

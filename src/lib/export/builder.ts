@@ -70,6 +70,7 @@ export async function buildYearbookExport(
       const web = asset.variants.find((v) => v.variant === "WEB");
       if (web) storageKey = web.storageKey;
     }
+    // Videos: always use original for offline playback
 
     const srcPath = path.join(STORAGE_ROOT, storageKey);
     if (!(await fileExists(srcPath))) return null;
@@ -100,6 +101,12 @@ export async function buildYearbookExport(
     for (const link of t.media) {
       await copyAsset(link.media);
     }
+  }
+
+  // Cover / profile photo
+  const coverAsset = yearbook.coverPhoto ?? (yearbook.child as { profilePhoto?: typeof yearbook.coverPhoto }).profilePhoto;
+  if (coverAsset) {
+    await copyAsset(coverAsset);
   }
 
   const html = generateOfflineHtml(yearbook, assetMap);
@@ -176,6 +183,8 @@ function generateOfflineHtml(
 ): string {
   const summary = yearbook.summaryContent as Record<string, unknown> | null;
   const coverTitle = yearbook.customCoverTitle ?? yearbook.title;
+  const coverAsset = yearbook.coverPhoto ?? (yearbook.child as { profilePhoto?: { id: string } | null }).profilePhoto;
+  const coverImg = coverAsset ? assetMap.get(coverAsset.id) : null;
 
   let milestonesHtml = "";
   for (const m of yearbook.milestones) {
@@ -247,6 +256,30 @@ function generateOfflineHtml(
     }
   }
 
+  let musicHtml = "";
+  for (const track of yearbook.music) {
+    const href = track.youtubeUrl ?? `https://music.youtube.com/search?q=${encodeURIComponent([track.artist, track.title].filter(Boolean).join(" "))}`;
+    musicHtml += `<div class="music-item"><strong>${esc(track.title)}</strong>${track.artist ? ` — ${esc(track.artist)}` : ""}<br/><a href="${esc(href)}">${esc(href)}</a></div>`;
+  }
+
+  let notesHtml = "";
+  for (const note of yearbook.parentNotes) {
+    notesHtml += `<div class="parent-note"><p class="note-meta">${esc(note.author)} · ${new Date(note.noteDate).toLocaleDateString("en-US")}</p><p class="note-body">${esc(note.content)}</p></div>`;
+  }
+
+  let videosHtml = "";
+  for (const v of yearbook.timeline.filter((t) => t.category === "VIDEO")) {
+    if (v.description?.startsWith("http")) {
+      videosHtml += `<div class="video-link"><a href="${esc(v.description)}" target="_blank">${esc(v.title)}</a></div>`;
+    }
+    for (const link of v.media) {
+      const p = assetMap.get(link.media.id);
+      if (p && link.media.type === "VIDEO") {
+        videosHtml += `<div class="video-upload"><p>${esc(v.title)}</p><video controls preload="metadata" src="${p}"></video></div>`;
+      }
+    }
+  }
+
   const letter = yearbook.futureLetter;
 
   return `<!DOCTYPE html>
@@ -259,6 +292,7 @@ function generateOfflineHtml(
 </head>
 <body>
   <header class="cover">
+    ${coverImg ? `<img class="cover-photo" src="${coverImg}" alt="${esc(yearbook.child.fullName)}" />` : ""}
     <p class="child-name">${esc(yearbook.child.fullName)}</p>
     <h1>${esc(coverTitle)}</h1>
     <p class="age">${esc(yearbook.ageLabel ?? "")}</p>
@@ -266,6 +300,9 @@ function generateOfflineHtml(
   ${summaryHtml ? `<section><h2>Year summary</h2><div class="summary-grid">${summaryHtml}</div></section>` : ""}
   ${milestonesHtml ? `<section><h2>Milestones</h2>${milestonesHtml}</section>` : ""}
   ${storiesHtml ? `<section><h2>Stories</h2>${storiesHtml}</section>` : ""}
+  ${musicHtml ? `<section><h2>Music you loved</h2>${musicHtml}</section>` : ""}
+  ${videosHtml ? `<section><h2>Videos</h2>${videosHtml}</section>` : ""}
+  ${notesHtml ? `<section><h2>Parent notes</h2>${notesHtml}</section>` : ""}
   ${timelineHtml ? `<section><h2>Timeline</h2>${timelineHtml}</section>` : ""}
   ${letter ? `<section class="letter"><h2>Future letter</h2><div class="letter-body">${esc(letter.content).replace(/\n/g, "<br/>")}</div>${letter.signature ? `<p class="signature">— ${esc(letter.signature)}</p>` : ""}</section>` : ""}
   <footer><p>Exported with Memoria · ${new Date().toLocaleDateString("en-US")}</p><p class="hint">Videos play on this page. For videos in the PDF export, open this HTML file.</p></footer>
@@ -277,7 +314,8 @@ function generateExportCss(): string {
   return `
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Georgia, serif; background: #fdf4ff; color: #1e1b2e; line-height: 1.75; }
-.cover { text-align: center; padding: 4rem 1.5rem; min-height: 60vh; display: flex; flex-direction: column; justify-content: center; }
+.cover { text-align: center; padding: 4rem 1.5rem; min-height: 60vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.cover-photo { width: 160px; height: 160px; border-radius: 24px; object-fit: cover; margin-bottom: 1.5rem; }
 .cover h1 { font-size: 2.5rem; font-weight: 400; margin: 1rem 0; }
 .child-name { text-transform: uppercase; letter-spacing: 0.2em; font-size: 0.85rem; color: #a21caf; }
 .age { color: #78716c; font-size: 1.1rem; }
@@ -291,6 +329,9 @@ img, video { width: 100%; border-radius: 8px; display: block; }
 blockquote { border-left: 3px solid #d946ef; padding-left: 1.25rem; margin: 1.5rem 0; font-style: italic; }
 .timeline-item { margin-bottom: 1.5rem; padding-left: 1rem; border-left: 2px solid #e7e0d5; }
 .timeline-item time { font-size: 0.85rem; color: #78716c; }
+.music-item, .video-link, .video-upload, .parent-note { margin-bottom: 1rem; padding: 1rem; background: #fff; border-radius: 8px; border: 1px solid #e7e0d5; }
+.note-meta { font-size: 0.85rem; color: #a21caf; margin-bottom: 0.5rem; }
+.note-body { font-style: italic; }
 .letter-body { font-style: italic; font-size: 1.1rem; }
 .signature { text-align: right; margin-top: 2rem; color: #a21caf; }
 .summary-grid { display: grid; gap: 1rem; }

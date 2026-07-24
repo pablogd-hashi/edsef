@@ -24,7 +24,7 @@ const yearbookWithRelations = {
   parentNotes: { orderBy: { order: "asc" as const } },
   futureLetter: true,
   coverPhoto: { include: { variants: true } },
-  child: true,
+  child: { include: { profilePhoto: { include: { variants: true } } } },
 } satisfies Prisma.YearbookInclude;
 
 export type YearbookWithRelations = Prisma.YearbookGetPayload<{
@@ -148,6 +148,30 @@ export class YearbookService {
         })
       )
     );
+  }
+
+  async update(
+    yearbookId: string,
+    childId: string,
+    data: {
+      summaryContent?: Prisma.InputJsonValue;
+      customCoverTitle?: string;
+      coverPhotoId?: string | null;
+    },
+    userId: string
+  ): Promise<Yearbook> {
+    const existing = await this.getById(yearbookId, childId);
+    if (!existing) throw new Error("Yearbook not found");
+
+    return prisma.yearbook.update({
+      where: { id: yearbookId },
+      data: {
+        ...(data.summaryContent !== undefined ? { summaryContent: data.summaryContent } : {}),
+        ...(data.customCoverTitle !== undefined ? { customCoverTitle: data.customCoverTitle } : {}),
+        ...(data.coverPhotoId !== undefined ? { coverPhotoId: data.coverPhotoId } : {}),
+        updatedById: userId,
+      },
+    });
   }
 
   async publish(yearbookId: string, userId: string): Promise<Yearbook> {

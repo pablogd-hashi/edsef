@@ -117,6 +117,7 @@ export function InteractiveTimeline({
   canEdit = false,
   periodStart,
   periodEnd,
+  category = "GENERAL",
 }: {
   items: TimelineItem[];
   childId: string;
@@ -124,6 +125,7 @@ export function InteractiveTimeline({
   canEdit?: boolean;
   periodStart?: Date | string | null;
   periodEnd?: Date | string | null;
+  category?: "PARENTS_BEFORE_BIRTH" | "PARENTS_DURING_YEAR" | "GENERAL";
 }) {
   const router = useRouter();
 
@@ -159,6 +161,7 @@ export function InteractiveTimeline({
           periodEnd={periodEnd}
           defaultMonth={activeMonth ?? undefined}
           defaultYear={defaultYear}
+          category={category}
         />
       )}
 

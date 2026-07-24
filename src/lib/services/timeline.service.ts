@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { calculateAge } from "@/lib/age";
 import type { CreateTimelineEntryInput } from "@/lib/validators";
-import type { TimelineEntry } from "@prisma/client";
+import type { TimelineCategory, TimelineEntry } from "@prisma/client";
 
 export class TimelineService {
   async listByYearbook(yearbookId: string): Promise<TimelineEntry[]> {
@@ -32,6 +32,7 @@ export class TimelineService {
         month,
         ageLabel: age.label,
         locationId: input.locationId,
+        category: (input.category as TimelineCategory | undefined) ?? "GENERAL",
       },
     });
   }
