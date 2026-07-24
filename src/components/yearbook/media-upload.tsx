@@ -10,6 +10,9 @@ interface MediaUploadProps {
   yearbookId: string;
   milestoneId?: string;
   timelineEntryId?: string;
+  storyId?: string;
+  parentNoteId?: string;
+  sectionType?: string;
   onUploaded?: () => void;
   className?: string;
 }
@@ -41,6 +44,9 @@ export function MediaUpload({
   yearbookId,
   milestoneId,
   timelineEntryId,
+  storyId,
+  parentNoteId,
+  sectionType,
   onUploaded,
   className,
 }: MediaUploadProps) {
@@ -82,6 +88,9 @@ export function MediaUpload({
       formData.append("yearbookId", yearbookId);
       if (milestoneId) formData.append("milestoneId", milestoneId);
       if (timelineEntryId) formData.append("timelineEntryId", timelineEntryId);
+      if (storyId) formData.append("storyId", storyId);
+      if (parentNoteId) formData.append("parentNoteId", parentNoteId);
+      if (sectionType) formData.append("sectionType", sectionType);
 
       const res = await fetch("/api/media/upload", {
         method: "POST",

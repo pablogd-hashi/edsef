@@ -13,6 +13,7 @@ import {
 } from "@/lib/storage/local";
 import { EXPORT_SCHEMA_VERSION } from "@/domain/types";
 import type { MediaAsset, MediaType } from "@prisma/client";
+import { deriveSummaryFromYearbook } from "@/lib/yearbook/derive-summary";
 
 export interface ExportMediaRef {
   assetId: string;
@@ -103,6 +104,20 @@ export async function buildYearbookExport(
     }
   }
 
+  for (const attachment of yearbook.attachments) {
+    await copyAsset(attachment.media);
+  }
+  for (const story of yearbook.stories) {
+    for (const attachment of story.attachments) {
+      await copyAsset(attachment.media);
+    }
+  }
+  for (const note of yearbook.parentNotes) {
+    for (const attachment of note.attachments) {
+      await copyAsset(attachment.media);
+    }
+  }
+
   // Cover / profile photo
   const coverAsset = yearbook.coverPhoto ?? (yearbook.child as { profilePhoto?: typeof yearbook.coverPhoto }).profilePhoto;
   if (coverAsset) {
@@ -182,6 +197,7 @@ function generateOfflineHtml(
   assetMap: Map<string, string>
 ): string {
   const summary = yearbook.summaryContent as Record<string, unknown> | null;
+  const derived = deriveSummaryFromYearbook(yearbook);
   const coverTitle = yearbook.customCoverTitle ?? yearbook.title;
   const coverAsset = yearbook.coverPhoto ?? (yearbook.child as { profilePhoto?: { id: string } | null }).profilePhoto;
   const coverImg = coverAsset ? assetMap.get(coverAsset.id) : null;
@@ -222,7 +238,18 @@ function generateOfflineHtml(
         body += `<h3>${esc(node.content?.map((c) => c.text ?? "").join("") ?? "")}</h3>`;
       }
     }
-    storiesHtml += `<article class="story"><h2>${esc(s.title)}</h2>${body}</article>`;
+    let mediaHtml = '<div class="media-grid">';
+    for (const link of s.attachments) {
+      const p = assetMap.get(link.media.id);
+      if (!p) continue;
+      if (link.media.type === "VIDEO") {
+        mediaHtml += `<video controls preload="metadata" src="${p}"></video>`;
+      } else {
+        mediaHtml += `<img src="${p}" alt="" loading="lazy" />`;
+      }
+    }
+    mediaHtml += "</div>";
+    storiesHtml += `<article class="story"><h2>${esc(s.title)}</h2>${body}${mediaHtml}</article>`;
   }
 
   let timelineHtml = "";
@@ -247,13 +274,48 @@ function generateOfflineHtml(
   }
 
   let summaryHtml = "";
-  if (summary) {
-    for (const [key, val] of Object.entries(summary)) {
-      if (!val) continue;
-      const label = key.replace(/([A-Z])/g, " $1").trim();
-      const text = Array.isArray(val) ? val.join(" · ") : String(val);
-      summaryHtml += `<div class="summary-item"><strong>${esc(label)}</strong><p>${esc(text)}</p></div>`;
+  const manualLocation = summary?.location as string | undefined;
+  const location = manualLocation ?? (derived.locations.length > 0 ? derived.locations.join(" · ") : undefined);
+
+  const summaryFields: [string, string | undefined][] = [
+    ["Where we lived", location],
+    ["Context", summary?.context as string | undefined],
+    ["Trips", summary?.trips as string | undefined],
+    ["Likes", summary?.likes as string | undefined],
+    ["Fears", summary?.fears as string | undefined],
+  ];
+
+  for (const [label, val] of summaryFields) {
+    if (!val) continue;
+    summaryHtml += `<div class="summary-item"><strong>${esc(label)}</strong><p>${esc(val)}</p></div>`;
+  }
+
+  if (derived.highlights.length > 0) {
+    summaryHtml += `<div class="summary-item"><strong>Highlights</strong><ul>${derived.highlights.map((h) => `<li>${esc(h)}</li>`).join("")}</ul></div>`;
+  }
+  if (derived.favoriteMusic) {
+    summaryHtml += `<div class="summary-item"><strong>Music you loved</strong><p>${esc(derived.favoriteMusic)}</p></div>`;
+  }
+  if (derived.stories.length > 0) {
+    summaryHtml += `<div class="summary-item"><strong>Stories</strong><ul>${derived.stories.map((s) => `<li>${esc(s)}</li>`).join("")}</ul></div>`;
+  }
+  if (derived.videos.length > 0) {
+    summaryHtml += `<div class="summary-item"><strong>Videos</strong><ul>${derived.videos.map((v) => `<li>${esc(v)}</li>`).join("")}</ul></div>`;
+  }
+
+  const summaryMedia = yearbook.attachments.filter((a) => a.sectionType === "SUMMARY");
+  if (summaryMedia.length > 0) {
+    summaryHtml += '<div class="media-grid">';
+    for (const link of summaryMedia) {
+      const p = assetMap.get(link.media.id);
+      if (!p) continue;
+      if (link.media.type === "VIDEO") {
+        summaryHtml += `<video controls preload="metadata" src="${p}"></video>`;
+      } else {
+        summaryHtml += `<img src="${p}" alt="" loading="lazy" />`;
+      }
     }
+    summaryHtml += "</div>";
   }
 
   let musicHtml = "";
@@ -261,10 +323,34 @@ function generateOfflineHtml(
     const href = track.youtubeUrl ?? `https://music.youtube.com/search?q=${encodeURIComponent([track.artist, track.title].filter(Boolean).join(" "))}`;
     musicHtml += `<div class="music-item"><strong>${esc(track.title)}</strong>${track.artist ? ` — ${esc(track.artist)}` : ""}<br/><a href="${esc(href)}">${esc(href)}</a></div>`;
   }
+  const musicMedia = yearbook.attachments.filter((a) => a.sectionType === "MUSIC");
+  if (musicMedia.length > 0) {
+    musicHtml += '<div class="media-grid">';
+    for (const link of musicMedia) {
+      const p = assetMap.get(link.media.id);
+      if (!p) continue;
+      if (link.media.type === "VIDEO") {
+        musicHtml += `<video controls preload="metadata" src="${p}"></video>`;
+      } else {
+        musicHtml += `<img src="${p}" alt="" loading="lazy" />`;
+      }
+    }
+    musicHtml += "</div>";
+  }
 
   let notesHtml = "";
   for (const note of yearbook.parentNotes) {
-    notesHtml += `<div class="parent-note"><p class="note-meta">${esc(note.author)} · ${new Date(note.noteDate).toLocaleDateString("en-US")}</p><p class="note-body">${esc(note.content)}</p></div>`;
+    let mediaHtml = "";
+    for (const link of note.attachments) {
+      const p = assetMap.get(link.media.id);
+      if (!p) continue;
+      if (link.media.type === "VIDEO") {
+        mediaHtml += `<video controls preload="metadata" src="${p}"></video>`;
+      } else {
+        mediaHtml += `<img src="${p}" alt="" loading="lazy" />`;
+      }
+    }
+    notesHtml += `<div class="parent-note"><p class="note-meta">${esc(note.author)} · ${new Date(note.noteDate).toLocaleDateString("en-US")}</p><p class="note-body">${esc(note.content)}</p>${mediaHtml}</div>`;
   }
 
   let videosHtml = "";

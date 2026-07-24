@@ -6,6 +6,23 @@ import { requireParentSession } from "@/lib/api/require-parent";
 const reorderSchema = z.object({
   milestoneId: z.string().cuid().optional(),
   timelineEntryId: z.string().cuid().optional(),
+  storyId: z.string().cuid().optional(),
+  parentNoteId: z.string().cuid().optional(),
+  sectionType: z
+    .enum([
+      "COVER",
+      "SUMMARY",
+      "MILESTONES",
+      "STORIES",
+      "VIDEOS",
+      "MUSIC",
+      "PARENT_NOTES",
+      "TIMELINE",
+      "FUTURE_LETTER",
+      "ATTACHMENTS",
+    ])
+    .optional(),
+  yearbookId: z.string().cuid().optional(),
   mediaIds: z.array(z.string().cuid()).min(1),
 });
 
@@ -17,11 +34,27 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Invalid data" }, { status: 400 });
   }
 
-  const { milestoneId, timelineEntryId, mediaIds } = parsed.data;
+  const {
+    milestoneId,
+    timelineEntryId,
+    storyId,
+    parentNoteId,
+    sectionType,
+    yearbookId,
+    mediaIds,
+  } = parsed.data;
 
-  if (!milestoneId && !timelineEntryId) {
+  const targetCount = [
+    milestoneId,
+    timelineEntryId,
+    storyId,
+    parentNoteId,
+    sectionType,
+  ].filter(Boolean).length;
+
+  if (targetCount !== 1) {
     return NextResponse.json(
-      { error: "milestoneId or timelineEntryId required" },
+      { error: "Exactly one of milestoneId, timelineEntryId, storyId, parentNoteId, or sectionType required" },
       { status: 400 }
     );
   }
@@ -36,15 +69,48 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Milestone not found" }, { status: 404 });
     }
     childId = milestone.yearbook.childId;
-  } else {
+  } else if (timelineEntryId) {
     const entry = await prisma.timelineEntry.findUnique({
-      where: { id: timelineEntryId! },
+      where: { id: timelineEntryId },
       include: { yearbook: { select: { childId: true } } },
     });
     if (!entry) {
       return NextResponse.json({ error: "Timeline entry not found" }, { status: 404 });
     }
     childId = entry.yearbook.childId;
+  } else if (storyId) {
+    const story = await prisma.story.findUnique({
+      where: { id: storyId },
+      include: { yearbook: { select: { childId: true } } },
+    });
+    if (!story) {
+      return NextResponse.json({ error: "Story not found" }, { status: 404 });
+    }
+    childId = story.yearbook.childId;
+  } else if (parentNoteId) {
+    const note = await prisma.parentNote.findUnique({
+      where: { id: parentNoteId },
+      include: { yearbook: { select: { childId: true } } },
+    });
+    if (!note) {
+      return NextResponse.json({ error: "Parent note not found" }, { status: 404 });
+    }
+    childId = note.yearbook.childId;
+  } else {
+    if (!yearbookId || !sectionType) {
+      return NextResponse.json(
+        { error: "yearbookId and sectionType required for section media" },
+        { status: 400 }
+      );
+    }
+    const yearbook = await prisma.yearbook.findUnique({
+      where: { id: yearbookId },
+      select: { childId: true },
+    });
+    if (!yearbook) {
+      return NextResponse.json({ error: "Yearbook not found" }, { status: 404 });
+    }
+    childId = yearbook.childId;
   }
 
   const auth = await requireParentSession(childId);
@@ -58,10 +124,28 @@ export async function PATCH(request: Request) {
           data: { order },
         });
       }
-      return prisma.timelineEntryMedia.update({
-        where: {
-          timelineEntryId_mediaId: { timelineEntryId: timelineEntryId!, mediaId },
-        },
+      if (timelineEntryId) {
+        return prisma.timelineEntryMedia.update({
+          where: {
+            timelineEntryId_mediaId: { timelineEntryId, mediaId },
+          },
+          data: { order },
+        });
+      }
+      if (storyId) {
+        return prisma.attachment.updateMany({
+          where: { storyId, mediaId },
+          data: { order },
+        });
+      }
+      if (parentNoteId) {
+        return prisma.attachment.updateMany({
+          where: { parentNoteId, mediaId },
+          data: { order },
+        });
+      }
+      return prisma.attachment.updateMany({
+        where: { yearbookId: yearbookId!, sectionType, mediaId },
         data: { order },
       });
     })

@@ -388,7 +388,8 @@ model ParentNote {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  yearbook Yearbook @relation(fields: [yearbookId], references: [id], onDelete: Cascade)
+  yearbook    Yearbook     @relation(fields: [yearbookId], references: [id], onDelete: Cascade)
+  attachments Attachment[]
 
   @@index([yearbookId, order])
 }
@@ -407,19 +408,25 @@ model FutureLetter {
 }
 
 model Attachment {
-  id         String   @id @default(cuid())
-  yearbookId String
-  storyId    String?
-  mediaId    String
-  title      String?
-  order      Int      @default(0)
-  createdAt  DateTime @default(now())
+  id           String       @id @default(cuid())
+  yearbookId   String
+  storyId      String?
+  parentNoteId String?
+  sectionType  SectionType?
+  mediaId      String
+  title        String?
+  order        Int          @default(0)
+  createdAt    DateTime     @default(now())
 
-  yearbook Yearbook    @relation(fields: [yearbookId], references: [id], onDelete: Cascade)
-  story    Story?      @relation(fields: [storyId], references: [id])
-  media    MediaAsset  @relation(fields: [mediaId], references: [id])
+  yearbook   Yearbook    @relation(fields: [yearbookId], references: [id], onDelete: Cascade)
+  story      Story?      @relation(fields: [storyId], references: [id])
+  parentNote ParentNote? @relation(fields: [parentNoteId], references: [id])
+  media      MediaAsset  @relation(fields: [mediaId], references: [id])
 
   @@index([yearbookId])
+  @@index([storyId])
+  @@index([parentNoteId])
+  @@index([yearbookId, sectionType])
 }
 
 // ─── Media ───────────────────────────────────────────────────────────────────

@@ -5,12 +5,18 @@ import type { Prisma, SectionType, Yearbook, YearbookTemplate } from "@prisma/cl
 
 const yearbookWithRelations = {
   sections: { orderBy: { order: "asc" as const } },
-  stories: { where: { deletedAt: null }, orderBy: { order: "asc" as const } },
+  stories: {
+    where: { deletedAt: null },
+    orderBy: { order: "asc" as const },
+    include: {
+      attachments: { orderBy: { order: "asc" as const }, include: { media: true } },
+    },
+  },
   milestones: {
     where: { deletedAt: null },
     orderBy: { order: "asc" as const },
     include: {
-      media: { include: { media: true } },
+      media: { orderBy: { order: "asc" as const }, include: { media: true } },
       tags: { include: { tag: true } },
       location: true,
     },
@@ -18,10 +24,23 @@ const yearbookWithRelations = {
   timeline: {
     where: { deletedAt: null },
     orderBy: { eventDate: "asc" as const },
-    include: { media: { include: { media: true } }, location: true },
+    include: {
+      media: { orderBy: { order: "asc" as const }, include: { media: true } },
+      location: true,
+    },
   },
   music: { orderBy: { order: "asc" as const } },
-  parentNotes: { orderBy: { order: "asc" as const } },
+  parentNotes: {
+    orderBy: { order: "asc" as const },
+    include: {
+      attachments: { orderBy: { order: "asc" as const }, include: { media: true } },
+    },
+  },
+  attachments: {
+    where: { sectionType: { not: null } },
+    orderBy: { order: "asc" as const },
+    include: { media: true },
+  },
   futureLetter: true,
   coverPhoto: { include: { variants: true } },
   child: { include: { profilePhoto: { include: { variants: true } } } },

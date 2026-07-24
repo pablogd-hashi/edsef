@@ -4,6 +4,9 @@ import { useRouter } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import { EditableField } from "@/components/ui/editable-field";
 import { tiptapToPlainText } from "@/lib/tiptap";
+import { MediaGallery } from "@/components/yearbook/media-gallery";
+import { MediaUpload } from "@/components/yearbook/media-upload";
+import type { MediaItem } from "@/components/yearbook/media-gallery";
 
 type TiptapNode = {
   type: string;
@@ -61,11 +64,17 @@ export function StoryReader({
   id,
   title,
   content,
+  media = [],
+  childId,
+  yearbookId,
   canEdit = false,
 }: {
   id: string;
   title: string;
   content: Prisma.JsonValue;
+  media?: { media: MediaItem }[];
+  childId: string;
+  yearbookId: string;
   canEdit?: boolean;
 }) {
   const router = useRouter();
@@ -112,6 +121,16 @@ export function StoryReader({
         />
       ) : (
         <div className="prose-yearbook">{renderTiptapContent(content)}</div>
+      )}
+
+      <MediaGallery media={media} canEdit={canEdit} storyId={id} />
+      {canEdit && (
+        <MediaUpload
+          className="mt-4"
+          childId={childId}
+          yearbookId={yearbookId}
+          storyId={id}
+        />
       )}
     </article>
   );

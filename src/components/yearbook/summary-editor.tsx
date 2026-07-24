@@ -4,19 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { EditableField } from "@/components/ui/editable-field";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-
-interface SummaryContent {
-  subtitle?: string;
-  location?: string;
-  context?: string;
-  highlights?: string[];
-  trips?: string[];
-  favoriteMusic?: string;
-  likes?: string;
-  fears?: string;
-}
+import type { ManualSummaryContent } from "@/lib/yearbook/derive-summary";
 
 export function SummaryEditor({
   yearbookId,
@@ -26,14 +14,14 @@ export function SummaryEditor({
 }: {
   yearbookId: string;
   childId: string;
-  content: SummaryContent | null;
+  content: ManualSummaryContent | null;
   canEdit: boolean;
 }) {
   const router = useRouter();
-  const [local, setLocal] = useState<SummaryContent>(content ?? {});
+  const [local, setLocal] = useState<ManualSummaryContent>(content ?? {});
   const [saving, setSaving] = useState(false);
 
-  async function save(next: SummaryContent) {
+  async function save(next: ManualSummaryContent) {
     setSaving(true);
     try {
       const res = await fetch(`/api/yearbooks/${yearbookId}?childId=${childId}`, {
@@ -51,7 +39,7 @@ export function SummaryEditor({
     }
   }
 
-  async function updateField(key: keyof SummaryContent, value: string) {
+  async function updateField(key: keyof ManualSummaryContent, value: string) {
     const next = { ...local, [key]: value || undefined };
     setLocal(next);
     await save(next);
@@ -68,13 +56,15 @@ export function SummaryEditor({
           <Loader2 className="h-3 w-3 animate-spin" /> Saving…
         </p>
       )}
+      <p className="text-sm text-muted">
+        Milestones, music, stories, and videos appear here automatically as you add them in their sections.
+      </p>
       <div className="grid gap-4 sm:grid-cols-2">
         {(
           [
             ["location", "Where you lived"],
             ["context", "Context of the year"],
             ["trips", "Trips & adventures"],
-            ["favoriteMusic", "Favorite music"],
             ["likes", "Likes"],
             ["fears", "Fears"],
           ] as const
@@ -91,22 +81,6 @@ export function SummaryEditor({
             />
           </div>
         ))}
-      </div>
-      <div className="rounded-xl border border-border-light bg-card p-6">
-        <p className="text-xs uppercase tracking-wider text-accent-dark mb-2">Highlights</p>
-        <EditableField
-          value={(local.highlights ?? []).join("\n")}
-          canEdit
-          multiline
-          placeholder="One highlight per line…"
-          className="text-foreground leading-relaxed"
-          onSave={async (v) => {
-            const highlights = v.split("\n").map((s) => s.trim()).filter(Boolean);
-            const next = { ...local, highlights: highlights.length ? highlights : undefined };
-            setLocal(next);
-            await save(next);
-          }}
-        />
       </div>
     </div>
   );

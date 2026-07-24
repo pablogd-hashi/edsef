@@ -4,19 +4,27 @@ import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
 import { formatDate } from "@/lib/age";
 import { EditableField } from "@/components/ui/editable-field";
+import { MediaGallery } from "@/components/yearbook/media-gallery";
+import { MediaUpload } from "@/components/yearbook/media-upload";
+import type { MediaItem } from "@/components/yearbook/media-gallery";
 
 export interface ParentNoteItem {
   id: string;
   author: string;
   content: string;
   noteDate: Date | string;
+  media?: { media: MediaItem }[];
 }
 
 export function ParentNotes({
   notes,
+  childId,
+  yearbookId,
   canEdit = false,
 }: {
   notes: ParentNoteItem[];
+  childId: string;
+  yearbookId: string;
   canEdit?: boolean;
 }) {
   const router = useRouter();
@@ -68,6 +76,20 @@ export function ParentNotes({
               router.refresh();
             }}
           />
+
+          <MediaGallery
+            media={note.media ?? []}
+            canEdit={canEdit}
+            parentNoteId={note.id}
+          />
+          {canEdit && (
+            <MediaUpload
+              className="mt-4"
+              childId={childId}
+              yearbookId={yearbookId}
+              parentNoteId={note.id}
+            />
+          )}
         </div>
       ))}
     </div>

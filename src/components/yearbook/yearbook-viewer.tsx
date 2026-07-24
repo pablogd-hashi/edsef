@@ -8,6 +8,12 @@ import { InteractiveTimeline } from "./interactive-timeline";
 import { StoryReader } from "./story-reader";
 import { ParentNotes } from "./parent-notes";
 import { SummaryEditor } from "./summary-editor";
+import { SectionMediaBlock } from "./section-media";
+import {
+  deriveSummaryFromYearbook,
+  hasDerivedOrManualSummary,
+  type ManualSummaryContent,
+} from "@/lib/yearbook/derive-summary";
 import {
   MilestoneAdd,
   StoryAdd,
@@ -27,6 +33,20 @@ interface YearbookViewerProps {
   yearbook: YearbookWithRelations;
   mode?: "edit" | "preview";
   canEdit?: boolean;
+}
+
+function getSectionMedia(yearbook: YearbookWithRelations, sectionType: SectionType) {
+  return yearbook.attachments
+    .filter((a) => a.sectionType === sectionType)
+    .map((a) => ({
+      media: {
+        id: a.media.id,
+        type: a.media.type,
+        title: a.media.title,
+        width: a.media.width,
+        height: a.media.height,
+      },
+    }));
 }
 
 function filterTimeline(
@@ -149,13 +169,12 @@ export function YearbookViewer({
   const yearbookId = yearbook.id;
   const [activeSection, setActiveSection] = useState("cover");
 
-  const summary = yearbook.summaryContent as Record<string, unknown> | null;
-  const hasSummary = Boolean(
-    summary &&
-      (summary.context ||
-        summary.location ||
-        (Array.isArray(summary.highlights) && summary.highlights.length > 0))
-  );
+  const manualSummary = yearbook.summaryContent as ManualSummaryContent | null;
+  const derivedSummary = useMemo(() => deriveSummaryFromYearbook(yearbook), [yearbook]);
+  const hasSummary = hasDerivedOrManualSummary(manualSummary, derivedSummary);
+  const summaryMedia = getSectionMedia(yearbook, "SUMMARY");
+  const musicMedia = getSectionMedia(yearbook, "MUSIC");
+  const videosSectionMedia = getSectionMedia(yearbook, "VIDEOS");
 
   const videos = filterTimeline(yearbook.timeline, ["VIDEO"]);
   const videoLinks = videos.filter((v) => v.description?.startsWith("http"));
@@ -165,11 +184,11 @@ export function YearbookViewer({
 
   const hasContent: Record<string, boolean> = {
     cover: true,
-    summary: hasSummary,
+    summary: hasSummary || summaryMedia.length > 0,
     milestones: yearbook.milestones.length > 0,
-    music: yearbook.music.length > 0,
+    music: yearbook.music.length > 0 || musicMedia.length > 0,
     stories: yearbook.stories.length > 0,
-    videos: videoLinks.length > 0 || videoUploads.length > 0,
+    videos: videoLinks.length > 0 || videoUploads.length > 0 || videosSectionMedia.length > 0,
     notes: yearbook.parentNotes.length > 0,
     "before-birth": beforeBirth.length > 0,
     "this-year": thisYear.length > 0,
@@ -244,18 +263,28 @@ export function YearbookViewer({
           <section id="section-summary" className="book-page">
             <FadeIn>
               <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
-              {canEdit ? (
-                <SummaryEditor
-                  yearbookId={yearbookId}
-                  childId={childId}
-                  content={summary}
-                  canEdit
-                />
-              ) : hasSummary ? (
-                <SummarySection content={summary} />
-              ) : (
-                <SectionEmpty hint={meta.emptyHint} />
+              {(hasSummary || summaryMedia.length > 0) && (
+                <SummarySection manual={manualSummary} derived={derivedSummary} />
               )}
+              {canEdit ? (
+                <div className={hasSummary || summaryMedia.length > 0 ? "mt-6" : ""}>
+                  <SummaryEditor
+                    yearbookId={yearbookId}
+                    childId={childId}
+                    content={manualSummary}
+                    canEdit
+                  />
+                </div>
+              ) : !hasSummary && summaryMedia.length === 0 ? (
+                <SectionEmpty hint={meta.emptyHint} />
+              ) : null}
+              <SectionMediaBlock
+                media={summaryMedia}
+                childId={childId}
+                yearbookId={yearbookId}
+                sectionType="SUMMARY"
+                canEdit={canEdit}
+              />
             </FadeIn>
           </section>
         );
@@ -303,7 +332,14 @@ export function YearbookViewer({
                 yearbookId={yearbookId}
                 canEdit={canEdit}
               />
-              {!canEdit && yearbook.music.length === 0 && (
+              <SectionMediaBlock
+                media={musicMedia}
+                childId={childId}
+                yearbookId={yearbookId}
+                sectionType="MUSIC"
+                canEdit={canEdit}
+              />
+              {!canEdit && yearbook.music.length === 0 && musicMedia.length === 0 && (
                 <SectionEmpty hint={meta.emptyHint} />
               )}
             </FadeIn>
@@ -323,6 +359,17 @@ export function YearbookViewer({
                       id={story.id}
                       title={story.title}
                       content={story.content as Prisma.JsonValue}
+                      media={story.attachments.map((a) => ({
+                        media: {
+                          id: a.media.id,
+                          type: a.media.type,
+                          title: a.media.title,
+                          width: a.media.width,
+                          height: a.media.height,
+                        },
+                      }))}
+                      childId={childId}
+                      yearbookId={yearbookId}
                       canEdit={canEdit}
                     />
                   ))}
@@ -356,6 +403,13 @@ export function YearbookViewer({
               ) : (
                 <SectionEmpty hint={meta.emptyHint} />
               )}
+              <SectionMediaBlock
+                media={videosSectionMedia}
+                childId={childId}
+                yearbookId={yearbookId}
+                sectionType="VIDEOS"
+                canEdit={canEdit}
+              />
             </FadeIn>
           </section>
         );
@@ -366,7 +420,26 @@ export function YearbookViewer({
             <FadeIn>
               <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
               {yearbook.parentNotes.length > 0 && (
-                <ParentNotes notes={yearbook.parentNotes} canEdit={canEdit} />
+                <ParentNotes
+                  notes={yearbook.parentNotes.map((n) => ({
+                    id: n.id,
+                    author: n.author,
+                    content: n.content,
+                    noteDate: n.noteDate,
+                    media: n.attachments.map((a) => ({
+                      media: {
+                        id: a.media.id,
+                        type: a.media.type,
+                        title: a.media.title,
+                        width: a.media.width,
+                        height: a.media.height,
+                      },
+                    })),
+                  }))}
+                  childId={childId}
+                  yearbookId={yearbookId}
+                  canEdit={canEdit}
+                />
               )}
               {canEdit && (
                 <div className={yearbook.parentNotes.length > 0 ? "mt-6" : ""}>
