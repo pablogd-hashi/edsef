@@ -22,6 +22,7 @@
     "prod:start": "bash scripts/prod/start.sh",
     "prod:stop": "bash scripts/prod/stop.sh",
     "prod:backup": "bash scripts/prod/backup.sh",
+    "prod:restore": "bash scripts/prod/restore.sh",
     "prod:health": "bash scripts/prod/health.sh",
     "prod:update": "bash scripts/prod/update.sh",
     "postinstall": "prisma generate"
@@ -62,6 +63,7 @@
     "zod": "^4.3.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.4",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
     "@types/archiver": "^7.0.0",
@@ -73,6 +75,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "pglite-prisma-adapter": "^0.7.2",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5",

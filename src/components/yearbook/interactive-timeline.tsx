@@ -301,7 +301,11 @@ export function InteractiveTimeline({
                         </p>
                       )}
 
-                      <MilestoneMediaGallery media={item.media ?? []} canEdit={canEdit} />
+                      <MilestoneMediaGallery
+                        media={item.media ?? []}
+                        canEdit={canEdit}
+                        timelineEntryId={item.id}
+                      />
 
                       {canEdit && (
                         <MediaUpload

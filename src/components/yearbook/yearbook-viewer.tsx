@@ -1,6 +1,6 @@
 "use client";
 
-import { YEARBOOK_SECTIONS } from "@/lib/import/types";
+import { YEARBOOK_SECTIONS } from "@/lib/yearbook/sections";
 import type { YearbookWithRelations } from "@/lib/services/yearbook.service";
 import { CoverHero, SummarySection } from "./cover-hero";
 import { MilestoneGrid } from "./milestone-grid";
@@ -8,9 +8,10 @@ import { InteractiveTimeline } from "./interactive-timeline";
 import { StoryReader } from "./story-reader";
 import { MusicPlaylist } from "./music-playlist";
 import { ParentNotes } from "./parent-notes";
+import { SectionEmpty } from "./section-empty";
 import { FadeIn, SectionTitle } from "@/components/ui/motion";
-import type { Prisma, TimelineCategory } from "@prisma/client";
-import { useEffect, useState } from "react";
+import type { Prisma, SectionType, TimelineCategory } from "@prisma/client";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
 
@@ -43,6 +44,7 @@ function VideoLinks({
 }: {
   items: { id: string; title: string; description?: string | null }[];
 }) {
+  if (items.length === 0) return null;
   return (
     <div className="space-y-3">
       {items.map((item) => (
@@ -61,41 +63,95 @@ function VideoLinks({
   );
 }
 
+function sectionVisible(
+  visible: boolean,
+  hasContent: boolean,
+  canEdit: boolean,
+  isPreview: boolean
+): boolean {
+  if (!visible) return canEdit && !isPreview;
+  if (canEdit && !isPreview) return true;
+  return hasContent;
+}
+
+const UI_TO_SECTION_TYPE: Record<string, SectionType> = {
+  cover: "COVER",
+  summary: "SUMMARY",
+  milestones: "MILESTONES",
+  music: "MUSIC",
+  stories: "STORIES",
+  videos: "VIDEOS",
+  notes: "PARENT_NOTES",
+  "before-birth": "TIMELINE",
+  "this-year": "TIMELINE",
+};
+
 export function YearbookViewer({
   yearbook,
   mode = "edit",
   canEdit: canEditProp,
 }: YearbookViewerProps) {
   const canEdit = canEditProp ?? mode === "edit";
+  const isPreview = mode === "preview";
   const childId = yearbook.childId;
   const yearbookId = yearbook.id;
   const [activeSection, setActiveSection] = useState("cover");
 
   const summary = yearbook.summaryContent as Record<string, unknown> | null;
-  const hasSummary =
+  const hasSummary = Boolean(
     summary &&
-    (summary.context ||
-      summary.location ||
-      (Array.isArray(summary.highlights) && summary.highlights.length > 0));
+      (summary.context ||
+        summary.location ||
+        (Array.isArray(summary.highlights) && summary.highlights.length > 0))
+  );
 
   const videos = filterTimeline(yearbook.timeline, ["VIDEO"]);
   const beforeBirth = filterTimeline(yearbook.timeline, ["PARENTS_BEFORE_BIRTH"]);
-  const thisYear = filterTimeline(yearbook.timeline, [
-    "PARENTS_DURING_YEAR",
-    "GENERAL",
-  ]);
+  const thisYear = filterTimeline(yearbook.timeline, ["PARENTS_DURING_YEAR", "GENERAL"]);
 
-  const sectionContent: Record<string, boolean> = {
+  const hasContent: Record<string, boolean> = {
     cover: true,
-    summary: !!hasSummary,
+    summary: hasSummary,
     milestones: yearbook.milestones.length > 0,
     music: yearbook.music.length > 0,
     stories: yearbook.stories.length > 0,
     videos: videos.length > 0,
     notes: yearbook.parentNotes.length > 0,
     "before-birth": beforeBirth.length > 0,
-    "this-year": thisYear.length > 0 || canEdit,
+    "this-year": thisYear.length > 0,
   };
+
+  const orderedSections = useMemo(() => {
+    const dbByType = new Map(yearbook.sections.map((s) => [s.type, s]));
+    const timelineDb = dbByType.get("TIMELINE");
+
+    return [...YEARBOOK_SECTIONS]
+      .map((ui) => {
+        if (ui.id === "before-birth" || ui.id === "this-year") {
+          return {
+            ...ui,
+            order:
+              (timelineDb?.order ?? 7) + (ui.id === "before-birth" ? -0.1 : 0),
+            visible: timelineDb?.visible ?? true,
+            label: ui.label,
+          };
+        }
+
+        const sectionType = UI_TO_SECTION_TYPE[ui.id];
+        const db = dbByType.get(sectionType);
+        return {
+          ...ui,
+          order: db?.order ?? YEARBOOK_SECTIONS.indexOf(ui),
+          visible: db?.visible ?? true,
+          label: db?.title ?? ui.label,
+        };
+      })
+      .sort((a, b) => a.order - b.order);
+  }, [yearbook.sections]);
+
+  const visibleSections = orderedSections.filter((s) =>
+    sectionVisible(s.visible, hasContent[s.id] ?? false, canEdit, isPreview)
+  );
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -109,158 +165,206 @@ export function YearbookViewer({
       { rootMargin: "-20% 0px -60% 0px" }
     );
 
-    for (const s of YEARBOOK_SECTIONS) {
+    for (const s of visibleSections) {
       const el = document.getElementById(`section-${s.id}`);
       if (el) observer.observe(el);
     }
 
     return () => observer.disconnect();
-  }, []);
+  }, [visibleSections]);
+
+  function renderSection(id: string) {
+    const meta = orderedSections.find((s) => s.id === id);
+    if (!meta) return null;
+
+    switch (id) {
+      case "cover":
+        return (
+          <section id="section-cover" className="book-page">
+            <CoverHero yearbook={yearbook} immersive={isPreview} />
+          </section>
+        );
+
+      case "summary":
+        return (
+          <section id="section-summary" className="book-page">
+            <FadeIn>
+              <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
+              {hasSummary ? (
+                <SummarySection content={summary} />
+              ) : (
+                <SectionEmpty hint={meta.emptyHint} />
+              )}
+            </FadeIn>
+          </section>
+        );
+
+      case "milestones":
+        return (
+          <section id="section-milestones" className="book-page">
+            <FadeIn>
+              <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
+              {yearbook.milestones.length > 0 ? (
+                <MilestoneGrid
+                  milestones={yearbook.milestones.map((m) => ({
+                    id: m.id,
+                    title: m.title,
+                    description: m.description,
+                    ageLabel: m.ageLabel,
+                    location: m.location,
+                    media: m.media,
+                  }))}
+                  childId={childId}
+                  yearbookId={yearbookId}
+                  canEdit={canEdit}
+                />
+              ) : (
+                <SectionEmpty hint={meta.emptyHint} />
+              )}
+            </FadeIn>
+          </section>
+        );
+
+      case "music":
+        return (
+          <section id="section-music" className="book-page">
+            <FadeIn>
+              <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
+              {yearbook.music.length > 0 ? (
+                <MusicPlaylist tracks={yearbook.music} />
+              ) : (
+                <SectionEmpty hint={meta.emptyHint} />
+              )}
+            </FadeIn>
+          </section>
+        );
+
+      case "stories":
+        return (
+          <section id="section-stories" className="book-page">
+            <FadeIn>
+              <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
+              {yearbook.stories.length > 0 ? (
+                <div className="space-y-16">
+                  {yearbook.stories.map((story) => (
+                    <StoryReader
+                      key={story.id}
+                      id={story.id}
+                      title={story.title}
+                      content={story.content as Prisma.JsonValue}
+                      canEdit={canEdit}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <SectionEmpty hint={meta.emptyHint} />
+              )}
+            </FadeIn>
+          </section>
+        );
+
+      case "videos":
+        return (
+          <section id="section-videos" className="book-page">
+            <FadeIn>
+              <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
+              {videos.length > 0 ? (
+                <VideoLinks items={videos} />
+              ) : (
+                <SectionEmpty hint={meta.emptyHint} />
+              )}
+            </FadeIn>
+          </section>
+        );
+
+      case "notes":
+        return (
+          <section id="section-notes" className="book-page">
+            <FadeIn>
+              <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
+              {yearbook.parentNotes.length > 0 ? (
+                <ParentNotes notes={yearbook.parentNotes} canEdit={canEdit} />
+              ) : (
+                <SectionEmpty hint={meta.emptyHint} />
+              )}
+            </FadeIn>
+          </section>
+        );
+
+      case "before-birth":
+        return (
+          <section id="section-before-birth" className="book-page">
+            <FadeIn>
+              <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
+              {beforeBirth.length > 0 ? (
+                <InteractiveTimeline
+                  items={beforeBirth}
+                  childId={childId}
+                  yearbookId={yearbookId}
+                  canEdit={canEdit}
+                  periodStart={yearbook.periodStart}
+                  periodEnd={yearbook.periodEnd}
+                />
+              ) : (
+                <SectionEmpty hint={meta.emptyHint} />
+              )}
+            </FadeIn>
+          </section>
+        );
+
+      case "this-year":
+        return (
+          <section id="section-this-year" className="book-page">
+            <FadeIn>
+              <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
+              {thisYear.length > 0 ? (
+                <InteractiveTimeline
+                  items={thisYear}
+                  childId={childId}
+                  yearbookId={yearbookId}
+                  canEdit={canEdit}
+                  periodStart={yearbook.periodStart}
+                  periodEnd={yearbook.periodEnd}
+                />
+              ) : (
+                <SectionEmpty hint={meta.emptyHint} />
+              )}
+            </FadeIn>
+          </section>
+        );
+
+      default:
+        return null;
+    }
+  }
 
   return (
-    <div className={cn(mode === "preview" && "preview-mode")}>
+    <div className={cn("yearbook-reader", isPreview && "preview-mode")}>
       <nav className="sticky top-[57px] z-40 border-b border-border/60 glass">
         <div className="mx-auto max-w-4xl overflow-x-auto timeline-scroll px-4">
           <div className="flex gap-1 py-2">
-            {YEARBOOK_SECTIONS.map((s) => {
-              if (!sectionContent[s.id]) return null;
-              return (
-                <a
-                  key={s.id}
-                  href={`#section-${s.id}`}
-                  className={cn(
-                    "shrink-0 rounded-full px-4 py-1.5 text-sm transition-all duration-200",
-                    activeSection === s.id
-                      ? "bg-foreground text-background"
-                      : "text-muted hover:text-foreground hover:bg-cream"
-                  )}
-                >
-                  {s.label}
-                </a>
-              );
-            })}
+            {visibleSections.map((s) => (
+              <a
+                key={s.id}
+                href={`#section-${s.id}`}
+                className={cn(
+                  "shrink-0 rounded-full px-4 py-1.5 text-sm transition-all duration-200",
+                  activeSection === s.id
+                    ? "bg-foreground text-background"
+                    : "text-muted hover:text-foreground hover:bg-cream"
+                )}
+              >
+                {s.label}
+              </a>
+            ))}
           </div>
         </div>
       </nav>
 
-      <div className="mx-auto max-w-4xl px-6 py-8 md:py-12 space-y-20 md:space-y-28">
-        <section id="section-cover">
-          <CoverHero yearbook={yearbook} immersive={mode === "preview"} />
-        </section>
-
-        {hasSummary && (
-          <section id="section-summary">
-            <FadeIn>
-              <SectionTitle subtitle="The year at a glance">Summary</SectionTitle>
-              <SummarySection content={summary} />
-            </FadeIn>
-          </section>
-        )}
-
-        {yearbook.milestones.length > 0 && (
-          <section id="section-milestones">
-            <FadeIn>
-              <SectionTitle subtitle="What you achieved this year">
-                Milestones
-              </SectionTitle>
-              <MilestoneGrid
-                milestones={yearbook.milestones.map((m) => ({
-                  id: m.id,
-                  title: m.title,
-                  description: m.description,
-                  ageLabel: m.ageLabel,
-                  location: m.location,
-                  media: m.media,
-                }))}
-                childId={childId}
-                yearbookId={yearbookId}
-                canEdit={canEdit}
-              />
-            </FadeIn>
-          </section>
-        )}
-
-        {yearbook.music.length > 0 && (
-          <section id="section-music">
-            <FadeIn>
-              <SectionTitle subtitle="Songs that marked the year">Music</SectionTitle>
-              <MusicPlaylist tracks={yearbook.music} />
-            </FadeIn>
-          </section>
-        )}
-
-        {yearbook.stories.length > 0 && (
-          <section id="section-stories">
-            <FadeIn>
-              <SectionTitle subtitle="Stories worth telling">Stories</SectionTitle>
-              <div className="space-y-16">
-                {yearbook.stories.map((story) => (
-                  <StoryReader
-                    key={story.id}
-                    id={story.id}
-                    title={story.title}
-                    content={story.content as Prisma.JsonValue}
-                    canEdit={canEdit}
-                  />
-                ))}
-              </div>
-            </FadeIn>
-          </section>
-        )}
-
-        {videos.length > 0 && (
-          <section id="section-videos">
-            <FadeIn>
-              <SectionTitle subtitle="Videos from this year">Videos</SectionTitle>
-              <VideoLinks items={videos} />
-            </FadeIn>
-          </section>
-        )}
-
-        {yearbook.parentNotes.length > 0 && (
-          <section id="section-notes">
-            <FadeIn>
-              <SectionTitle subtitle="Notes from mom and dad">Parent notes</SectionTitle>
-              <ParentNotes notes={yearbook.parentNotes} canEdit={canEdit} />
-            </FadeIn>
-          </section>
-        )}
-
-        {beforeBirth.length > 0 && (
-          <section id="section-before-birth">
-            <FadeIn>
-              <SectionTitle subtitle="What mom and dad were up to before you arrived">
-                Before you were born
-              </SectionTitle>
-              <InteractiveTimeline
-                items={beforeBirth}
-                childId={childId}
-                yearbookId={yearbookId}
-                canEdit={canEdit}
-                periodStart={yearbook.periodStart}
-                periodEnd={yearbook.periodEnd}
-              />
-            </FadeIn>
-          </section>
-        )}
-
-        {(thisYear.length > 0 || canEdit) && (
-          <section id="section-this-year">
-            <FadeIn>
-              <SectionTitle subtitle="Month by month — family life this year">
-                This year
-              </SectionTitle>
-              <InteractiveTimeline
-                items={thisYear}
-                childId={childId}
-                yearbookId={yearbookId}
-                canEdit={canEdit}
-                periodStart={yearbook.periodStart}
-                periodEnd={yearbook.periodEnd}
-              />
-            </FadeIn>
-          </section>
-        )}
+      <div className="mx-auto max-w-4xl px-6 py-8 md:py-12 space-y-0">
+        {visibleSections.map((s) => (
+          <div key={s.id}>{renderSection(s.id)}</div>
+        ))}
       </div>
     </div>
   );
