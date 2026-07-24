@@ -14,6 +14,7 @@ export const createChildSchema = z.object({
 
 export const updateChildSchema = createChildSchema.partial().extend({
   status: z.enum(["ACTIVE", "ARCHIVED"]).optional(),
+  profilePhotoId: z.string().cuid().nullable().optional(),
 });
 
 export const createYearbookSchema = z.object({

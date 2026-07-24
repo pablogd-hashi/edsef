@@ -58,7 +58,12 @@ export default async function DashboardPage() {
           </FadeIn>
         ) : (
           <StaggerChildren className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {children.map((child) => (
+            {children.map((child) => {
+              const photoUrl = child.profilePhoto
+                ? `/api/media/${child.profilePhoto.id}/file?variant=thumbnail`
+                : null;
+
+              return (
               <StaggerItem key={child.id}>
                 <Link
                   href={`/children/${child.id}`}
@@ -69,6 +74,7 @@ export default async function DashboardPage() {
                       name={child.nickname ?? child.fullName}
                       color={child.themeColor}
                       size="lg"
+                      src={photoUrl}
                     />
                     <div className="flex-1 min-w-0">
                       <h2 className="font-editorial text-xl group-hover:text-accent-dark transition-colors">
@@ -91,7 +97,8 @@ export default async function DashboardPage() {
                   </div>
                 </Link>
               </StaggerItem>
-            ))}
+              );
+            })}
 
             <StaggerItem>
               <Link

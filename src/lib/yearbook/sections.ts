@@ -75,3 +75,28 @@ export function getSectionByType(type: SectionType) {
 export function getSectionById(id: string) {
   return YEARBOOK_SECTIONS.find((s) => s.id === id);
 }
+
+export interface SectionEditorState {
+  id: string;
+  sectionId: string;
+  label: string;
+  order: number;
+  visible: boolean;
+}
+
+export function buildSectionEditorState(
+  dbSections: { id: string; type: string; title: string | null; order: number; visible: boolean }[]
+): SectionEditorState[] {
+  return [...dbSections]
+    .sort((a, b) => a.order - b.order)
+    .map((db) => {
+      const ui = YEARBOOK_SECTIONS.find((s) => s.sectionType === db.type);
+      return {
+        id: db.id,
+        sectionId: ui?.id ?? db.type.toLowerCase(),
+        label: db.title ?? ui?.label ?? db.type,
+        order: db.order,
+        visible: db.visible,
+      };
+    });
+}

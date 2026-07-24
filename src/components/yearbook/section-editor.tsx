@@ -3,16 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GripVertical, Eye, EyeOff, ChevronUp, ChevronDown, Loader2 } from "lucide-react";
-import { YEARBOOK_SECTIONS } from "@/lib/yearbook/sections";
+import { YEARBOOK_SECTIONS, type SectionEditorState } from "@/lib/yearbook/sections";
 import { cn } from "@/lib/utils";
-
-interface SectionState {
-  id: string;
-  sectionId: string;
-  label: string;
-  order: number;
-  visible: boolean;
-}
 
 export function SectionEditor({
   yearbookId,
@@ -21,7 +13,7 @@ export function SectionEditor({
 }: {
   yearbookId: string;
   childId: string;
-  sections: SectionState[];
+  sections: SectionEditorState[];
 }) {
   const router = useRouter();
   const [items, setItems] = useState(sections);
@@ -159,21 +151,4 @@ export function SectionEditor({
       </div>
     </div>
   );
-}
-
-export function buildSectionEditorState(
-  dbSections: { id: string; type: string; title: string | null; order: number; visible: boolean }[]
-): SectionState[] {
-  return [...dbSections]
-    .sort((a, b) => a.order - b.order)
-    .map((db) => {
-      const ui = YEARBOOK_SECTIONS.find((s) => s.sectionType === db.type);
-      return {
-        id: db.id,
-        sectionId: ui?.id ?? db.type.toLowerCase(),
-        label: db.title ?? ui?.label ?? db.type,
-        order: db.order,
-        visible: db.visible,
-      };
-    });
 }
