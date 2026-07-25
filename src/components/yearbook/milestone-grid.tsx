@@ -49,6 +49,7 @@ export function MilestoneGrid({
       {milestones.map((m, i) => (
         <StaggerItem key={m.id}>
           <motion.div
+            id={`milestone-${m.id}`}
             whileHover={{ y: -4 }}
             transition={{ duration: 0.2 }}
             className="group relative h-full rounded-2xl border border-border bg-card p-6 overflow-hidden"

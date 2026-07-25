@@ -47,6 +47,20 @@ export function plainTextToTiptap(text: string): Prisma.InputJsonValue {
   };
 }
 
+/** Strip HTML tags from a string */
+export function stripHtml(html: string): string {
+  return html.replace(/<[^>]+>/g, "").trim();
+}
+
+/** Plain text from rich text (HTML, TipTap JSON, or plain string) */
+export function richTextToPlain(value: string | Prisma.JsonValue | null | undefined): string {
+  if (!value) return "";
+  if (typeof value === "string") {
+    return isHtmlContent(value) ? stripHtml(value) : value.trim();
+  }
+  return tiptapToPlainText(value).trim();
+}
+
 /** Normalize stored value for TipTap editor initial content */
 export function toEditorContent(value: string | Prisma.JsonValue | null | undefined): string | Prisma.JsonObject {
   if (!value) return "";
