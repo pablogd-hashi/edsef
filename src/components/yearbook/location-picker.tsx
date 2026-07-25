@@ -55,12 +55,19 @@ export function LocationPicker({
       const res = await fetch(
         `/api/locations/search?childId=${childId}&q=${encodeURIComponent(query)}`
       );
-      if (!res.ok) throw new Error("Search failed");
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? `Search failed (${res.status})`);
+      }
       const data = (await res.json()) as NominatimResult[];
       setResults(data);
       if (data.length === 0) setError("No places found — try a different name or paste a map link.");
-    } catch {
-      setError("Could not search. Try pasting a Google Maps link instead.");
+    } catch (err) {
+      setError(
+        err instanceof Error && err.message.includes("Unauthorized")
+          ? "Please sign in to search for places."
+          : "Could not search. Try pasting a Google Maps link instead."
+      );
     } finally {
       setSearching(false);
     }

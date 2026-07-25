@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireChildAccess } from "@/lib/api/require-child-access";
-import { searchNominatim } from "@/lib/maps/geocode";
+import { geocodePlace } from "@/lib/maps/geocode";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -15,9 +15,12 @@ export async function GET(request: Request) {
   if (auth.error) return auth.error;
 
   try {
-    const data = await searchNominatim(q, 6);
-    return NextResponse.json(data);
+    const place = await geocodePlace(q);
+    if (!place) {
+      return NextResponse.json({ error: "Place not found" }, { status: 404 });
+    }
+    return NextResponse.json(place);
   } catch {
-    return NextResponse.json({ error: "Map search failed" }, { status: 502 });
+    return NextResponse.json({ error: "Geocoding failed" }, { status: 502 });
   }
 }
