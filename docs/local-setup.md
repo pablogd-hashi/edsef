@@ -8,7 +8,7 @@ Install [Task](https://taskfile.dev/installation/) (`brew install go-task` on Ma
 
 ```bash
 task setup    # first time only
-task dev      # start everything
+task up       # start DB + dev server
 ```
 
 Open http://localhost:3000/register and create your account. No demo data is seeded.
@@ -18,10 +18,12 @@ Open http://localhost:3000/register and create your account. No demo data is see
 | Task | Description |
 |------|-------------|
 | `task setup` | Create `.env`, start Docker, install deps, run migrations |
-| `task up` | Start Postgres + Redis |
+| `task up` | Start Postgres + Redis and Next.js dev server |
+| `task dev` | Same as `task up` |
+| `task db:up` | Start only Postgres + Redis (no dev server) |
 | `task down` | Stop Postgres + Redis |
-| `task dev` | Start DB and Next.js dev server |
 | `task migrate` | Apply pending migrations |
+| `task db:status` | Check container and `/api/ping` health |
 | `task logs` | Tail Docker logs |
 | `task ps` | Show container status |
 | `task reset-db` | Wipe DB volume and re-run setup (destructive) |
@@ -35,18 +37,6 @@ npm install
 npm run db:migrate:deploy
 npm run dev
 ```
-
-<<<<<<< HEAD
-=======
-Or with [Task](https://taskfile.dev) installed:
-
-```bash
-task setup   # first time
-task up      # start DB + dev server
-task down    # stop DB containers
-```
-
-Open http://localhost:3000/register and create your account. No demo data is seeded.
 
 ## Troubleshooting
 
@@ -65,7 +55,6 @@ Login and the dashboard need the database — without it you will see a clear er
 
 Another Postgres is using port 5432. Either stop it, or change the port in `docker-compose.local.yml` and `DATABASE_URL` in `.env`.
 
->>>>>>> 63fd26e (Add database health checks and clearer setup when Postgres is down)
 ## Storage
 
 Photos and videos go to `./storage/` (override with `STORAGE_PATH` in `.env`).
