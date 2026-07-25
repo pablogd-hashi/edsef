@@ -9,10 +9,21 @@ import { buttonVariants } from "@/components/ui/button";
 import { FadeIn, StaggerChildren, StaggerItem } from "@/components/ui/motion";
 import { Plus, Heart, BookOpen, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { checkDatabaseConnection } from "@/lib/db/health";
+import { DatabaseUnavailable } from "@/components/errors/database-unavailable";
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.familyId) redirect("/login");
+
+  const dbOk = await checkDatabaseConnection();
+  if (!dbOk) {
+    return (
+      <AppShell userName={session.user.name}>
+        <DatabaseUnavailable />
+      </AppShell>
+    );
+  }
 
   const children = await childrenService.listByFamily(session.user.familyId);
 

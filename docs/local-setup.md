@@ -36,6 +36,36 @@ npm run db:migrate:deploy
 npm run dev
 ```
 
+<<<<<<< HEAD
+=======
+Or with [Task](https://taskfile.dev) installed:
+
+```bash
+task setup   # first time
+task up      # start DB + dev server
+task down    # stop DB containers
+```
+
+Open http://localhost:3000/register and create your account. No demo data is seeded.
+
+## Troubleshooting
+
+### `Can't reach database server at localhost:5432`
+
+PostgreSQL is not running. Fix:
+
+1. Open **Docker Desktop** and wait until it is fully started
+2. Run: `docker compose -f docker-compose.local.yml up -d`
+3. Verify: `curl http://localhost:3000/api/ping` should return `"db": true`
+4. If first time or after reset: `npm run db:migrate:deploy`
+
+Login and the dashboard need the database — without it you will see a clear error instead of a crash.
+
+### Port 5432 already in use
+
+Another Postgres is using port 5432. Either stop it, or change the port in `docker-compose.local.yml` and `DATABASE_URL` in `.env`.
+
+>>>>>>> 63fd26e (Add database health checks and clearer setup when Postgres is down)
 ## Storage
 
 Photos and videos go to `./storage/` (override with `STORAGE_PATH` in `.env`).

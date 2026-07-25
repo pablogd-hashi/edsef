@@ -20,7 +20,7 @@ export async function GET() {
         db: false,
         service: "memoria",
         timestamp,
-        error: "Database unavailable — run ./scripts/prod/setup-mac.sh or check Docker",
+        error: "Database unavailable — run: docker compose -f docker-compose.local.yml up -d",
       },
       { status: 503 }
     );

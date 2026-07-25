@@ -4,6 +4,7 @@ vars:
   COMPOSE_FILE: docker-compose.local.yml
 
 tasks:
+<<<<<<< HEAD
   default:
     desc: Show available tasks
     cmds:
@@ -67,3 +68,39 @@ tasks:
     cmds:
       - docker compose -f {{.COMPOSE_FILE}} down -v
       - task: setup
+=======
+  setup:
+    desc: First-time local setup (env, Docker, deps, migrations)
+    cmds:
+      - test -f .env || cp .env.example .env
+      - docker compose -f {{.COMPOSE_FILE}} up -d
+      - npm install
+      - npm run db:migrate:deploy
+
+  up:
+    desc: Start database/redis and dev server
+    cmds:
+      - docker compose -f {{.COMPOSE_FILE}} up -d
+      - npm run dev
+
+  down:
+    desc: Stop database and redis containers
+    cmds:
+      - docker compose -f {{.COMPOSE_FILE}} down
+
+  db:up:
+    desc: Start only PostgreSQL and Redis
+    cmds:
+      - docker compose -f {{.COMPOSE_FILE}} up -d
+
+  db:status:
+    desc: Check if database is reachable
+    cmds:
+      - docker compose -f {{.COMPOSE_FILE}} ps
+      - curl -s http://localhost:3000/api/ping || true
+
+  db:migrate:
+    desc: Apply pending database migrations
+    cmds:
+      - npm run db:migrate:deploy
+>>>>>>> 63fd26e (Add database health checks and clearer setup when Postgres is down)
