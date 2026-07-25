@@ -11,13 +11,26 @@ export interface ManualSummaryContent {
   fears?: string;
 }
 
+export interface DerivedHighlight {
+  id: string;
+  title: string;
+  description?: string | null;
+}
+
+export interface MapPoint {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
 export interface DerivedSummaryContent {
-  highlights: string[];
+  highlights: DerivedHighlight[];
   favoriteMusic: string;
   stories: string[];
   videos: string[];
   musicTracks: { title: string; artist?: string | null }[];
   locations: string[];
+  mapPoints: MapPoint[];
   milestoneCount: number;
   timelineCount: number;
 }
@@ -25,7 +38,11 @@ export interface DerivedSummaryContent {
 export function deriveSummaryFromYearbook(
   yearbook: YearbookWithRelations
 ): DerivedSummaryContent {
-  const highlights = yearbook.milestones.map((m) => m.title);
+  const highlights = yearbook.milestones.map((m) => ({
+    id: m.id,
+    title: m.title,
+    description: m.description,
+  }));
 
   const musicTracks = yearbook.music.map((t) => ({
     title: t.title,
@@ -49,6 +66,37 @@ export function deriveSummaryFromYearbook(
 
   const locations = [...new Set(locationNames)];
 
+  const mapPoints: MapPoint[] = [];
+  const seen = new Set<string>();
+  for (const m of yearbook.milestones) {
+    const loc = m.location;
+    if (loc?.latitude != null && loc?.longitude != null) {
+      const key = `${loc.latitude},${loc.longitude}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        mapPoints.push({
+          name: [loc.name, loc.city, loc.country].filter(Boolean).join(", "),
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+        });
+      }
+    }
+  }
+  for (const t of yearbook.timeline) {
+    const loc = t.location;
+    if (loc?.latitude != null && loc?.longitude != null) {
+      const key = `${loc.latitude},${loc.longitude}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        mapPoints.push({
+          name: [loc.name, loc.city, loc.country].filter(Boolean).join(", "),
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+        });
+      }
+    }
+  }
+
   return {
     highlights,
     favoriteMusic,
@@ -56,6 +104,7 @@ export function deriveSummaryFromYearbook(
     videos,
     musicTracks,
     locations,
+    mapPoints,
     milestoneCount: yearbook.milestones.length,
     timelineCount: yearbook.timeline.filter((t) => t.category !== "VIDEO").length,
   };
