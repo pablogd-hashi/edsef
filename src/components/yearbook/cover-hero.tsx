@@ -1,8 +1,14 @@
+"use client";
+
 import type { YearbookWithRelations } from "@/lib/services/yearbook.service";
 import { formatDate } from "@/lib/age";
-import { MapPin, Music, BookOpen, Film } from "lucide-react";
-import { CoverTitleEditor } from "./summary-editor";
+import { MapPin, Music, BookOpen, Film, Loader2 } from "lucide-react";
 import type { DerivedSummaryContent, ManualSummaryContent } from "@/lib/yearbook/derive-summary";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { RichTextContent } from "@/components/ui/rich-text-content";
+import { EditableField } from "@/components/ui/editable-field";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export function CoverHero({
   yearbook,
@@ -105,20 +111,52 @@ export function CoverHero({
 export function SummarySection({
   manual,
   derived,
+  canEdit = false,
+  yearbookId,
+  childId,
 }: {
   manual: ManualSummaryContent | null;
   derived: DerivedSummaryContent;
+  canEdit?: boolean;
+  yearbookId?: string;
+  childId?: string;
 }) {
-  const location =
-    manual?.location ?? (derived.locations.length > 0 ? derived.locations.join(" · ") : undefined);
+  const router = useRouter();
+  const [local, setLocal] = useState<ManualSummaryContent>(manual ?? {});
+  const [saving, setSaving] = useState(false);
 
-  const items = [
-    { label: "Where we lived", value: location, icon: MapPin },
-    { label: "Context", value: manual?.context },
-    { label: "Trips", value: manual?.trips },
-    { label: "Likes", value: manual?.likes },
-    { label: "Fears", value: manual?.fears },
-  ].filter((i) => i.value);
+  useEffect(() => {
+    setLocal(manual ?? {});
+  }, [manual]);
+
+  const derivedLocation =
+    derived.locations.length > 0 ? derived.locations.join(" · ") : undefined;
+
+  const manualFields = [
+    { key: "location" as const, label: "Where you lived", placeholder: "City, country…" },
+    { key: "context" as const, label: "Context of the year", placeholder: "What was happening this year?" },
+    { key: "trips" as const, label: "Trips & adventures", placeholder: "Places you visited…" },
+    { key: "likes" as const, label: "Likes", placeholder: "Favourite things…" },
+    { key: "fears" as const, label: "Fears", placeholder: "What worried you…" },
+  ];
+
+  async function saveField(key: keyof ManualSummaryContent, value: string) {
+    if (!yearbookId || !childId) return;
+    const next = { ...local, [key]: value || undefined };
+    setLocal(next);
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/yearbooks/${yearbookId}?childId=${childId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ summaryContent: next }),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      router.refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const hasDerived =
     derived.highlights.length > 0 ||
@@ -126,25 +164,46 @@ export function SummarySection({
     derived.stories.length > 0 ||
     derived.videos.length > 0;
 
-  if (!items.length && !hasDerived) return null;
+  const hasManual = manualFields.some((f) => local[f.key] || (f.key === "location" && derivedLocation));
+
+  if (!canEdit && !hasManual && !hasDerived) return null;
 
   return (
     <div className="space-y-4">
-      {items.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {items.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-xl border border-border-light bg-cream/50 p-5"
-            >
-              <p className="text-xs uppercase tracking-wider text-accent-dark mb-1.5">
-                {item.label}
-              </p>
-              <p className="text-foreground leading-relaxed">{item.value}</p>
-            </div>
-          ))}
-        </div>
+      {canEdit && (
+        <p className="text-sm text-muted flex items-center gap-2">
+          {saving && <Loader2 className="h-3 w-3 animate-spin" />}
+          Milestones, music, stories, and videos appear below automatically as you add them.
+        </p>
       )}
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        {manualFields.map(({ key, label, placeholder }) => {
+          const value = (local[key] as string) ?? (key === "location" ? derivedLocation ?? "" : "");
+          if (!canEdit && !value) return null;
+          return (
+            <div key={key} className="rounded-xl border border-border-light bg-cream/50 p-5">
+              <p className="text-xs uppercase tracking-wider text-accent-dark mb-2 flex items-center gap-1.5">
+                {key === "location" && <MapPin className="h-3.5 w-3.5" />}
+                {label}
+                {key === "location" && derivedLocation && !local.location && (
+                  <span className="text-muted-light font-normal normal-case ml-1">(from milestones)</span>
+                )}
+              </p>
+              {canEdit ? (
+                <RichTextEditor
+                  value={value}
+                  canEdit
+                  placeholder={placeholder}
+                  onSave={async (v) => saveField(key, v as string)}
+                />
+              ) : (
+                <RichTextContent value={value} />
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       {derived.highlights.length > 0 && (
         <div className="rounded-xl border border-border-light bg-card p-6">
@@ -204,5 +263,40 @@ export function SummarySection({
         </div>
       )}
     </div>
+  );
+}
+
+export function CoverTitleEditor({
+  yearbookId,
+  childId,
+  title,
+  canEdit,
+}: {
+  yearbookId: string;
+  childId: string;
+  title: string;
+  canEdit: boolean;
+}) {
+  const router = useRouter();
+
+  if (!canEdit) return null;
+
+  return (
+    <EditableField
+      value={title}
+      canEdit
+      as="span"
+      className="font-display text-4xl md:text-5xl font-light tracking-tight"
+      inputClassName="font-display text-3xl text-center"
+      onSave={async (customCoverTitle) => {
+        const res = await fetch(`/api/yearbooks/${yearbookId}?childId=${childId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ customCoverTitle }),
+        });
+        if (!res.ok) throw new Error("Failed to save");
+        router.refresh();
+      }}
+    />
   );
 }

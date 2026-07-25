@@ -3,21 +3,23 @@
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { StaggerChildren, StaggerItem } from "@/components/ui/motion";
-import { MapPin } from "lucide-react";
 import { MilestoneMediaGallery } from "@/components/yearbook/milestone-media";
 import { MediaUpload } from "@/components/yearbook/media-upload";
 import { EditableField } from "@/components/ui/editable-field";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { RichTextContent } from "@/components/ui/rich-text-content";
+import { LocationPicker, type LocationData } from "@/components/yearbook/location-picker";
 
 export interface MilestoneItem {
   id: string;
   title: string;
   description?: string | null;
   ageLabel?: string | null;
-  location?: { name: string } | null;
-  media?: { media: { id: string; type: string; title?: string | null } }[];
+  location?: LocationData | null;
+  media?: { media: { id: string; type: string; title?: string | null; width?: number | null; height?: number | null } }[];
 }
 
-async function patchMilestone(id: string, data: Record<string, string>) {
+async function patchMilestone(id: string, data: Record<string, string | null>) {
   const res = await fetch(`/api/milestones/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -64,7 +66,7 @@ export function MilestoneGrid({
                 <EditableField
                   value={m.ageLabel ?? ""}
                   canEdit={canEdit}
-                  placeholder="Etiqueta de edad"
+                  placeholder="Age label"
                   className="text-xs uppercase tracking-wider text-accent-dark font-medium mb-1"
                   inputClassName="text-xs uppercase"
                   onSave={async (ageLabel) => {
@@ -86,25 +88,31 @@ export function MilestoneGrid({
                   }}
                 />
 
-                <EditableField
-                  value={m.description ?? ""}
+                {canEdit ? (
+                  <div className="mt-3">
+                    <RichTextEditor
+                      value={m.description ?? ""}
+                      canEdit
+                      placeholder="Describe this moment — add bold, links, lists…"
+                      onSave={async (description) => {
+                        await patchMilestone(m.id, { description: description as string });
+                        router.refresh();
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <RichTextContent value={m.description} className="mt-2 text-sm text-muted" />
+                )}
+
+                <LocationPicker
+                  childId={childId}
+                  location={m.location}
                   canEdit={canEdit}
-                  multiline
-                  as="p"
-                  placeholder="Moment description"
-                  className="mt-2 text-sm text-muted leading-relaxed"
-                  onSave={async (description) => {
-                    await patchMilestone(m.id, { description });
+                  onSave={async (locationId) => {
+                    await patchMilestone(m.id, { locationId });
                     router.refresh();
                   }}
                 />
-
-                {m.location && (
-                  <p className="mt-3 flex items-center gap-1 text-xs text-muted-light">
-                    <MapPin className="h-3 w-3" />
-                    {m.location.name}
-                  </p>
-                )}
 
                 <MilestoneMediaGallery
                   media={m.media ?? []}

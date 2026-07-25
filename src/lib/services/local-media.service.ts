@@ -17,13 +17,14 @@ const MAX_IMAGE = Number(process.env.MAX_IMAGE_SIZE ?? 20 * 1024 * 1024);
 const MAX_VIDEO = Number(process.env.MAX_VIDEO_SIZE ?? 500 * 1024 * 1024);
 
 function mimeToType(mime: string, filename: string): MediaType {
-  const resolved = inferMimeType(filename, mime);
-  if (resolved.startsWith("image/")) return "IMAGE";
-  if (resolved.startsWith("video/")) return "VIDEO";
-  if (resolved.startsWith("audio/")) return "AUDIO";
   const ext = path.extname(filename).replace(/^\./, "").toLowerCase();
+  if (["mov", "mp4", "m4v", "webm", "avi", "mkv", "3gp"].includes(ext)) return "VIDEO";
+
+  const resolved = inferMimeType(filename, mime);
+  if (resolved.startsWith("video/")) return "VIDEO";
+  if (resolved.startsWith("image/")) return "IMAGE";
+  if (resolved.startsWith("audio/")) return "AUDIO";
   if (["heic", "heif", "jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return "IMAGE";
-  if (["mov", "mp4", "m4v", "webm"].includes(ext)) return "VIDEO";
   return "DOCUMENT";
 }
 

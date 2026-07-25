@@ -188,3 +188,42 @@ body {
 .preview-mode nav {
   background: rgba(247, 243, 236, 0.92);
 }
+
+/* Rich text editor & rendered content */
+.prose-yearbook-editor .tiptap {
+  min-height: 4rem;
+}
+
+.prose-yearbook-editor .tiptap h2 {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  margin: 0.75rem 0 0.5rem;
+}
+
+.prose-yearbook-editor .tiptap a,
+.rich-html a {
+  color: var(--accent-dark);
+  text-decoration: underline;
+}
+
+.rich-html strong,
+.prose-yearbook strong {
+  font-weight: 600;
+}
+
+.rich-html em,
+.prose-yearbook em {
+  font-style: italic;
+}
+
+.rich-html ul,
+.prose-yearbook ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+.rich-html p,
+.prose-yearbook p {
+  margin-bottom: 0.5rem;
+}
