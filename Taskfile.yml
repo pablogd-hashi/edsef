@@ -33,6 +33,13 @@ tasks:
     deps:
       - db:up
     cmds:
+      - echo ""
+      - echo "Database is up. Starting Next.js (this terminal will block — that is normal)."
+      - npm run dev
+
+  dev:only:
+    desc: Start Next.js only (when Docker is already running)
+    cmds:
       - npm run dev
 
   dev:
