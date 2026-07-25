@@ -1,5 +1,7 @@
 "use client";
 
+import { googleMapsUrl } from "@/lib/maps/parse-url";
+
 export function MapEmbed({
   latitude,
   longitude,
@@ -13,7 +15,9 @@ export function MapEmbed({
 }) {
   const delta = 0.015;
   const bbox = `${longitude - delta},${latitude - delta},${longitude + delta},${latitude + delta}`;
-  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${latitude},${longitude}`;
+  const embedSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${latitude},${longitude}`;
+  const osmLink = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=14/${latitude}/${longitude}`;
+  const googleLink = googleMapsUrl(latitude, longitude, name);
 
   return (
     <div className={className}>
@@ -23,21 +27,39 @@ export function MapEmbed({
           {name}
         </p>
       )}
-      <iframe
-        title={name ? `Map of ${name}` : "Location map"}
-        src={src}
-        className="w-full h-48 rounded-xl border border-border-light"
-        loading="lazy"
-        referrerPolicy="no-referrer"
-      />
       <a
-        href={`https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=14/${latitude}/${longitude}`}
+        href={googleLink}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-xs text-accent-dark hover:underline mt-1.5 inline-block"
+        className="block group"
+        title="Open in Google Maps"
       >
-        Open in OpenStreetMap
+        <iframe
+          title={name ? `Map of ${name}` : "Location map"}
+          src={embedSrc}
+          className="w-full h-48 rounded-xl border border-border-light pointer-events-none group-hover:border-accent/40 transition-colors"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+        />
       </a>
+      <div className="flex flex-wrap gap-3 mt-2">
+        <a
+          href={googleLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-accent-dark hover:underline font-medium"
+        >
+          Open in Google Maps →
+        </a>
+        <a
+          href={osmLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-muted hover:text-accent-dark hover:underline"
+        >
+          OpenStreetMap
+        </a>
+      </div>
     </div>
   );
 }
