@@ -28,7 +28,7 @@ export async function setup() {
   await applyMigrations(client);
 
   const adapter = new PrismaPGlite(client);
-  const prisma = new PrismaClient({ adapter });
+  const prisma = new PrismaClient({ adapter: adapter as never });
 
   const globalForPrisma = globalThis as typeof globalThis & {
     prisma?: PrismaClient;

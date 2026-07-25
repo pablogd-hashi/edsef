@@ -13,6 +13,7 @@ import {
 } from "@/lib/storage/local";
 import { EXPORT_SCHEMA_VERSION } from "@/domain/types";
 import type { MediaAsset, MediaType } from "@prisma/client";
+import { deriveSummaryFromYearbook } from "@/lib/yearbook/derive-summary";
 
 export interface ExportMediaRef {
   assetId: string;
@@ -70,6 +71,7 @@ export async function buildYearbookExport(
       const web = asset.variants.find((v) => v.variant === "WEB");
       if (web) storageKey = web.storageKey;
     }
+    // Videos: always use original for offline playback
 
     const srcPath = path.join(STORAGE_ROOT, storageKey);
     if (!(await fileExists(srcPath))) return null;
@@ -100,6 +102,26 @@ export async function buildYearbookExport(
     for (const link of t.media) {
       await copyAsset(link.media);
     }
+  }
+
+  for (const attachment of yearbook.attachments) {
+    await copyAsset(attachment.media);
+  }
+  for (const story of yearbook.stories) {
+    for (const attachment of story.attachments) {
+      await copyAsset(attachment.media);
+    }
+  }
+  for (const note of yearbook.parentNotes) {
+    for (const attachment of note.attachments) {
+      await copyAsset(attachment.media);
+    }
+  }
+
+  // Cover / profile photo
+  const coverAsset = yearbook.coverPhoto ?? (yearbook.child as { profilePhoto?: typeof yearbook.coverPhoto }).profilePhoto;
+  if (coverAsset) {
+    await copyAsset(coverAsset);
   }
 
   const html = generateOfflineHtml(yearbook, assetMap);
@@ -175,7 +197,10 @@ function generateOfflineHtml(
   assetMap: Map<string, string>
 ): string {
   const summary = yearbook.summaryContent as Record<string, unknown> | null;
+  const derived = deriveSummaryFromYearbook(yearbook);
   const coverTitle = yearbook.customCoverTitle ?? yearbook.title;
+  const coverAsset = yearbook.coverPhoto ?? (yearbook.child as { profilePhoto?: { id: string } | null }).profilePhoto;
+  const coverImg = coverAsset ? assetMap.get(coverAsset.id) : null;
 
   let milestonesHtml = "";
   for (const m of yearbook.milestones) {
@@ -213,7 +238,18 @@ function generateOfflineHtml(
         body += `<h3>${esc(node.content?.map((c) => c.text ?? "").join("") ?? "")}</h3>`;
       }
     }
-    storiesHtml += `<article class="story"><h2>${esc(s.title)}</h2>${body}</article>`;
+    let mediaHtml = '<div class="media-grid">';
+    for (const link of s.attachments) {
+      const p = assetMap.get(link.media.id);
+      if (!p) continue;
+      if (link.media.type === "VIDEO") {
+        mediaHtml += `<video controls preload="metadata" src="${p}"></video>`;
+      } else {
+        mediaHtml += `<img src="${p}" alt="" loading="lazy" />`;
+      }
+    }
+    mediaHtml += "</div>";
+    storiesHtml += `<article class="story"><h2>${esc(s.title)}</h2>${body}${mediaHtml}</article>`;
   }
 
   let timelineHtml = "";
@@ -238,12 +274,95 @@ function generateOfflineHtml(
   }
 
   let summaryHtml = "";
-  if (summary) {
-    for (const [key, val] of Object.entries(summary)) {
-      if (!val) continue;
-      const label = key.replace(/([A-Z])/g, " $1").trim();
-      const text = Array.isArray(val) ? val.join(" · ") : String(val);
-      summaryHtml += `<div class="summary-item"><strong>${esc(label)}</strong><p>${esc(text)}</p></div>`;
+  const manualLocation = summary?.location as string | undefined;
+  const location = manualLocation ?? (derived.locations.length > 0 ? derived.locations.join(" · ") : undefined);
+
+  const summaryFields: [string, string | undefined][] = [
+    ["Where we lived", location],
+    ["Context", summary?.context as string | undefined],
+    ["Trips", summary?.trips as string | undefined],
+    ["Likes", summary?.likes as string | undefined],
+    ["Fears", summary?.fears as string | undefined],
+  ];
+
+  for (const [label, val] of summaryFields) {
+    if (!val) continue;
+    summaryHtml += `<div class="summary-item"><strong>${esc(label)}</strong><p>${esc(val)}</p></div>`;
+  }
+
+  if (derived.highlights.length > 0) {
+    summaryHtml += `<div class="summary-item"><strong>Highlights</strong><ul>${derived.highlights.map((h) => `<li>${esc(h)}</li>`).join("")}</ul></div>`;
+  }
+  if (derived.favoriteMusic) {
+    summaryHtml += `<div class="summary-item"><strong>Music you loved</strong><p>${esc(derived.favoriteMusic)}</p></div>`;
+  }
+  if (derived.stories.length > 0) {
+    summaryHtml += `<div class="summary-item"><strong>Stories</strong><ul>${derived.stories.map((s) => `<li>${esc(s)}</li>`).join("")}</ul></div>`;
+  }
+  if (derived.videos.length > 0) {
+    summaryHtml += `<div class="summary-item"><strong>Videos</strong><ul>${derived.videos.map((v) => `<li>${esc(v)}</li>`).join("")}</ul></div>`;
+  }
+
+  const summaryMedia = yearbook.attachments.filter((a) => a.sectionType === "SUMMARY");
+  if (summaryMedia.length > 0) {
+    summaryHtml += '<div class="media-grid">';
+    for (const link of summaryMedia) {
+      const p = assetMap.get(link.media.id);
+      if (!p) continue;
+      if (link.media.type === "VIDEO") {
+        summaryHtml += `<video controls preload="metadata" src="${p}"></video>`;
+      } else {
+        summaryHtml += `<img src="${p}" alt="" loading="lazy" />`;
+      }
+    }
+    summaryHtml += "</div>";
+  }
+
+  let musicHtml = "";
+  for (const track of yearbook.music) {
+    const href = track.youtubeUrl ?? `https://music.youtube.com/search?q=${encodeURIComponent([track.artist, track.title].filter(Boolean).join(" "))}`;
+    musicHtml += `<div class="music-item"><strong>${esc(track.title)}</strong>${track.artist ? ` — ${esc(track.artist)}` : ""}<br/><a href="${esc(href)}">${esc(href)}</a></div>`;
+  }
+  const musicMedia = yearbook.attachments.filter((a) => a.sectionType === "MUSIC");
+  if (musicMedia.length > 0) {
+    musicHtml += '<div class="media-grid">';
+    for (const link of musicMedia) {
+      const p = assetMap.get(link.media.id);
+      if (!p) continue;
+      if (link.media.type === "VIDEO") {
+        musicHtml += `<video controls preload="metadata" src="${p}"></video>`;
+      } else {
+        musicHtml += `<img src="${p}" alt="" loading="lazy" />`;
+      }
+    }
+    musicHtml += "</div>";
+  }
+
+  let notesHtml = "";
+  for (const note of yearbook.parentNotes) {
+    let mediaHtml = "";
+    for (const link of note.attachments) {
+      const p = assetMap.get(link.media.id);
+      if (!p) continue;
+      if (link.media.type === "VIDEO") {
+        mediaHtml += `<video controls preload="metadata" src="${p}"></video>`;
+      } else {
+        mediaHtml += `<img src="${p}" alt="" loading="lazy" />`;
+      }
+    }
+    notesHtml += `<div class="parent-note"><p class="note-meta">${esc(note.author)} · ${new Date(note.noteDate).toLocaleDateString("en-US")}</p><p class="note-body">${esc(note.content)}</p>${mediaHtml}</div>`;
+  }
+
+  let videosHtml = "";
+  for (const v of yearbook.timeline.filter((t) => t.category === "VIDEO")) {
+    if (v.description?.startsWith("http")) {
+      videosHtml += `<div class="video-link"><a href="${esc(v.description)}" target="_blank">${esc(v.title)}</a></div>`;
+    }
+    for (const link of v.media) {
+      const p = assetMap.get(link.media.id);
+      if (p && link.media.type === "VIDEO") {
+        videosHtml += `<div class="video-upload"><p>${esc(v.title)}</p><video controls preload="metadata" src="${p}"></video></div>`;
+      }
     }
   }
 
@@ -259,6 +378,7 @@ function generateOfflineHtml(
 </head>
 <body>
   <header class="cover">
+    ${coverImg ? `<img class="cover-photo" src="${coverImg}" alt="${esc(yearbook.child.fullName)}" />` : ""}
     <p class="child-name">${esc(yearbook.child.fullName)}</p>
     <h1>${esc(coverTitle)}</h1>
     <p class="age">${esc(yearbook.ageLabel ?? "")}</p>
@@ -266,6 +386,9 @@ function generateOfflineHtml(
   ${summaryHtml ? `<section><h2>Year summary</h2><div class="summary-grid">${summaryHtml}</div></section>` : ""}
   ${milestonesHtml ? `<section><h2>Milestones</h2>${milestonesHtml}</section>` : ""}
   ${storiesHtml ? `<section><h2>Stories</h2>${storiesHtml}</section>` : ""}
+  ${musicHtml ? `<section><h2>Music you loved</h2>${musicHtml}</section>` : ""}
+  ${videosHtml ? `<section><h2>Videos</h2>${videosHtml}</section>` : ""}
+  ${notesHtml ? `<section><h2>Parent notes</h2>${notesHtml}</section>` : ""}
   ${timelineHtml ? `<section><h2>Timeline</h2>${timelineHtml}</section>` : ""}
   ${letter ? `<section class="letter"><h2>Future letter</h2><div class="letter-body">${esc(letter.content).replace(/\n/g, "<br/>")}</div>${letter.signature ? `<p class="signature">— ${esc(letter.signature)}</p>` : ""}</section>` : ""}
   <footer><p>Exported with Memoria · ${new Date().toLocaleDateString("en-US")}</p><p class="hint">Videos play on this page. For videos in the PDF export, open this HTML file.</p></footer>
@@ -277,7 +400,8 @@ function generateExportCss(): string {
   return `
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Georgia, serif; background: #fdf4ff; color: #1e1b2e; line-height: 1.75; }
-.cover { text-align: center; padding: 4rem 1.5rem; min-height: 60vh; display: flex; flex-direction: column; justify-content: center; }
+.cover { text-align: center; padding: 4rem 1.5rem; min-height: 60vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.cover-photo { width: 160px; height: 160px; border-radius: 24px; object-fit: cover; margin-bottom: 1.5rem; }
 .cover h1 { font-size: 2.5rem; font-weight: 400; margin: 1rem 0; }
 .child-name { text-transform: uppercase; letter-spacing: 0.2em; font-size: 0.85rem; color: #a21caf; }
 .age { color: #78716c; font-size: 1.1rem; }
@@ -291,6 +415,9 @@ img, video { width: 100%; border-radius: 8px; display: block; }
 blockquote { border-left: 3px solid #d946ef; padding-left: 1.25rem; margin: 1.5rem 0; font-style: italic; }
 .timeline-item { margin-bottom: 1.5rem; padding-left: 1rem; border-left: 2px solid #e7e0d5; }
 .timeline-item time { font-size: 0.85rem; color: #78716c; }
+.music-item, .video-link, .video-upload, .parent-note { margin-bottom: 1rem; padding: 1rem; background: #fff; border-radius: 8px; border: 1px solid #e7e0d5; }
+.note-meta { font-size: 0.85rem; color: #a21caf; margin-bottom: 0.5rem; }
+.note-body { font-style: italic; }
 .letter-body { font-style: italic; font-size: 1.1rem; }
 .signature { text-align: right; margin-top: 2rem; color: #a21caf; }
 .summary-grid { display: grid; gap: 1rem; }

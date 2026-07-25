@@ -10,7 +10,7 @@ import {
   STORAGE_ROOT,
 } from "@/lib/storage/local";
 import sharp from "sharp";
-import type { MediaType } from "@prisma/client";
+import type { MediaType, SectionType } from "@prisma/client";
 import { mediaService } from "./media.service";
 
 const MAX_IMAGE = Number(process.env.MAX_IMAGE_SIZE ?? 20 * 1024 * 1024);
@@ -37,10 +37,23 @@ export class LocalMediaService {
       yearbookId?: string;
       milestoneId?: string;
       timelineEntryId?: string;
+      storyId?: string;
+      parentNoteId?: string;
+      sectionType?: SectionType;
       title?: string;
     }
   ) {
-    const { file, childId, yearbookId, milestoneId, timelineEntryId, title } = params;
+    const {
+      file,
+      childId,
+      yearbookId,
+      milestoneId,
+      timelineEntryId,
+      storyId,
+      parentNoteId,
+      sectionType,
+      title,
+    } = params;
 
     const canAccess = await accessService.assertChildAccess(userId, childId);
     if (!canAccess) throw new Error("Forbidden");
@@ -147,6 +160,27 @@ export class LocalMediaService {
       });
     }
 
+    if (yearbookId && (storyId || parentNoteId || sectionType)) {
+      const count = await prisma.attachment.count({
+        where: {
+          yearbookId,
+          ...(storyId ? { storyId } : {}),
+          ...(parentNoteId ? { parentNoteId } : {}),
+          ...(sectionType ? { sectionType } : {}),
+        },
+      });
+      await prisma.attachment.create({
+        data: {
+          yearbookId,
+          mediaId: asset.id,
+          order: count,
+          storyId,
+          parentNoteId,
+          sectionType,
+        },
+      });
+    }
+
     return updated;
   }
 
@@ -159,6 +193,7 @@ export class LocalMediaService {
 
     await prisma.milestoneMedia.deleteMany({ where: { mediaId } });
     await prisma.timelineEntryMedia.deleteMany({ where: { mediaId } });
+    await prisma.attachment.deleteMany({ where: { mediaId } });
     await prisma.mediaAsset.update({
       where: { id: mediaId },
       data: { deletedAt: new Date() },

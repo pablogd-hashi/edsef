@@ -29,6 +29,9 @@ export async function POST(request: Request) {
     const yearbookId = (formData.get("yearbookId") as string) || undefined;
     const milestoneId = (formData.get("milestoneId") as string) || undefined;
     const timelineEntryId = (formData.get("timelineEntryId") as string) || undefined;
+    const storyId = (formData.get("storyId") as string) || undefined;
+    const parentNoteId = (formData.get("parentNoteId") as string) || undefined;
+    const sectionType = (formData.get("sectionType") as string) || undefined;
     const title = (formData.get("title") as string) || undefined;
 
     if (!file || !childId) {
@@ -41,6 +44,9 @@ export async function POST(request: Request) {
       yearbookId,
       milestoneId,
       timelineEntryId,
+      storyId,
+      parentNoteId,
+      sectionType: sectionType as import("@prisma/client").SectionType | undefined,
       title,
     });
 

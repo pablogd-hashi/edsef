@@ -14,6 +14,7 @@ export const createChildSchema = z.object({
 
 export const updateChildSchema = createChildSchema.partial().extend({
   status: z.enum(["ACTIVE", "ARCHIVED"]).optional(),
+  profilePhotoId: z.string().cuid().nullable().optional(),
 });
 
 export const createYearbookSchema = z.object({
@@ -43,6 +44,9 @@ export const createTimelineEntrySchema = z.object({
   eventDate: z.coerce.date(),
   month: z.number().int().min(1).max(12).optional(),
   locationId: z.string().cuid().optional(),
+  category: z
+    .enum(["PARENTS_BEFORE_BIRTH", "PARENTS_DURING_YEAR", "VIDEO", "GENERAL"])
+    .optional(),
 });
 
 export const updateMilestoneSchema = createMilestoneSchema
@@ -164,6 +168,49 @@ export const importApplySchema = z.object({
       })
     ),
   }),
+});
+
+export const updateYearbookSchema = z.object({
+  summaryContent: z.record(z.string(), z.unknown()).optional(),
+  customCoverTitle: z.string().max(200).optional(),
+  coverPhotoId: z.string().cuid().nullable().optional(),
+});
+
+export const createMusicSchema = z.object({
+  yearbookId: z.string().cuid(),
+  title: z.string().min(1).max(200),
+  artist: z.string().max(200).optional(),
+  youtubeUrl: z.string().max(500).optional(),
+});
+
+export const updateMusicSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  artist: z.string().max(200).optional(),
+  youtubeUrl: z.string().max(500).optional().nullable(),
+});
+
+export const createParentNoteSchema = z.object({
+  yearbookId: z.string().cuid(),
+  author: z.string().min(1).max(100),
+  content: z.string().min(1).max(5000),
+  noteDate: z.coerce.date().optional(),
+});
+
+export const createMilestoneBodySchema = createMilestoneSchema.extend({
+  childId: z.string().cuid(),
+});
+
+export const createStoryBodySchema = createStorySchema.extend({
+  childId: z.string().cuid(),
+  content: z.string().min(1).max(50000).optional(),
+});
+
+export const createMusicBodySchema = createMusicSchema.extend({
+  childId: z.string().cuid(),
+});
+
+export const createParentNoteBodySchema = createParentNoteSchema.extend({
+  childId: z.string().cuid(),
 });
 
 export type CreateChildInput = z.infer<typeof createChildSchema>;

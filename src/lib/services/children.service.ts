@@ -3,6 +3,7 @@ import type { Child, ChildStatus, Prisma } from "@prisma/client";
 import type { CreateChildInput } from "@/lib/validators";
 
 const childListInclude = {
+  profilePhoto: { include: { variants: true } },
   yearbooks: {
     where: { deletedAt: null },
     orderBy: { yearNumber: "asc" as const },
@@ -13,6 +14,18 @@ const childListInclude = {
 
 export type ChildListItem = Prisma.ChildGetPayload<{
   include: typeof childListInclude;
+}>;
+
+const childDetailInclude = {
+  yearbooks: {
+    where: { deletedAt: null },
+    orderBy: { yearNumber: "asc" as const },
+  },
+  profilePhoto: { include: { variants: true } },
+} satisfies Prisma.ChildInclude;
+
+export type ChildWithDetails = Prisma.ChildGetPayload<{
+  include: typeof childDetailInclude;
 }>;
 
 export class ChildrenService {
@@ -28,16 +41,10 @@ export class ChildrenService {
     });
   }
 
-  async getById(childId: string, familyId: string): Promise<Child | null> {
+  async getById(childId: string, familyId: string): Promise<ChildWithDetails | null> {
     return prisma.child.findFirst({
       where: { id: childId, familyId, deletedAt: null },
-      include: {
-        yearbooks: {
-          where: { deletedAt: null },
-          orderBy: { yearNumber: "asc" },
-        },
-        profilePhoto: { include: { variants: true } },
-      },
+      include: childDetailInclude,
     });
   }
 

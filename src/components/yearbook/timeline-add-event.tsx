@@ -32,6 +32,7 @@ export function TimelineAddEvent({
   periodEnd,
   defaultMonth,
   defaultYear,
+  category = "GENERAL",
   onClose,
 }: {
   childId: string;
@@ -40,6 +41,7 @@ export function TimelineAddEvent({
   periodEnd?: Date | string | null;
   defaultMonth?: number;
   defaultYear?: number;
+  category?: "PARENTS_BEFORE_BIRTH" | "PARENTS_DURING_YEAR" | "VIDEO" | "GENERAL";
   onClose?: () => void;
 }) {
   const router = useRouter();
@@ -142,6 +144,7 @@ export function TimelineAddEvent({
           description: description.trim() || undefined,
           eventDate: eventDate.toISOString(),
           month: eventDate.getMonth() + 1,
+          category,
         }),
       });
 

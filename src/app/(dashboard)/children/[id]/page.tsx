@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth/config";
 import { childrenService, yearbookService } from "@/lib/services";
 import { redirect, notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
-import { Avatar } from "@/components/ui/avatar";
+import { ProfilePhotoUpload } from "@/components/children/profile-photo-upload";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { FadeIn, StaggerChildren, StaggerItem } from "@/components/ui/motion";
@@ -32,6 +32,10 @@ export default async function ChildPage({
   const isParent =
     session.user.role === "OWNER" || session.user.role === "PARENT";
 
+  const profilePhotoUrl = child.profilePhoto
+    ? `/api/media/${child.profilePhoto.id}/file?variant=web`
+    : null;
+
   return (
     <AppShell userName={session.user.name}>
       <ChildTheme themeColor={child.themeColor}>
@@ -54,9 +58,12 @@ export default async function ChildPage({
 
           <FadeIn>
             <div className="flex flex-col sm:flex-row items-start gap-6">
-              <Avatar
+              <ProfilePhotoUpload
+                childId={child.id}
                 name={child.nickname ?? child.fullName}
-                color={child.themeColor}
+                themeColor={child.themeColor}
+                currentPhotoUrl={profilePhotoUrl}
+                canEdit={isParent}
                 size="xl"
               />
               <div className="flex-1">
