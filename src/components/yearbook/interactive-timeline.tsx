@@ -13,6 +13,19 @@ import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { RichTextContent } from "@/components/ui/rich-text-content";
 import { LocationPicker, type LocationData } from "@/components/yearbook/location-picker";
 import { TimelineAddEvent } from "@/components/yearbook/timeline-add-event";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
+
+type MonthGroup = {
+  key: string;
+  year: number;
+  month: number;
+  items: TimelineItem[];
+  media: MediaRef[];
+};
+
+function monthKey(year: number, month: number) {
+  return `${year}-${month}`;
+}
 
 export interface TimelineItem {
   id: string;
@@ -63,7 +76,7 @@ function MediaThumb({ media, className }: { media: MediaRef; className?: string 
     return (
       <video
         src={src}
-        className={cn("h-full w-full object-cover", className)}
+        className={cn("h-full w-full object-contain bg-black/5", className)}
         muted
         playsInline
         preload="metadata"
@@ -133,26 +146,39 @@ export function InteractiveTimeline({
   const router = useRouter();
 
   const months = useMemo(() => {
-    const grouped = new Map<number, TimelineItem[]>();
+    const grouped = new Map<string, TimelineItem[]>();
     for (const item of items) {
-      const m = item.month ?? new Date(item.eventDate).getMonth() + 1;
-      if (!grouped.has(m)) grouped.set(m, []);
-      grouped.get(m)!.push(item);
+      const date = new Date(item.eventDate);
+      const year = date.getFullYear();
+      const month = item.month ?? date.getMonth() + 1;
+      const key = monthKey(year, month);
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key)!.push(item);
     }
     return Array.from(grouped.entries())
-      .sort(([a], [b]) => a - b)
-      .map(([month, monthItems]) => ({
-        month,
-        items: monthItems,
-        media: collectMonthMedia(monthItems),
-      }));
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, monthItems]) => {
+        const [year, month] = key.split("-").map(Number);
+        return {
+          key,
+          year,
+          month,
+          items: monthItems,
+          media: collectMonthMedia(monthItems),
+        } satisfies MonthGroup;
+      });
   }, [items]);
 
-  const [activeMonth, setActiveMonth] = useState(months[0]?.month ?? null);
-  const activeGroup = months.find((g) => g.month === activeMonth);
+  const [activeKey, setActiveKey] = useState<string | null>(months[0]?.key ?? null);
+  const activeGroup = months.find((g) => g.key === activeKey);
+
+  const spansMultipleYears = useMemo(
+    () => new Set(months.map((g) => g.year)).size > 1,
+    [months]
+  );
 
   const periodEndDate = periodEnd ? new Date(periodEnd) : new Date();
-  const defaultYear = periodEndDate.getFullYear();
+  const defaultYear = activeGroup?.year ?? periodEndDate.getFullYear();
 
   return (
     <div className="space-y-10">
@@ -162,7 +188,7 @@ export function InteractiveTimeline({
           yearbookId={yearbookId}
           periodStart={periodStart}
           periodEnd={periodEnd}
-          defaultMonth={activeMonth ?? undefined}
+          defaultMonth={activeGroup?.month}
           defaultYear={defaultYear}
           category={category}
         />
@@ -184,14 +210,14 @@ export function InteractiveTimeline({
       <div className="relative">
         <div className="absolute left-0 right-0 top-[calc(50%+28px)] h-px bg-gradient-to-r from-transparent via-border to-transparent pointer-events-none hidden sm:block" />
 
-        <div className="timeline-scroll flex gap-4 overflow-x-auto pb-4 -mx-2 px-2 snap-x snap-mandatory">
-          {months.map(({ month, media, items: monthItems }) => {
-            const isActive = month === activeMonth;
+        <HorizontalScroll className="flex gap-4 pb-4 -mx-2 px-2 snap-x snap-mandatory">
+          {months.map(({ key, year, month, media, items: monthItems }) => {
+            const isActive = key === activeKey;
             return (
               <button
-                key={month}
+                key={key}
                 type="button"
-                onClick={() => setActiveMonth(month)}
+                onClick={() => setActiveKey(key)}
                 className={cn(
                   "snap-start shrink-0 flex flex-col items-center gap-3 w-[140px] sm:w-[160px] transition-all duration-200 touch-manipulation",
                   isActive && "scale-[1.02]"
@@ -223,6 +249,11 @@ export function InteractiveTimeline({
                   </p>
                   <p className="text-[11px] text-muted-light capitalize mt-0.5">
                     {getMonthName(month)}
+                    {spansMultipleYears && (
+                      <span className="block text-[10px] normal-case tracking-normal">
+                        {year}
+                      </span>
+                    )}
                   </p>
                   <p className="text-[10px] text-muted-light mt-1">
                     {monthItems.length} {monthItems.length === 1 ? "moment" : "moments"}
@@ -231,14 +262,14 @@ export function InteractiveTimeline({
               </button>
             );
           })}
-        </div>
+        </HorizontalScroll>
       </div>
 
       {/* Events for selected month */}
       <AnimatePresence mode="wait">
         {activeGroup && (
           <motion.div
-            key={activeGroup.month}
+            key={activeGroup.key}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -247,6 +278,9 @@ export function InteractiveTimeline({
           >
             <h3 className="font-editorial text-2xl capitalize text-foreground">
               {getMonthName(activeGroup.month)}
+              {spansMultipleYears && (
+                <span className="text-muted font-sans text-lg ml-2">{activeGroup.year}</span>
+              )}
             </h3>
 
             <div className="relative space-y-8 pl-6 sm:pl-8">

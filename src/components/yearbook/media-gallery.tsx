@@ -153,7 +153,7 @@ export function MediaGallery({
               {m.type === "VIDEO" ? (
                 <video
                   src={`/api/media/${m.id}/file?variant=original`}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-contain bg-black/5"
                   controls={!canReorder}
                   preload="metadata"
                 />

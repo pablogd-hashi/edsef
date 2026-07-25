@@ -27,6 +27,11 @@ import type { Prisma, SectionType, TimelineCategory } from "@prisma/client";
 import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
+import {
+  computeYearbookPeriod,
+  formatYearbookYears,
+} from "@/lib/yearbook/period";
 
 interface YearbookViewerProps {
   yearbook: YearbookWithRelations;
@@ -116,7 +121,7 @@ function VideoSection({
                   key={m.id}
                   src={`/api/media/${m.id}/file?variant=original`}
                   controls
-                  className="w-full rounded-xl aspect-video object-cover"
+                  className="w-full rounded-xl aspect-video object-contain bg-black/5"
                   preload="metadata"
                 />
               ) : null
@@ -171,6 +176,19 @@ export function YearbookViewer({
   const manualSummary = yearbook.summaryContent as ManualSummaryContent | null;
   const derivedSummary = useMemo(() => deriveSummaryFromYearbook(yearbook), [yearbook]);
   const hasSummary = hasDerivedOrManualSummary(manualSummary, derivedSummary);
+  const calendarYears = useMemo(() => {
+    if (yearbook.periodStart && yearbook.periodEnd) {
+      return formatYearbookYears(new Date(yearbook.periodStart), new Date(yearbook.periodEnd));
+    }
+    if (yearbook.yearNumber) {
+      const period = computeYearbookPeriod(
+        new Date(yearbook.child.birthDate),
+        yearbook.yearNumber
+      );
+      return formatYearbookYears(period.periodStart, period.periodEnd);
+    }
+    return null;
+  }, [yearbook]);
   const summaryMedia = getSectionMedia(yearbook, "SUMMARY");
   const musicMedia = getSectionMedia(yearbook, "MUSIC");
   const videosSectionMedia = getSectionMedia(yearbook, "VIDEOS");
@@ -530,8 +548,13 @@ export function YearbookViewer({
   return (
     <div className={cn("yearbook-reader", isPreview && "preview-mode")}>
       <nav className="sticky top-[57px] z-40 border-b border-border/60 glass">
-        <div className="mx-auto max-w-4xl overflow-x-auto timeline-scroll px-4">
-          <div className="flex gap-1 py-2">
+        <HorizontalScroll className="mx-auto max-w-4xl px-4">
+          <div className="flex gap-1 py-2 min-w-max">
+            {calendarYears && isPreview && (
+              <span className="shrink-0 self-center rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent-dark mr-1">
+                {calendarYears}
+              </span>
+            )}
             {visibleSections.map((s) => (
               <a
                 key={s.id}
@@ -547,7 +570,7 @@ export function YearbookViewer({
               </a>
             ))}
           </div>
-        </div>
+        </HorizontalScroll>
       </nav>
 
       <div className="mx-auto max-w-4xl px-6 py-8 md:py-12 space-y-0">
