@@ -76,7 +76,7 @@ function MediaThumb({ media, className }: { media: MediaRef; className?: string 
     return (
       <video
         src={src}
-        className={cn("h-full w-full object-contain bg-black/5", className)}
+        className={cn("h-full w-full object-contain bg-black/10", className)}
         muted
         playsInline
         preload="metadata"
@@ -86,7 +86,7 @@ function MediaThumb({ media, className }: { media: MediaRef; className?: string 
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={media.title ?? ""} className={cn("h-full w-full object-cover", className)} />
+    <img src={src} alt={media.title ?? ""} className={cn("h-full w-full object-contain bg-cream/60", className)} />
   );
 }
 
