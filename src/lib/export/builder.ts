@@ -291,7 +291,7 @@ function generateOfflineHtml(
   }
 
   if (derived.highlights.length > 0) {
-    summaryHtml += `<div class="summary-item"><strong>Highlights</strong><ul>${derived.highlights.map((h) => `<li>${esc(h)}</li>`).join("")}</ul></div>`;
+    summaryHtml += `<div class="summary-item"><strong>Highlights</strong><ul>${derived.highlights.map((h) => `<li>${esc(h.title)}</li>`).join("")}</ul></div>`;
   }
   if (derived.favoriteMusic) {
     summaryHtml += `<div class="summary-item"><strong>Music you loved</strong><p>${esc(derived.favoriteMusic)}</p></div>`;

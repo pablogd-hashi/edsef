@@ -7,6 +7,8 @@ import type { DerivedSummaryContent, ManualSummaryContent } from "@/lib/yearbook
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { RichTextContent } from "@/components/ui/rich-text-content";
 import { EditableField } from "@/components/ui/editable-field";
+import { SummaryLocationMaps } from "@/components/yearbook/summary-location-map";
+import { richTextToPlain } from "@/lib/rich-text";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
@@ -181,8 +183,16 @@ export function SummarySection({
         {manualFields.map(({ key, label, placeholder }) => {
           const value = (local[key] as string) ?? (key === "location" ? derivedLocation ?? "" : "");
           if (!canEdit && !value) return null;
+          const plainValue = richTextToPlain(value);
+          const showLocationMap = key === "location" && (plainValue || derived.mapPoints.length > 0);
+          const showTripsMap = key === "trips" && plainValue;
           return (
-            <div key={key} className="rounded-xl border border-border-light bg-cream/50 p-5">
+            <div
+              key={key}
+              className={`rounded-xl border border-border-light bg-cream/50 p-5 ${
+                key === "trips" ? "sm:col-span-2" : ""
+              }`}
+            >
               <p className="text-xs uppercase tracking-wider text-accent-dark mb-2 flex items-center gap-1.5">
                 {key === "location" && <MapPin className="h-3.5 w-3.5" />}
                 {label}
@@ -200,6 +210,16 @@ export function SummarySection({
               ) : (
                 <RichTextContent value={value} />
               )}
+              {showLocationMap && (
+                <SummaryLocationMaps
+                  childId={childId}
+                  text={plainValue}
+                  knownPoints={derived.mapPoints}
+                />
+              )}
+              {showTripsMap && (
+                <SummaryLocationMaps childId={childId} text={plainValue} />
+              )}
             </div>
           );
         })}
@@ -207,15 +227,32 @@ export function SummarySection({
 
       {derived.highlights.length > 0 && (
         <div className="rounded-xl border border-border-light bg-card p-6">
-          <p className="text-xs uppercase tracking-wider text-accent-dark mb-3">
+          <a
+            href="#section-milestones"
+            className="text-xs uppercase tracking-wider text-accent-dark mb-3 inline-flex items-center gap-1 hover:underline"
+          >
             Highlights
-            <span className="ml-2 text-muted-light font-normal normal-case">from milestones</span>
-          </p>
-          <ul className="space-y-2 text-foreground leading-relaxed">
+            <span className="text-muted-light font-normal normal-case">from milestones →</span>
+          </a>
+          <ul className="space-y-3 text-foreground leading-relaxed">
             {derived.highlights.map((h) => (
-              <li key={h} className="flex gap-2">
-                <span className="text-accent-dark">·</span>
-                <span>{h}</span>
+              <li key={h.id}>
+                <a
+                  href={`#milestone-${h.id}`}
+                  className="group flex gap-2 rounded-lg -mx-2 px-2 py-1.5 hover:bg-cream/60 transition-colors"
+                >
+                  <span className="text-accent-dark shrink-0">·</span>
+                  <span>
+                    <span className="font-medium group-hover:text-accent-dark transition-colors">
+                      {h.title}
+                    </span>
+                    {h.description && (
+                      <span className="block text-sm text-muted mt-0.5 line-clamp-2">
+                        {richTextToPlain(h.description)}
+                      </span>
+                    )}
+                  </span>
+                </a>
               </li>
             ))}
           </ul>
@@ -224,25 +261,35 @@ export function SummarySection({
 
       {derived.favoriteMusic.length > 0 && (
         <div className="rounded-xl border border-border-light bg-card p-6">
-          <p className="text-xs uppercase tracking-wider text-accent-dark mb-3 flex items-center gap-2">
+          <a
+            href="#section-music"
+            className="text-xs uppercase tracking-wider text-accent-dark mb-3 flex items-center gap-2 hover:underline w-fit"
+          >
             <Music className="h-3.5 w-3.5" />
             Music you loved
-            <span className="text-muted-light font-normal normal-case">from music section</span>
-          </p>
+            <span className="text-muted-light font-normal normal-case">from music section →</span>
+          </a>
           <p className="text-foreground leading-relaxed">{derived.favoriteMusic}</p>
         </div>
       )}
 
       {derived.stories.length > 0 && (
         <div className="rounded-xl border border-border-light bg-card p-6">
-          <p className="text-xs uppercase tracking-wider text-accent-dark mb-3 flex items-center gap-2">
+          <a
+            href="#section-stories"
+            className="text-xs uppercase tracking-wider text-accent-dark mb-3 flex items-center gap-2 hover:underline w-fit"
+          >
             <BookOpen className="h-3.5 w-3.5" />
             Stories
-            <span className="text-muted-light font-normal normal-case">from stories section</span>
-          </p>
+            <span className="text-muted-light font-normal normal-case">from stories section →</span>
+          </a>
           <ul className="space-y-1 text-foreground leading-relaxed">
             {derived.stories.map((s) => (
-              <li key={s}>{s}</li>
+              <li key={s}>
+                <a href="#section-stories" className="hover:text-accent-dark hover:underline">
+                  {s}
+                </a>
+              </li>
             ))}
           </ul>
         </div>
@@ -250,14 +297,21 @@ export function SummarySection({
 
       {derived.videos.length > 0 && (
         <div className="rounded-xl border border-border-light bg-card p-6">
-          <p className="text-xs uppercase tracking-wider text-accent-dark mb-3 flex items-center gap-2">
+          <a
+            href="#section-videos"
+            className="text-xs uppercase tracking-wider text-accent-dark mb-3 flex items-center gap-2 hover:underline w-fit"
+          >
             <Film className="h-3.5 w-3.5" />
             Videos
-            <span className="text-muted-light font-normal normal-case">from videos section</span>
-          </p>
+            <span className="text-muted-light font-normal normal-case">from videos section →</span>
+          </a>
           <ul className="space-y-1 text-foreground leading-relaxed">
             {derived.videos.map((v) => (
-              <li key={v}>{v}</li>
+              <li key={v}>
+                <a href="#section-videos" className="hover:text-accent-dark hover:underline">
+                  {v}
+                </a>
+              </li>
             ))}
           </ul>
         </div>

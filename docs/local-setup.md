@@ -8,7 +8,7 @@ Install [Task](https://taskfile.dev/installation/) (`brew install go-task` on Ma
 
 ```bash
 task setup    # first time only
-task dev      # start everything
+task up       # start DB + dev server
 ```
 
 Open http://localhost:3000/register and create your account. No demo data is seeded.
@@ -18,10 +18,12 @@ Open http://localhost:3000/register and create your account. No demo data is see
 | Task | Description |
 |------|-------------|
 | `task setup` | Create `.env`, start Docker, install deps, run migrations |
-| `task up` | Start Postgres + Redis |
+| `task up` | Start Postgres + Redis and Next.js dev server |
+| `task dev` | Same as `task up` |
+| `task db:up` | Start only Postgres + Redis (no dev server) |
 | `task down` | Stop Postgres + Redis |
-| `task dev` | Start DB and Next.js dev server |
 | `task migrate` | Apply pending migrations |
+| `task db:status` | Check container and `/api/ping` health |
 | `task logs` | Tail Docker logs |
 | `task ps` | Show container status |
 | `task reset-db` | Wipe DB volume and re-run setup (destructive) |
@@ -35,6 +37,23 @@ npm install
 npm run db:migrate:deploy
 npm run dev
 ```
+
+## Troubleshooting
+
+### `Can't reach database server at localhost:5432`
+
+PostgreSQL is not running. Fix:
+
+1. Open **Docker Desktop** and wait until it is fully started
+2. Run: `docker compose -f docker-compose.local.yml up -d`
+3. Verify: `curl http://localhost:3000/api/ping` should return `"db": true`
+4. If first time or after reset: `npm run db:migrate:deploy`
+
+Login and the dashboard need the database — without it you will see a clear error instead of a crash.
+
+### Port 5432 already in use
+
+Another Postgres is using port 5432. Either stop it, or change the port in `docker-compose.local.yml` and `DATABASE_URL` in `.env`.
 
 ## Storage
 

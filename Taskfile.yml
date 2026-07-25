@@ -13,12 +13,12 @@ tasks:
     desc: First-time setup — .env, Docker, deps, migrations
     cmds:
       - task: env
-      - task: up
+      - task: db:up
       - npm install
       - npm run db:migrate:deploy
       - mkdir -p storage
       - echo ""
-      - echo "Ready. Run  task dev  then open http://localhost:3000/register"
+      - echo "Ready. Run  task up  then open http://localhost:3000/register"
 
   env:
     desc: Create .env from .env.example if missing
@@ -29,7 +29,19 @@ tasks:
       - echo "Created .env from .env.example"
 
   up:
-    desc: Start Postgres + Redis
+    desc: Start Postgres + Redis and Next.js dev server
+    deps:
+      - db:up
+    cmds:
+      - npm run dev
+
+  dev:
+    desc: Alias for up — start DB and Next.js dev server
+    cmds:
+      - task: up
+
+  db:up:
+    desc: Start only Postgres + Redis
     cmds:
       - docker compose -f {{.COMPOSE_FILE}} up -d --wait
       - docker compose -f {{.COMPOSE_FILE}} ps
@@ -38,13 +50,6 @@ tasks:
     desc: Stop Postgres + Redis
     cmds:
       - docker compose -f {{.COMPOSE_FILE}} down
-
-  dev:
-    desc: Start Next.js dev server
-    deps:
-      - up
-    cmds:
-      - npm run dev
 
   logs:
     desc: Tail Docker service logs
@@ -60,6 +65,12 @@ tasks:
     desc: Apply database migrations
     cmds:
       - npm run db:migrate:deploy
+
+  db:status:
+    desc: Check if database is reachable
+    cmds:
+      - docker compose -f {{.COMPOSE_FILE}} ps
+      - curl -s http://localhost:3000/api/ping || true
 
   reset-db:
     desc: Wipe database volume and re-run migrations (destructive)
