@@ -2,28 +2,20 @@
 
 import { googleMapsUrl } from "@/lib/maps/parse-url";
 
-function staticMapImageUrl(latitude: number, longitude: number): string {
-  const params = new URLSearchParams({
-    center: `${latitude},${longitude}`,
-    zoom: "12",
-    size: "800x300",
-    markers: `${latitude},${longitude},lightblue1`,
-  });
-  return `https://staticmap.openstreetmap.de/staticmap.php?${params.toString()}`;
-}
-
 export function MapEmbed({
   latitude,
   longitude,
   name,
+  childId,
   className,
 }: {
   latitude: number;
   longitude: number;
   name?: string;
+  childId: string;
   className?: string;
 }) {
-  const mapImage = staticMapImageUrl(latitude, longitude);
+  const mapImage = `/api/maps/static?childId=${encodeURIComponent(childId)}&lat=${latitude}&lng=${longitude}`;
   const osmLink = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=14/${latitude}/${longitude}`;
   const googleLink = googleMapsUrl(latitude, longitude, name);
 
@@ -48,7 +40,6 @@ export function MapEmbed({
           alt={name ? `Map of ${name}` : "Location map"}
           className="w-full h-48 rounded-xl border border-border-light object-cover group-hover:border-accent/40 transition-colors bg-cream/40"
           loading="lazy"
-          referrerPolicy="no-referrer"
         />
       </a>
       <div className="flex flex-wrap gap-3 mt-2">

@@ -114,14 +114,14 @@ function VideoSection({
       {mediaItems.map((item) => (
         <div key={item.id} className="rounded-xl border border-border bg-card p-4">
           <p className="font-medium mb-3">{item.title}</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="space-y-4 max-w-3xl">
             {item.media.map(({ media: m }) =>
               m.type === "VIDEO" ? (
                 <video
                   key={m.id}
                   src={`/api/media/${m.id}/file?variant=original`}
                   controls
-                  className="w-full rounded-xl aspect-video object-contain bg-black/5"
+                  className="w-full rounded-xl aspect-video object-contain bg-black"
                   preload="metadata"
                 />
               ) : null

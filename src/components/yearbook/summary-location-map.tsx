@@ -102,6 +102,7 @@ export function SummaryLocationMaps({
             latitude={point.latitude}
             longitude={point.longitude}
             name={point.name}
+            childId={childId!}
           />
         ))}
       </div>

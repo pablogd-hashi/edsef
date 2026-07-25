@@ -162,6 +162,7 @@ export function LocationPicker({
           latitude={location.latitude}
           longitude={location.longitude}
           name={[location.name, location.city, location.country].filter(Boolean).join(", ")}
+          childId={childId}
         />
         {canEdit && (
           <button

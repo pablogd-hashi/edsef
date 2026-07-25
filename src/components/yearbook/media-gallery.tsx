@@ -133,7 +133,8 @@ export function MediaGallery({
       )}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {items.map(({ media: m }, index) => {
-          const orientation = mediaOrientation(m.width, m.height);
+          const isVideo = m.type === "VIDEO";
+          const orientation = isVideo ? "landscape" : mediaOrientation(m.width, m.height);
           return (
             <div
               key={m.id}
@@ -145,15 +146,16 @@ export function MediaGallery({
                 "relative rounded-xl overflow-hidden bg-cream border border-border-light group",
                 canReorder && "cursor-grab active:cursor-grabbing",
                 dragIndex === index && "ring-2 ring-accent opacity-80",
-                orientation === "portrait" && "row-span-2 aspect-[3/4]",
-                orientation === "landscape" && "col-span-2 aspect-[4/3]",
-                orientation === "square" && "aspect-square"
+                isVideo && "col-span-2 sm:col-span-3 aspect-video",
+                !isVideo && orientation === "portrait" && "row-span-2 aspect-[3/4]",
+                !isVideo && orientation === "landscape" && "col-span-2 aspect-[4/3]",
+                !isVideo && orientation === "square" && "aspect-square"
               )}
             >
-              {m.type === "VIDEO" ? (
+              {isVideo ? (
                 <video
                   src={`/api/media/${m.id}/file?variant=original`}
-                  className="h-full w-full object-contain bg-black/5"
+                  className="h-full w-full object-contain bg-black"
                   controls={!canReorder}
                   preload="metadata"
                 />
