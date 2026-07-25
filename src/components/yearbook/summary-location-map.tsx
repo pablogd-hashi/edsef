@@ -10,11 +10,14 @@ export function SummaryLocationMaps({
   childId,
   text,
   knownPoints = [],
+  splitPlaces = true,
   className,
 }: {
   childId?: string;
   text?: string;
   knownPoints?: MapPoint[];
+  /** When false, geocode the full text as one place (e.g. "Amsterdam, Netherlands"). */
+  splitPlaces?: boolean;
   className?: string;
 }) {
   const [geocoded, setGeocoded] = useState<MapPoint[]>([]);
@@ -28,9 +31,15 @@ export function SummaryLocationMaps({
       return;
     }
 
-    const places = splitPlaceList(text).filter(
-      (place) => !knownPoints.some((p) => p.name.toLowerCase().includes(place.toLowerCase()))
-    );
+    const places = splitPlaces
+      ? splitPlaceList(text).filter(
+          (place) => !knownPoints.some((p) => p.name.toLowerCase().includes(place.toLowerCase()))
+        )
+      : [text.trim()].filter(
+          (place) =>
+            place.length > 0 &&
+            !knownPoints.some((p) => p.name.toLowerCase().includes(place.toLowerCase()))
+        );
 
     if (places.length === 0) {
       setGeocoded([]);
@@ -73,7 +82,7 @@ export function SummaryLocationMaps({
     return () => {
       cancelled = true;
     };
-  }, [childId, text, knownKey, knownPoints]);
+  }, [childId, text, knownKey, knownPoints, splitPlaces]);
 
   const points = [...knownPoints, ...geocoded];
   if (points.length === 0 && !loading) return null;

@@ -1,7 +1,11 @@
 "use client";
 
 import type { YearbookWithRelations } from "@/lib/services/yearbook.service";
-import { formatDate } from "@/lib/age";
+import {
+  computeYearbookPeriod,
+  formatYearbookPeriodLong,
+  formatYearbookYears,
+} from "@/lib/yearbook/period";
 import { MapPin, Music, BookOpen, Film, Loader2 } from "lucide-react";
 import type { DerivedSummaryContent, ManualSummaryContent } from "@/lib/yearbook/derive-summary";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
@@ -26,6 +30,23 @@ export function CoverHero({
     yearbook.coverPhoto ??
     (child as { profilePhoto?: { id: string } | null }).profilePhoto;
   const photoUrl = photo ? `/api/media/${photo.id}/file?variant=web` : null;
+
+  const period =
+    yearbook.periodStart && yearbook.periodEnd
+      ? {
+          periodStart: new Date(yearbook.periodStart),
+          periodEnd: new Date(yearbook.periodEnd),
+        }
+      : yearbook.yearNumber
+        ? computeYearbookPeriod(new Date(child.birthDate), yearbook.yearNumber)
+        : null;
+
+  const calendarYears = period
+    ? formatYearbookYears(period.periodStart, period.periodEnd)
+    : null;
+  const calendarPeriod = period
+    ? formatYearbookPeriodLong(period.periodStart, period.periodEnd)
+    : null;
 
   return (
     <section
@@ -90,15 +111,17 @@ export function CoverHero({
         )}
 
         <p className="mt-4 text-lg text-muted">
-          {yearbook.ageLabel}
-          {yearbook.periodStart && yearbook.periodEnd && (
-            <span className="text-muted-light">
-              {" "}
-              · {formatDate(yearbook.periodStart, "yyyy")}–
-              {formatDate(yearbook.periodEnd, "yyyy")}
-            </span>
+          {calendarYears && (
+            <span className="font-medium text-foreground">{calendarYears}</span>
           )}
+          {calendarYears && yearbook.ageLabel && (
+            <span className="text-muted-light"> · </span>
+          )}
+          {yearbook.ageLabel}
         </p>
+        {calendarPeriod && (
+          <p className="mt-1 text-sm text-muted-light">{calendarPeriod}</p>
+        )}
 
         {immersive && (
           <div className="mt-12 flex justify-center">
@@ -215,6 +238,7 @@ export function SummarySection({
                   childId={childId}
                   text={plainValue}
                   knownPoints={derived.mapPoints}
+                  splitPlaces={false}
                 />
               )}
               {showTripsMap && (

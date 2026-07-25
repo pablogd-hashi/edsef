@@ -7,6 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { ArrowLeft, Pencil, Download, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChildTheme } from "@/components/theme/child-theme";
+import { computeYearbookPeriod, formatYearbookYears } from "@/lib/yearbook/period";
 
 export default async function PreviewPage({
   params,
@@ -19,6 +20,19 @@ export default async function PreviewPage({
   const { id: childId, yearbookId } = await params;
   const yearbook = await yearbookService.getById(yearbookId, childId);
   if (!yearbook) notFound();
+
+  const period =
+    yearbook.periodStart && yearbook.periodEnd
+      ? {
+          periodStart: new Date(yearbook.periodStart),
+          periodEnd: new Date(yearbook.periodEnd),
+        }
+      : yearbook.yearNumber
+        ? computeYearbookPeriod(new Date(yearbook.child.birthDate), yearbook.yearNumber)
+        : null;
+  const calendarYears = period
+    ? formatYearbookYears(period.periodStart, period.periodEnd)
+    : null;
 
   return (
     <ChildTheme themeColor={yearbook.child.themeColor} className="min-h-screen bg-card preview-mode">
@@ -38,6 +52,9 @@ export default async function PreviewPage({
               </p>
               <p className="text-sm font-medium truncate max-w-[200px] sm:max-w-none">
                 {yearbook.customCoverTitle ?? yearbook.title}
+                {calendarYears && (
+                  <span className="text-muted font-normal"> · {calendarYears}</span>
+                )}
               </p>
             </div>
           </div>

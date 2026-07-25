@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { calculateAge } from "@/lib/age";
+import { computeYearbookPeriod } from "@/lib/yearbook/period";
 import type { CreateYearbookInput } from "@/lib/validators";
 import type { Prisma, SectionType, Yearbook, YearbookTemplate } from "@prisma/client";
 
@@ -114,13 +115,20 @@ export class YearbookService {
       ? calculateAge(child.birthDate, new Date(child.birthDate.getFullYear() + input.yearNumber, child.birthDate.getMonth(), child.birthDate.getDate()))
       : null;
 
+    const period =
+      input.periodStart && input.periodEnd
+        ? { periodStart: input.periodStart, periodEnd: input.periodEnd }
+        : input.yearNumber
+          ? computeYearbookPeriod(child.birthDate, input.yearNumber)
+          : { periodStart: input.periodStart, periodEnd: input.periodEnd };
+
     return prisma.yearbook.create({
       data: {
         childId: input.childId,
         title: input.title,
         yearNumber: input.yearNumber,
-        periodStart: input.periodStart,
-        periodEnd: input.periodEnd,
+        periodStart: period.periodStart,
+        periodEnd: period.periodEnd,
         ageLabel: input.ageLabel ?? (input.yearNumber === 1 ? "0-12 meses" : age?.label),
         template: input.template as YearbookTemplate,
         customCoverTitle: input.customCoverTitle,

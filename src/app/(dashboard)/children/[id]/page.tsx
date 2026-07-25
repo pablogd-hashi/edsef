@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { FadeIn, StaggerChildren, StaggerItem } from "@/components/ui/motion";
 import { calculateAge, formatDate } from "@/lib/age";
+import { computeYearbookPeriod, formatYearbookYears } from "@/lib/yearbook/period";
 import { ArrowLeft, Plus, Eye, BookOpen, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChildTheme } from "@/components/theme/child-theme";
@@ -132,7 +133,21 @@ export default async function ChildPage({
           </FadeIn>
         ) : (
           <StaggerChildren className="space-y-4">
-            {yearbooks.map((yearbook) => (
+            {yearbooks.map((yearbook) => {
+              const period =
+                yearbook.periodStart && yearbook.periodEnd
+                  ? {
+                      periodStart: new Date(yearbook.periodStart),
+                      periodEnd: new Date(yearbook.periodEnd),
+                    }
+                  : yearbook.yearNumber
+                    ? computeYearbookPeriod(new Date(child.birthDate), yearbook.yearNumber)
+                    : null;
+              const calendarYears = period
+                ? formatYearbookYears(period.periodStart, period.periodEnd)
+                : null;
+
+              return (
               <StaggerItem key={yearbook.id}>
                 <div className="group rounded-2xl border border-border bg-card overflow-hidden transition-all duration-300 hover:shadow-[var(--warm-shadow)] hover:border-accent-light/50">
                   <div className="flex flex-col sm:flex-row">
@@ -156,6 +171,10 @@ export default async function ChildPage({
                           </Badge>
                         </div>
                         <p className="text-sm text-muted">
+                          {calendarYears && (
+                            <span className="font-medium text-foreground">{calendarYears}</span>
+                          )}
+                          {calendarYears && (yearbook.ageLabel ?? yearbook.yearNumber) && " · "}
                           {yearbook.ageLabel ?? `Year ${yearbook.yearNumber}`}
                           {" · "}
                           {yearbook._count.milestones} milestones ·{" "}
@@ -189,7 +208,8 @@ export default async function ChildPage({
                   </div>
                 </div>
               </StaggerItem>
-            ))}
+              );
+            })}
           </StaggerChildren>
         )}
       </main>
