@@ -44,6 +44,24 @@ Set `ALLOW_REGISTRATION=false` in `.env` once your account exists.
 
 ## Local development
 
+Install [Task](https://taskfile.dev/installation/) once (`brew install go-task`), then:
+
+```bash
+task setup    # first time: .env, Docker, deps, migrations
+task dev      # start DB + Next.js dev server
+```
+
+| Command | What it does |
+|---------|----------------|
+| `task setup` | Create `.env`, start Postgres/Redis, `npm install`, migrate |
+| `task up` | Start Postgres + Redis |
+| `task down` | Stop Postgres + Redis |
+| `task dev` | `task up` then `npm run dev` |
+| `task logs` | Tail Docker logs |
+| `task ps` | Show container status |
+
+Manual alternative:
+
 ```bash
 cp .env.example .env
 docker compose -f docker-compose.local.yml up -d
