@@ -70,9 +70,21 @@ const EXT_MIME: Record<string, string> = {
   webm: "video/webm",
 };
 
+const VIDEO_EXT = new Set(["mov", "mp4", "m4v", "webm", "avi", "mkv", "3gp"]);
+const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "gif", "webp", "heic", "heif"]);
+
 export function inferMimeType(filename: string, mimeType?: string): string {
-  if (mimeType && mimeType !== "application/octet-stream") return mimeType;
   const ext = path.extname(filename).replace(/^\./, "").toLowerCase();
+
+  // Extension wins for known video types — iOS often sends image/* for .mov files
+  if (VIDEO_EXT.has(ext)) {
+    return EXT_MIME[ext] ?? "video/mp4";
+  }
+  if (IMAGE_EXT.has(ext)) {
+    return EXT_MIME[ext] ?? mimeType ?? "image/jpeg";
+  }
+
+  if (mimeType && mimeType !== "application/octet-stream") return mimeType;
   return EXT_MIME[ext] ?? mimeType ?? "application/octet-stream";
 }
 

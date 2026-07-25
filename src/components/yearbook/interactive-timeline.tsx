@@ -5,10 +5,13 @@ import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getMonthAbbrev, getMonthName } from "@/lib/age";
-import { MapPin, ImageIcon } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 import { MilestoneMediaGallery } from "@/components/yearbook/milestone-media";
 import { MediaUpload } from "@/components/yearbook/media-upload";
 import { EditableField } from "@/components/ui/editable-field";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { RichTextContent } from "@/components/ui/rich-text-content";
+import { LocationPicker, type LocationData } from "@/components/yearbook/location-picker";
 import { TimelineAddEvent } from "@/components/yearbook/timeline-add-event";
 
 export interface TimelineItem {
@@ -18,13 +21,13 @@ export interface TimelineItem {
   eventDate: Date | string;
   month?: number | null;
   ageLabel?: string | null;
-  location?: { name: string; city?: string | null } | null;
+  location?: LocationData | null;
   media?: { media: { id: string; type: string; title?: string | null } }[];
 }
 
 type MediaRef = { id: string; type: string; title?: string | null };
 
-async function patchTimeline(id: string, data: Record<string, string>) {
+async function patchTimeline(id: string, data: Record<string, string | null>) {
   const res = await fetch(`/api/timeline/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -283,26 +286,31 @@ export function InteractiveTimeline({
                         }}
                       />
 
-                      <EditableField
-                        value={item.description ?? ""}
+                      {canEdit ? (
+                        <div className="mt-2">
+                          <RichTextEditor
+                            value={item.description ?? ""}
+                            canEdit
+                            placeholder="Describe this moment…"
+                            onSave={async (description) => {
+                              await patchTimeline(item.id, { description: description as string });
+                              router.refresh();
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <RichTextContent value={item.description} className="text-muted mt-2" />
+                      )}
+
+                      <LocationPicker
+                        childId={childId}
+                        location={item.location}
                         canEdit={canEdit}
-                        multiline
-                        as="p"
-                        placeholder="Moment description"
-                        className="text-muted leading-relaxed mt-2"
-                        onSave={async (description) => {
-                          await patchTimeline(item.id, { description });
+                        onSave={async (locationId) => {
+                          await patchTimeline(item.id, { locationId });
                           router.refresh();
                         }}
                       />
-
-                      {item.location && (
-                        <p className="mt-3 flex items-center gap-1.5 text-sm text-accent-dark">
-                          <MapPin className="h-3.5 w-3.5 shrink-0" />
-                          {item.location.name}
-                          {item.location.city && `, ${item.location.city}`}
-                        </p>
-                      )}
 
                       <MilestoneMediaGallery
                         media={item.media ?? []}

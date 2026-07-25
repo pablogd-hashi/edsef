@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
 import { formatDate } from "@/lib/age";
 import { EditableField } from "@/components/ui/editable-field";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { RichTextContent } from "@/components/ui/rich-text-content";
 import { MediaGallery } from "@/components/yearbook/media-gallery";
 import { MediaUpload } from "@/components/yearbook/media-upload";
 import type { MediaItem } from "@/components/yearbook/media-gallery";
@@ -63,19 +65,23 @@ export function ParentNotes({
             {" · "}
             {formatDate(new Date(note.noteDate), "d MMMM yyyy")}
           </p>
-          <EditableField
-            value={note.content}
-            canEdit={canEdit}
-            multiline
-            as="p"
-            placeholder="Escribe tu nota..."
-            className="font-editorial text-lg leading-relaxed italic text-foreground/90"
-            inputClassName="font-editorial text-base italic"
-            onSave={async (content) => {
-              await patchNote(note.id, { content });
-              router.refresh();
-            }}
-          />
+          {canEdit ? (
+            <RichTextEditor
+              value={note.content}
+              canEdit
+              placeholder="Write your note…"
+              className="font-editorial italic"
+              onSave={async (content) => {
+                await patchNote(note.id, { content: content as string });
+                router.refresh();
+              }}
+            />
+          ) : (
+            <RichTextContent
+              value={note.content}
+              className="font-editorial text-lg leading-relaxed italic text-foreground/90"
+            />
+          )}
 
           <MediaGallery
             media={note.media ?? []}

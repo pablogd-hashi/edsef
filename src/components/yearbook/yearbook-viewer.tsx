@@ -7,7 +7,6 @@ import { MilestoneGrid } from "./milestone-grid";
 import { InteractiveTimeline } from "./interactive-timeline";
 import { StoryReader } from "./story-reader";
 import { ParentNotes } from "./parent-notes";
-import { SummaryEditor } from "./summary-editor";
 import { SectionMediaBlock } from "./section-media";
 import {
   deriveSummaryFromYearbook,
@@ -175,6 +174,10 @@ export function YearbookViewer({
   const summaryMedia = getSectionMedia(yearbook, "SUMMARY");
   const musicMedia = getSectionMedia(yearbook, "MUSIC");
   const videosSectionMedia = getSectionMedia(yearbook, "VIDEOS");
+  const milestonesSectionMedia = getSectionMedia(yearbook, "MILESTONES");
+  const storiesSectionMedia = getSectionMedia(yearbook, "STORIES");
+  const notesSectionMedia = getSectionMedia(yearbook, "PARENT_NOTES");
+  const timelineSectionMedia = getSectionMedia(yearbook, "TIMELINE");
 
   const videos = filterTimeline(yearbook.timeline, ["VIDEO"]);
   const videoLinks = videos.filter((v) => v.description?.startsWith("http"));
@@ -263,21 +266,16 @@ export function YearbookViewer({
           <section id="section-summary" className="book-page">
             <FadeIn>
               <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
-              {(hasSummary || summaryMedia.length > 0) && (
-                <SummarySection manual={manualSummary} derived={derivedSummary} />
-              )}
-              {canEdit ? (
-                <div className={hasSummary || summaryMedia.length > 0 ? "mt-6" : ""}>
-                  <SummaryEditor
-                    yearbookId={yearbookId}
-                    childId={childId}
-                    content={manualSummary}
-                    canEdit
-                  />
-                </div>
-              ) : !hasSummary && summaryMedia.length === 0 ? (
+              <SummarySection
+                manual={manualSummary}
+                derived={derivedSummary}
+                canEdit={canEdit}
+                yearbookId={yearbookId}
+                childId={childId}
+              />
+              {!canEdit && !hasSummary && summaryMedia.length === 0 && (
                 <SectionEmpty hint={meta.emptyHint} />
-              ) : null}
+              )}
               <SectionMediaBlock
                 media={summaryMedia}
                 childId={childId}
@@ -314,9 +312,16 @@ export function YearbookViewer({
                   <MilestoneAdd childId={childId} yearbookId={yearbookId} />
                 </div>
               )}
-              {!canEdit && yearbook.milestones.length === 0 && (
+              {!canEdit && yearbook.milestones.length === 0 && milestonesSectionMedia.length === 0 && (
                 <SectionEmpty hint={meta.emptyHint} />
               )}
+              <SectionMediaBlock
+                media={milestonesSectionMedia}
+                childId={childId}
+                yearbookId={yearbookId}
+                sectionType="MILESTONES"
+                canEdit={canEdit}
+              />
             </FadeIn>
           </section>
         );
@@ -380,9 +385,16 @@ export function YearbookViewer({
                   <StoryAdd childId={childId} yearbookId={yearbookId} />
                 </div>
               )}
-              {!canEdit && yearbook.stories.length === 0 && (
+              {!canEdit && yearbook.stories.length === 0 && storiesSectionMedia.length === 0 && (
                 <SectionEmpty hint={meta.emptyHint} />
               )}
+              <SectionMediaBlock
+                media={storiesSectionMedia}
+                childId={childId}
+                yearbookId={yearbookId}
+                sectionType="STORIES"
+                canEdit={canEdit}
+              />
             </FadeIn>
           </section>
         );
@@ -446,9 +458,16 @@ export function YearbookViewer({
                   <ParentNoteAdd childId={childId} yearbookId={yearbookId} />
                 </div>
               )}
-              {!canEdit && yearbook.parentNotes.length === 0 && (
+              {!canEdit && yearbook.parentNotes.length === 0 && notesSectionMedia.length === 0 && (
                 <SectionEmpty hint={meta.emptyHint} />
               )}
+              <SectionMediaBlock
+                media={notesSectionMedia}
+                childId={childId}
+                yearbookId={yearbookId}
+                sectionType="PARENT_NOTES"
+                canEdit={canEdit}
+              />
             </FadeIn>
           </section>
         );
@@ -467,6 +486,13 @@ export function YearbookViewer({
                 periodEnd={yearbook.periodEnd}
                 category="PARENTS_BEFORE_BIRTH"
               />
+              <SectionMediaBlock
+                media={timelineSectionMedia}
+                childId={childId}
+                yearbookId={yearbookId}
+                sectionType="TIMELINE"
+                canEdit={canEdit}
+              />
             </FadeIn>
           </section>
         );
@@ -484,6 +510,13 @@ export function YearbookViewer({
                 periodStart={yearbook.periodStart}
                 periodEnd={yearbook.periodEnd}
                 category="GENERAL"
+              />
+              <SectionMediaBlock
+                media={timelineSectionMedia}
+                childId={childId}
+                yearbookId={yearbookId}
+                sectionType="TIMELINE"
+                canEdit={canEdit}
               />
             </FadeIn>
           </section>

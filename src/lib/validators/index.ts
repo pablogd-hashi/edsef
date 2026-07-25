@@ -51,10 +51,12 @@ export const createTimelineEntrySchema = z.object({
 
 export const updateMilestoneSchema = createMilestoneSchema
   .omit({ yearbookId: true })
+  .extend({ locationId: z.string().cuid().nullable().optional() })
   .partial();
 
 export const updateTimelineEntrySchema = createTimelineEntrySchema
   .omit({ yearbookId: true })
+  .extend({ locationId: z.string().cuid().nullable().optional() })
   .partial();
 
 export const updateStorySchema = z.object({

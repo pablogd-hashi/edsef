@@ -37,7 +37,11 @@ export class MilestoneService {
     });
   }
 
-  async update(id: string, data: Partial<CreateMilestoneInput>, birthDate?: Date): Promise<Milestone> {
+  async update(
+    id: string,
+    data: Omit<Partial<CreateMilestoneInput>, "locationId"> & { locationId?: string | null },
+    birthDate?: Date
+  ): Promise<Milestone> {
     const updateData: Record<string, unknown> = { ...data };
     if (data.eventDate && birthDate && !data.ageLabel) {
       updateData.ageLabel = calculateAge(birthDate, data.eventDate).label;

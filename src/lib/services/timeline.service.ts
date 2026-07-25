@@ -39,7 +39,7 @@ export class TimelineService {
 
   async update(
     id: string,
-    data: Partial<CreateTimelineEntryInput>,
+    data: Omit<Partial<CreateTimelineEntryInput>, "locationId"> & { locationId?: string | null },
     birthDate?: Date
   ): Promise<TimelineEntry> {
     const updateData: Record<string, unknown> = { ...data };

@@ -68,7 +68,11 @@ export function MediaUpload({
       const maxVideo = 500 * 1024 * 1024;
       const maxImage = 20 * 1024 * 1024;
       const isVideo =
-        file.type.startsWith("video/") || /\.(mov|mp4|m4v|webm)$/i.test(file.name);
+        /\.(mov|mp4|m4v|webm|avi|mkv|3gp)$/i.test(file.name) ||
+        file.type.startsWith("video/");
+      const isImage =
+        /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(file.name) ||
+        (file.type.startsWith("image/") && !isVideo);
       const limit = isVideo ? maxVideo : maxImage;
       if (file.size > limit) {
         setError(
