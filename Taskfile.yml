@@ -35,12 +35,18 @@ tasks:
     cmds:
       - echo ""
       - echo "Database is up. Starting Next.js (this terminal will block — that is normal)."
+      - echo "On low-memory Macs, prefer two terminals:  task db:up  then  task dev:only"
       - npm run dev
 
   dev:only:
     desc: Start Next.js only (when Docker is already running)
     cmds:
       - npm run dev
+
+  smoke:
+    desc: Validate env, Docker, and running dev server (start dev:only first)
+    cmds:
+      - bash scripts/smoke.sh
 
   doctor:
     desc: Check Node, port 3000, Docker, and common dev issues

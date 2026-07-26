@@ -12,6 +12,7 @@ export function LoginForm({ dbAvailable }: { dbAvailable: boolean }) {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
   const registered = searchParams.get("registered");
+  const sessionReset = searchParams.get("session") === "reset";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -56,6 +57,11 @@ export function LoginForm({ dbAvailable }: { dbAvailable: boolean }) {
             </code>{" "}
             before signing in.
           </p>
+        </div>
+      )}
+      {sessionReset && (
+        <div className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 text-sm text-blue-900">
+          Session cleared. Sign in again with your email and password.
         </div>
       )}
       {registered && (
@@ -107,6 +113,12 @@ export function LoginForm({ dbAvailable }: { dbAvailable: boolean }) {
         <Link href="/register" className="text-accent-dark hover:underline font-medium">
           Create account
         </Link>
+      </p>
+      <p className="text-center text-xs text-muted-light">
+        Auth errors or can&apos;t sign in?{" "}
+        <a href="/api/auth/reset-session" className="hover:underline">
+          Reset session
+        </a>
       </p>
     </form>
   );
