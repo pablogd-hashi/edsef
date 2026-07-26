@@ -1,12 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Flush hints immediately (before Next.js loads — can take a while on Mac)
+COMPOSE_FILE="docker-compose.local.yml"
+
 echo ""
 echo "Starting Memoria dev server..."
-echo "  → Open http://localhost:3000 when you see 'Ready'"
-echo "  → First start can take 1–2 minutes after git pull"
-echo "  → Press Ctrl+C to stop"
+
+# Check database before Next.js starts (common reason the app 'doesn't work')
+if command -v docker >/dev/null 2>&1; then
+  if docker compose -f "$COMPOSE_FILE" ps --status running 2>/dev/null | grep -q postgres; then
+    echo "  ✓ PostgreSQL container is running"
+  else
+    echo ""
+    echo "  ⚠️  PostgreSQL is NOT running."
+    echo "     The site will load, but login and data will fail."
+    echo "     In another terminal run:  task db:up"
+    echo ""
+  fi
+else
+  echo "  ⚠️  Docker not found — database must be running for login to work"
+fi
+
+echo ""
+echo "  When you see '✓ Ready' below, open:  http://localhost:3000"
+echo "  This terminal stays open while the server runs — that is correct."
+echo "  Stop the server with Ctrl+C."
 echo ""
 
 export NEXT_TELEMETRY_DISABLED=1
