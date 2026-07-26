@@ -42,6 +42,11 @@ tasks:
     cmds:
       - npm run dev
 
+  doctor:
+    desc: Check Node, port 3000, Docker, and common dev issues
+    cmds:
+      - bash scripts/doctor.sh
+
   dev:
     desc: Alias for up — start DB and Next.js dev server
     cmds:
