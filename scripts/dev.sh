@@ -22,21 +22,25 @@ else
 fi
 
 echo ""
-echo "  When you see '✓ Ready' below, open:  http://localhost:3000"
+echo "  When you see '✓ Ready' below, open:  http://localhost:${PORT:-3000}"
+echo "  First page load can take 1–3 min while routes compile — later loads are fast."
 echo "  This terminal stays open while the server runs — that is correct."
 echo "  Stop the server with Ctrl+C."
+echo ""
+echo "  Low memory (exit 137)? Run  task db:up  in one tab and  task dev:only  in another."
+echo "  JWT auth errors? Visit  http://localhost:${PORT:-3000}/api/auth/reset-session"
 echo ""
 
 export NEXT_TELEMETRY_DISABLED=1
 
 HOST="${DEV_HOST:-127.0.0.1}"
 PORT="${PORT:-3000}"
-USE_WEBPACK="${DEV_WEBPACK:-1}"
+USE_WEBPACK="${DEV_WEBPACK:-0}"
 
 if [[ "$USE_WEBPACK" == "1" ]]; then
-  echo "Using webpack dev server (set DEV_WEBPACK=0 to try Turbopack)"
+  echo "Using webpack dev server (set DEV_WEBPACK=0 for faster Turbopack)"
   exec next dev --webpack -H "$HOST" -p "$PORT"
 else
-  echo "Using Turbopack dev server"
+  echo "Using Turbopack dev server (set DEV_WEBPACK=1 if compile hangs on large storage/)"
   exec next dev --turbo -H "$HOST" -p "$PORT"
 fi

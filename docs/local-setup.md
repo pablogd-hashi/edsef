@@ -21,7 +21,8 @@ Open http://localhost:3000/register and create your account. No demo data is see
 | `task up` | Start Postgres + Redis and Next.js dev server |
 | `task dev` | Same as `task up` |
 | `task dev:only` | Start Next.js only (Docker already running) |
-| `task doctor` | Check Node, port 3000, Docker, cache size |
+| `task doctor` | Check Node, port 3000, Docker, cache size, AUTH_SECRET |
+| `task smoke` | Validate env, DB, and running dev server (run `dev:only` first) |
 | `task db:up` | Start only Postgres + Redis (no dev server) |
 | `task down` | Stop Postgres + Redis |
 | `task migrate` | Apply pending migrations |
@@ -99,6 +100,34 @@ Login and the dashboard need the database — without it you will see a clear er
 ### Port 5432 already in use
 
 Another Postgres is using port 5432. Either stop it, or change the port in `docker-compose.local.yml` and `DATABASE_URL` in `.env`.
+
+### `[auth][error] JWTSessionError: no matching decryption secret`
+
+Your browser has an old session cookie from a previous `AUTH_SECRET`. The app still works — clear the cookie:
+
+1. Open http://localhost:3000/api/auth/reset-session (or click **Reset session** on the login page)
+2. Sign in again
+
+This happens after changing `.env` or copying the project to a new machine.
+
+### `CredentialsSignin` / wrong password
+
+There are **no demo users**. Create an account at http://localhost:3000/register, or use the email/password you registered with.
+
+### `task up` exits with code 137 (killed)
+
+Docker + Next.js dev together can run out of memory on a MacBook Air. Use two terminals:
+
+```bash
+task db:up       # terminal 1 — keep Docker running
+task dev:only    # terminal 2 — Next.js only
+```
+
+Optional: `NODE_OPTIONS='--max-old-space-size=3072' task dev:only`
+
+### First request takes 3+ minutes
+
+Normal on cold start — webpack/Turbopack compiles routes on first visit. Later requests are fast. Run `task smoke` once the server shows `✓ Ready`.
 
 ## Storage
 

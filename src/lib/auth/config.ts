@@ -5,7 +5,16 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db/prisma";
 import { loginSchema } from "@/lib/validators";
 
+const authSecret = process.env.AUTH_SECRET;
+
+if (!authSecret || authSecret.length < 32) {
+  throw new Error(
+    "AUTH_SECRET must be set in .env and be at least 32 characters. Copy from .env.example if needed."
+  );
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: authSecret,
   adapter: PrismaAdapter(prisma),
   trustHost: true,
   session: { strategy: "jwt" },
