@@ -20,6 +20,8 @@ Open http://localhost:3000/register and create your account. No demo data is see
 | `task setup` | Create `.env`, start Docker, install deps, run migrations |
 | `task up` | Start Postgres + Redis and Next.js dev server |
 | `task dev` | Same as `task up` |
+| `task dev:only` | Start Next.js only (Docker already running) |
+| `task doctor` | Check Node, port 3000, Docker, cache size |
 | `task db:up` | Start only Postgres + Redis (no dev server) |
 | `task down` | Stop Postgres + Redis |
 | `task migrate` | Apply pending migrations |
@@ -39,6 +41,49 @@ npm run dev
 ```
 
 ## Troubleshooting
+
+### `task up` stops after `next dev` / `npm run dev` shows nothing
+
+**The terminal blocking is normal** — but you should see `✓ Ready` within 1–2 minutes.
+
+If there is **no output at all** after `next dev`:
+
+```bash
+# 1. Diagnose
+task doctor
+
+# 2. Clear Next.js cache and retry
+rm -rf .next
+npm run dev
+
+# 3. Still stuck? Force webpack mode (default in scripts/dev.sh)
+DEV_WEBPACK=1 npm run dev
+
+# 4. Kill anything on port 3000
+lsof -i :3000
+pkill -f "next dev" || true
+```
+
+A large `./storage/` folder (photos/videos) can make Turbopack appear frozen on Mac — webpack mode avoids that.
+
+For phone access on your LAN: `DEV_HOST=0.0.0.0 npm run dev`
+
+### `task up` stops after `next dev -H 0.0.0.0` (older message)
+
+**This is normal** — the dev server runs in the foreground and the terminal will not return to a prompt.
+
+1. Wait for `✓ Ready` (first start after `git pull` can take 1–2 minutes)
+2. Open http://localhost:3000 — it may work before `Ready` appears
+3. Keep that terminal open; use a **second tab** for other commands
+4. Stop with **Ctrl+C**
+
+If nothing happens after 2–3 minutes:
+
+```bash
+lsof -i :3000          # check port conflict
+pkill -f "next dev"    # kill stale processes
+task dev:only          # skip Docker if already up
+```
 
 ### `Can't reach database server at localhost:5432`
 
