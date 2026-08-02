@@ -47,6 +47,11 @@ tasks:
     cmds:
       - bash scripts/doctor.sh
 
+  relocate:
+    desc: Copy project out of iCloud Documents to ~/Developer
+    cmds:
+      - bash scripts/relocate-from-icloud.sh
+
   dev:
     desc: Alias for up — start DB and Next.js dev server
     cmds:

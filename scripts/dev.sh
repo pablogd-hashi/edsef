@@ -33,6 +33,59 @@ HOST="${DEV_HOST:-127.0.0.1}"
 PORT="${PORT:-3000}"
 USE_WEBPACK="${DEV_WEBPACK:-1}"
 
+# Fail fast: iCloud-evicted node_modules make `next` hang forever in pread().
+_dataless=0
+if [[ -d node_modules ]]; then
+  _dataless=$(find node_modules -type f -flags +dataless 2>/dev/null | wc -l | tr -d ' ')
+fi
+if [[ "${_dataless}" -gt 0 ]]; then
+  echo "✗ Cannot start: ${_dataless} files in node_modules were evicted by iCloud (dataless)."
+  echo "  Next.js hangs reading those files — this is not a slow compile."
+  echo ""
+  echo "  Fix once:"
+  echo "    bash scripts/relocate-from-icloud.sh"
+  echo "    # then open ~/Developer/edsef-diary/edsef and run: task up"
+  echo ""
+  exit 1
+fi
+
+# Clear orphaned next-server holding PORT / .next/dev/lock (accepts TCP but never responds).
+_clear_stale_next() {
+  local pids
+  pids="$(lsof -nP -iTCP:"$PORT" -sTCP:LISTEN -t 2>/dev/null || true)"
+  if [[ -z "$pids" && ! -f .next/dev/lock ]]; then
+    return 0
+  fi
+
+  local healthy=0
+  if [[ -n "$pids" ]]; then
+    if curl -sf -m 1 "http://127.0.0.1:${PORT}/api/ping" >/dev/null 2>&1 \
+      || curl -sf -m 1 "http://127.0.0.1:${PORT}/" >/dev/null 2>&1; then
+      healthy=1
+    fi
+  fi
+
+  if [[ "$healthy" -eq 1 ]]; then
+    echo "Port $PORT is already serving Memoria. Stop it first, or open http://127.0.0.1:$PORT"
+    exit 1
+  fi
+
+  if [[ -n "$pids" || -f .next/dev/lock ]]; then
+    echo "Clearing stale Next.js process on port $PORT..."
+    if [[ -n "$pids" ]]; then
+      # shellcheck disable=SC2086
+      kill $pids 2>/dev/null || true
+      sleep 0.5
+      # shellcheck disable=SC2086
+      kill -9 $pids 2>/dev/null || true
+    fi
+    pkill -f "next dev.*-p ${PORT}" 2>/dev/null || true
+    rm -f .next/dev/lock 2>/dev/null || true
+    echo "  → Cleared. Starting fresh."
+  fi
+}
+_clear_stale_next
+
 if [[ "$USE_WEBPACK" == "1" ]]; then
   echo "Using webpack dev server (set DEV_WEBPACK=0 to try Turbopack)"
   exec next dev --webpack -H "$HOST" -p "$PORT"

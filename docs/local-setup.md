@@ -2,6 +2,22 @@
 
 Minimal stack: PostgreSQL + Redis in Docker, app on your machine with files in `./storage/`.
 
+## Do not put this project in iCloud Documents
+
+If the repo lives under `~/Documents` or `~/Desktop` with **Optimize Mac Storage**, macOS evicts `node_modules` (files show as `dataless`). `next` then hangs forever in `pread` — not a slow compile.
+
+**Symptom:** `npm run dev` prints “Using webpack…” and never reaches Ready; sometimes `Operation timed out` on the `next` binary.
+
+**Fix:**
+
+```bash
+bash scripts/relocate-from-icloud.sh
+# Open ~/Developer/edsef-diary/edsef in Cursor, then:
+task up
+```
+
+`task doctor` reports dataless file counts.
+
 ## Quick start (recommended)
 
 Install [Task](https://taskfile.dev/installation/) (`brew install go-task` on Mac), then:
