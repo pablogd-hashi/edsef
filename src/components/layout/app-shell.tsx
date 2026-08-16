@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Activity, LogOut } from "lucide-react";
+import { BookOpen, Activity, LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -21,6 +21,13 @@ export function AppShell({ children, userName, className }: AppShellProps) {
           </Link>
 
           <nav className="flex items-center gap-1">
+            <Link
+              href="/settings"
+              className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm text-muted hover:text-foreground hover:bg-cream transition-colors"
+            >
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Family</span>
+            </Link>
             <Link
               href="/health"
               className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm text-muted hover:text-foreground hover:bg-cream transition-colors"

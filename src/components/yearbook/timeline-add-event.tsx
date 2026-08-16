@@ -34,6 +34,7 @@ export function TimelineAddEvent({
   defaultYear,
   category = "GENERAL",
   onClose,
+  variant = "button",
 }: {
   childId: string;
   yearbookId: string;
@@ -43,6 +44,7 @@ export function TimelineAddEvent({
   defaultYear?: number;
   category?: "PARENTS_BEFORE_BIRTH" | "PARENTS_DURING_YEAR" | "VIDEO" | "GENERAL";
   onClose?: () => void;
+  variant?: "button" | "fab";
 }) {
   const router = useRouter();
   const photoInputId = useId();
@@ -169,6 +171,21 @@ export function TimelineAddEvent({
   }
 
   if (!open) {
+    if (variant === "fab") {
+      return (
+        <button
+          type="button"
+          onClick={handleOpen}
+          className={cn(
+            buttonVariants("secondary", "md"),
+            "fixed bottom-5 right-5 z-50 shadow-[var(--warm-shadow-lg)] touch-manipulation"
+          )}
+        >
+          <Plus className="h-4 w-4" />
+          Add moment
+        </button>
+      );
+    }
     return (
       <button
         type="button"
@@ -181,7 +198,7 @@ export function TimelineAddEvent({
     );
   }
 
-  return (
+  const form = (
     <form
       onSubmit={handleSubmit}
       className="rounded-2xl border border-accent/30 bg-gradient-to-br from-cream/50 to-card p-5 sm:p-6 shadow-[var(--warm-shadow)] space-y-5"
@@ -366,4 +383,14 @@ export function TimelineAddEvent({
       </button>
     </form>
   );
+
+  if (variant === "fab") {
+    return (
+      <div className="fixed inset-x-0 bottom-0 z-50 p-4 sm:inset-auto sm:bottom-5 sm:right-5 sm:w-[24rem] max-h-[90vh] overflow-y-auto">
+        {form}
+      </div>
+    );
+  }
+
+  return form;
 }

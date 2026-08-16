@@ -78,6 +78,11 @@ tasks:
     cmds:
       - docker compose -f {{.COMPOSE_FILE}} ps
 
+  inbox:
+    desc: Poll the iCloud Drive inbox and import new photos
+    cmds:
+      - npm run inbox:watch
+
   migrate:
     desc: Apply database migrations
     cmds:

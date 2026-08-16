@@ -248,6 +248,23 @@ export function YearbookViewer({
   );
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash.replace(/^#/, "");
+    const raw = params.get("section") || hash;
+    if (!raw) return;
+    const id =
+      raw === "timeline" || raw === "this-year" || raw === "section-this-year"
+        ? "section-this-year"
+        : raw.startsWith("section-")
+          ? raw
+          : `section-${raw}`;
+    const el = document.getElementById(id);
+    if (el) {
+      requestAnimationFrame(() => el.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
+  }, []);
+
+  useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {

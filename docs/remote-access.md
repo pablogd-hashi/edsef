@@ -119,8 +119,10 @@ AUTH_URL="http://macbook.tailXXXX.ts.net:3000"
 ### Security notes
 
 - Only devices on **your** Tailscale tailnet can reach the app.
-- Keep `ALLOW_REGISTRATION=false` after creating parent accounts.
+- Keep `ALLOW_REGISTRATION=false` after creating parent accounts. Invite the second parent from **Family** in the app (`/settings`) — do not reopen registration.
 - Tailscale does not replace backups — run `./scripts/prod/backup.sh` regularly.
+
+To add photos when the Mac is asleep, use the [iCloud inbox](./icloud-inbox.md) instead of opening the app remotely.
 
 ---
 

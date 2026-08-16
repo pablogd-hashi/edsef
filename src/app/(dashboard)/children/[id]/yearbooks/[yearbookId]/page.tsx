@@ -11,6 +11,7 @@ import { ArrowLeft, Eye, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChildTheme } from "@/components/theme/child-theme";
 import { ImportNotesDialog } from "@/components/yearbook/import-notes-dialog";
+import { TimelineAddEvent } from "@/components/yearbook/timeline-add-event";
 
 export default async function YearbookPage({
   params,
@@ -96,6 +97,15 @@ export default async function YearbookPage({
       )}
 
       <YearbookViewer yearbook={yearbook} mode="edit" canEdit={isParent} />
+      {isParent && (
+        <TimelineAddEvent
+          childId={childId}
+          yearbookId={yearbookId}
+          periodStart={yearbook.periodStart}
+          periodEnd={yearbook.periodEnd}
+          variant="fab"
+        />
+      )}
     </ChildTheme>
   );
 }

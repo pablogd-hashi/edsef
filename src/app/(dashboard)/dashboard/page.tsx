@@ -1,16 +1,18 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth/config";
-import { childrenService } from "@/lib/services";
+import { accessService, childrenService } from "@/lib/services";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { FadeIn, StaggerChildren, StaggerItem } from "@/components/ui/motion";
-import { Plus, Heart, BookOpen, ArrowRight } from "lucide-react";
+import { Plus, Heart, BookOpen, ArrowRight, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { checkDatabaseConnection } from "@/lib/db/health";
 import { DatabaseUnavailable } from "@/components/errors/database-unavailable";
+import { currentLifeYearNumber } from "@/lib/yearbook/period";
+import { listRecentInboxImports } from "@/lib/inbox/recent";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -25,7 +27,12 @@ export default async function DashboardPage() {
     );
   }
 
-  const children = await childrenService.listByFamily(session.user.familyId);
+  const [children, parents, inboxImports] = await Promise.all([
+    childrenService.listByFamily(session.user.familyId),
+    accessService.listParents(session.user.familyId),
+    listRecentInboxImports(session.user.familyId),
+  ]);
+  const needsPartner = parents.length < 2;
 
   return (
     <AppShell userName={session.user.name}>
@@ -73,14 +80,14 @@ export default async function DashboardPage() {
               const photoUrl = child.profilePhoto
                 ? `/api/media/${child.profilePhoto.id}/file?variant=thumbnail`
                 : null;
+              const currentYear = currentLifeYearNumber(child.birthDate);
+              const currentBook = child.yearbooks.find((y) => y.yearNumber === currentYear);
+              const childInbox = inboxImports.filter((i) => i.childId === child.id);
 
               return (
               <StaggerItem key={child.id}>
-                <Link
-                  href={`/children/${child.id}`}
-                  className="group block h-full rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:shadow-[var(--warm-shadow-lg)] hover:border-accent-light/50 hover:-translate-y-1"
-                >
-                  <div className="flex items-start gap-4">
+                <div className="group h-full rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:shadow-[var(--warm-shadow-lg)] hover:border-accent-light/50">
+                  <Link href={`/children/${child.id}`} className="flex items-start gap-4">
                     <Avatar
                       name={child.nickname ?? child.fullName}
                       color={child.themeColor}
@@ -96,17 +103,34 @@ export default async function DashboardPage() {
                       </p>
                       <div className="mt-3 flex items-center gap-2 flex-wrap">
                         <Badge variant="accent">
+                          Year {currentYear}
+                        </Badge>
+                        <Badge>
                           {child.yearbooks.length}{" "}
                           {child.yearbooks.length === 1 ? "year" : "years"}
                         </Badge>
-                        {child._count.mediaAssets > 0 && (
-                          <Badge>{child._count.mediaAssets} files</Badge>
+                        {childInbox.length > 0 && (
+                          <Badge variant="accent">
+                            {childInbox.length} new from iCloud
+                          </Badge>
                         )}
                       </div>
                     </div>
-                    <ArrowRight className="h-4 w-4 text-muted-light group-hover:text-accent-dark group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
+                  </Link>
+                  <div className="mt-5">
+                    <Link
+                      href={
+                        currentBook
+                          ? `/children/${child.id}/yearbooks/${currentBook.id}?section=timeline`
+                          : `/children/${child.id}/yearbooks/current`
+                      }
+                      className={cn(buttonVariants("secondary", "sm"), "w-full")}
+                    >
+                      Open this year
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
                   </div>
-                </Link>
+                </div>
               </StaggerItem>
               );
             })}
@@ -123,24 +147,45 @@ export default async function DashboardPage() {
           </StaggerChildren>
         )}
 
-        {children.length > 0 && children[0].yearbooks.length > 0 && (
-          <FadeIn delay={0.2}>
-            <div className="mt-12 rounded-2xl border border-border bg-gradient-to-r from-cream to-card p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        {inboxImports.length > 0 && (
+          <FadeIn delay={0.15}>
+            <div className="mt-10 rounded-2xl border border-accent/30 bg-gradient-to-r from-cream to-card p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <BookOpen className="h-5 w-5 text-accent-dark" />
                 <div>
-                  <p className="font-medium">Continue editing</p>
+                  <p className="font-medium">
+                    {inboxImports.length} new from iCloud
+                  </p>
                   <p className="text-sm text-muted">
-                    {children[0].yearbooks[0].title} —{" "}
-                    {children[0].nickname ?? children[0].fullName}
+                    Photos landed on this year&apos;s timeline. Open a year to title them.
                   </p>
                 </div>
               </div>
               <Link
-                href={`/children/${children[0].id}/yearbooks/${children[0].yearbooks[0].id}`}
+                href={`/children/${inboxImports[0].childId}/yearbooks/${inboxImports[0].yearbookId}?section=timeline`}
                 className={cn(buttonVariants("outline", "sm"))}
               >
-                Open year
+                Review
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </FadeIn>
+        )}
+
+        {needsPartner && (
+          <FadeIn delay={0.2}>
+            <div className="mt-10 rounded-2xl border border-dashed border-border bg-card/60 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <UserPlus className="h-5 w-5 text-accent-dark" />
+                <div>
+                  <p className="font-medium">Invite the other parent</p>
+                  <p className="text-sm text-muted">
+                    One-time link. They join this family — registration stays closed.
+                  </p>
+                </div>
+              </div>
+              <Link href="/settings" className={cn(buttonVariants("outline", "sm"))}>
+                Family settings
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
