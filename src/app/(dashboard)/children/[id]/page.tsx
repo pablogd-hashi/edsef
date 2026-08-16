@@ -8,8 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { FadeIn, StaggerChildren, StaggerItem } from "@/components/ui/motion";
 import { calculateAge, formatDate } from "@/lib/age";
-import { computeYearbookPeriod, formatYearbookYears } from "@/lib/yearbook/period";
-import { ArrowLeft, Plus, Eye, BookOpen, Calendar } from "lucide-react";
+import { computeYearbookPeriod, currentLifeYearNumber, formatYearbookYears } from "@/lib/yearbook/period";
+import { ArrowLeft, Plus, Eye, BookOpen, Calendar, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChildTheme } from "@/components/theme/child-theme";
 import { ChildThemePicker } from "@/components/children/child-theme-picker";
@@ -29,6 +29,8 @@ export default async function ChildPage({
 
   const yearbooks = await yearbookService.listByChild(id);
   const age = calculateAge(child.birthDate);
+  const currentYear = currentLifeYearNumber(child.birthDate);
+  const currentBook = yearbooks.find((y) => y.yearNumber === currentYear);
 
   const isParent =
     session.user.role === "OWNER" || session.user.role === "PARENT";
@@ -100,20 +102,33 @@ export default async function ChildPage({
 
       <main className="mx-auto max-w-4xl px-6 py-10 md:py-14">
         <FadeIn>
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
               <h2 className="font-editorial text-2xl">Life years</h2>
               <p className="text-sm text-muted mt-1">
                 Each year is an independent digital book
               </p>
             </div>
-            <Link
-              href={`/children/${id}/yearbooks/new`}
-              className={buttonVariants("outline", "sm")}
-            >
-              <Plus className="h-4 w-4" />
-              New year
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href={
+                  currentBook
+                    ? `/children/${id}/yearbooks/${currentBook.id}?section=timeline`
+                    : `/children/${id}/yearbooks/current`
+                }
+                className={buttonVariants("secondary", "sm")}
+              >
+                Open this year
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href={`/children/${id}/yearbooks/new`}
+                className={buttonVariants("outline", "sm")}
+              >
+                <Plus className="h-4 w-4" />
+                New year
+              </Link>
+            </div>
           </div>
         </FadeIn>
 
@@ -121,13 +136,13 @@ export default async function ChildPage({
           <FadeIn delay={0.1}>
             <div className="rounded-2xl border border-dashed border-border p-16 text-center">
               <BookOpen className="mx-auto h-10 w-10 text-accent/40 mb-4" />
-              <p className="text-muted mb-6">No years created yet</p>
+              <p className="text-muted mb-6">No years created yet — this year opens on first visit</p>
               <Link
-                href={`/children/${id}/yearbooks/new`}
+                href={`/children/${id}/yearbooks/current`}
                 className={buttonVariants("secondary", "md")}
               >
-                <Plus className="h-4 w-4" />
-                Create first year
+                Open this year
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </FadeIn>
@@ -149,7 +164,12 @@ export default async function ChildPage({
 
               return (
               <StaggerItem key={yearbook.id}>
-                <div className="group rounded-2xl border border-border bg-card overflow-hidden transition-all duration-300 hover:shadow-[var(--warm-shadow)] hover:border-accent-light/50">
+                <div className={cn(
+                  "group rounded-2xl border bg-card overflow-hidden transition-all duration-300 hover:shadow-[var(--warm-shadow)] hover:border-accent-light/50",
+                  yearbook.yearNumber === currentYear
+                    ? "border-accent/50 ring-1 ring-accent/20"
+                    : "border-border"
+                )}>
                   <div className="flex flex-col sm:flex-row">
                     {/* Color accent bar */}
                     <div
@@ -162,6 +182,9 @@ export default async function ChildPage({
                           <h3 className="font-editorial text-xl group-hover:text-accent-dark transition-colors">
                             {yearbook.title}
                           </h3>
+                          {yearbook.yearNumber === currentYear && (
+                            <Badge variant="accent">This year</Badge>
+                          )}
                           <Badge
                             variant={
                               yearbook.status === "PUBLISHED" ? "success" : "warning"
@@ -198,7 +221,11 @@ export default async function ChildPage({
                           Preview
                         </Link>
                         <Link
-                          href={`/children/${id}/yearbooks/${yearbook.id}`}
+                          href={
+                            yearbook.yearNumber === currentYear
+                              ? `/children/${id}/yearbooks/${yearbook.id}?section=timeline`
+                              : `/children/${id}/yearbooks/${yearbook.id}`
+                          }
                           className={cn(buttonVariants("primary", "sm"))}
                         >
                           Open

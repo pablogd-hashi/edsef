@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { calculateAge } from "@/lib/age";
-import { computeYearbookPeriod } from "@/lib/yearbook/period";
+import { computeYearbookPeriod, currentLifeYearNumber } from "@/lib/yearbook/period";
 import type { CreateYearbookInput } from "@/lib/validators";
 import type { Prisma, SectionType, Yearbook, YearbookTemplate } from "@prisma/client";
 
@@ -104,6 +104,40 @@ export class YearbookService {
       },
       include: yearbookWithRelations,
     });
+  }
+
+  async findCurrent(childId: string, at: Date = new Date()) {
+    const child = await prisma.child.findUnique({ where: { id: childId } });
+    if (!child) return null;
+    const yearNumber = currentLifeYearNumber(child.birthDate, at);
+    return prisma.yearbook.findFirst({
+      where: { childId, yearNumber, deletedAt: null },
+    });
+  }
+
+  async getOrCreateCurrent(
+    childId: string,
+    userId: string,
+    at: Date = new Date()
+  ): Promise<Yearbook> {
+    const child = await prisma.child.findUniqueOrThrow({
+      where: { id: childId },
+    });
+    const yearNumber = currentLifeYearNumber(child.birthDate, at);
+    const existing = await prisma.yearbook.findFirst({
+      where: { childId, yearNumber, deletedAt: null },
+    });
+    if (existing) return existing;
+
+    return this.create(
+      {
+        childId,
+        title: `Year ${yearNumber}`,
+        yearNumber,
+        template: "EDITORIAL",
+      },
+      userId
+    );
   }
 
   async create(input: CreateYearbookInput, userId: string): Promise<Yearbook> {

@@ -27,6 +27,14 @@ export const metadata: Metadata = {
   description:
     "Create and preserve annual digital diaries for your children. Export, back up, and keep memories for the future.",
   robots: { index: false, follow: false },
+  appleWebApp: {
+    capable: true,
+    title: "Memoria",
+    statusBarStyle: "default",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport = {
