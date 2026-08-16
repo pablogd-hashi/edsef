@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:integration": "tsx tests/integration/family-capture.ts",
     "worker": "tsx src/workers/index.ts",
     "inbox:watch": "tsx src/workers/inbox-watch.ts",
     "prod:inbox": "bash scripts/prod/inbox-watch.sh",
