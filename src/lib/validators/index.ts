@@ -87,6 +87,8 @@ export const registerSchema = z.object({
   password: z.string().min(8).max(100),
 });
 
+export const acceptInviteSchema = registerSchema;
+
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
