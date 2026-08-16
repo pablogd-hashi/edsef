@@ -9,9 +9,9 @@ import {
   inferMimeType,
   STORAGE_ROOT,
 } from "@/lib/storage/local";
-import sharp from "sharp";
 import type { MediaType, SectionType } from "@prisma/client";
 import { mediaService } from "./media.service";
+import { generateImageVariants } from "@/lib/inbox/heic";
 
 const MAX_IMAGE = Number(process.env.MAX_IMAGE_SIZE ?? 20 * 1024 * 1024);
 const MAX_VIDEO = Number(process.env.MAX_VIDEO_SIZE ?? 500 * 1024 * 1024);
@@ -60,8 +60,56 @@ export class LocalMediaService {
     if (!canAccess) throw new Error("Forbidden");
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const mimeType = inferMimeType(file.name, file.type || undefined);
-    const type = mimeToType(mimeType, file.name);
+    return this.uploadFromBuffer(familyId, {
+      buffer,
+      filename: file.name,
+      mimeType: file.type || undefined,
+      childId,
+      yearbookId,
+      milestoneId,
+      timelineEntryId,
+      storyId,
+      parentNoteId,
+      sectionType,
+      title,
+    });
+  }
+
+  async uploadFromBuffer(
+    familyId: string,
+    params: {
+      buffer: Buffer;
+      filename: string;
+      mimeType?: string;
+      childId: string;
+      yearbookId?: string;
+      milestoneId?: string;
+      timelineEntryId?: string;
+      storyId?: string;
+      parentNoteId?: string;
+      sectionType?: SectionType;
+      title?: string;
+      capturedAt?: Date;
+      sourcePath?: string;
+    }
+  ) {
+    const {
+      buffer,
+      filename,
+      childId,
+      yearbookId,
+      milestoneId,
+      timelineEntryId,
+      storyId,
+      parentNoteId,
+      sectionType,
+      title,
+      capturedAt,
+      sourcePath,
+    } = params;
+
+    const mimeType = inferMimeType(filename, params.mimeType);
+    const type = mimeToType(mimeType, filename);
 
     if (type === "IMAGE" && buffer.length > MAX_IMAGE) {
       throw new Error(`Image too large (max ${MAX_IMAGE / 1024 / 1024}MB)`);
@@ -70,18 +118,19 @@ export class LocalMediaService {
       throw new Error(`Video too large (max ${MAX_VIDEO / 1024 / 1024}MB)`);
     }
 
-    const ext = sanitizeExtension(file.name, mimeType);
+    const ext = sanitizeExtension(filename, mimeType);
     const checksum = computeSha256(buffer);
 
     const asset = await mediaService.create({
       childId,
       yearbookId,
       type,
-      originalFilename: file.name,
+      originalFilename: filename,
       mimeType,
       size: BigInt(buffer.length),
       storageKey: "pending",
-      title: title ?? file.name,
+      title: title ?? filename,
+      capturedAt,
     });
 
     const originalPath = getAssetFilePath(familyId, childId, asset.id, "original", ext);
@@ -93,43 +142,32 @@ export class LocalMediaService {
     let height: number | undefined;
 
     if (type === "IMAGE") {
-      try {
-        const meta = await sharp(buffer).metadata();
-        width = meta.width;
-        height = meta.height;
+      const variants = await generateImageVariants(buffer, sourcePath);
+      width = variants.width;
+      height = variants.height;
 
-        const webBuf = await sharp(buffer)
-          .resize(1920, 1920, { fit: "inside", withoutEnlargement: true })
-          .jpeg({ quality: 85 })
-          .toBuffer();
-        const thumbBuf = await sharp(buffer)
-          .resize(400, 400, { fit: "cover" })
-          .jpeg({ quality: 80 })
-          .toBuffer();
-
+      if (variants.webBuf && variants.thumbBuf) {
         const webPath = getAssetFilePath(familyId, childId, asset.id, "web", "jpg");
         const thumbPath = getAssetFilePath(familyId, childId, asset.id, "thumbnail", "jpg");
-        await saveBuffer(webPath, webBuf);
-        await saveBuffer(thumbPath, thumbBuf);
+        await saveBuffer(webPath, variants.webBuf);
+        await saveBuffer(thumbPath, variants.thumbBuf);
 
         await mediaService.addVariant(asset.id, "WEB", {
           storageKey: path.relative(STORAGE_ROOT, webPath),
           mimeType: "image/jpeg",
-          size: BigInt(webBuf.length),
-          width: (await sharp(webBuf).metadata()).width,
-          height: (await sharp(webBuf).metadata()).height,
-          checksum: computeSha256(webBuf),
+          size: BigInt(variants.webBuf.length),
+          width: variants.width,
+          height: variants.height,
+          checksum: computeSha256(variants.webBuf),
         });
         await mediaService.addVariant(asset.id, "THUMBNAIL", {
           storageKey: path.relative(STORAGE_ROOT, thumbPath),
           mimeType: "image/jpeg",
-          size: BigInt(thumbBuf.length),
+          size: BigInt(variants.thumbBuf.length),
           width: 400,
           height: 400,
-          checksum: computeSha256(thumbBuf),
+          checksum: computeSha256(variants.thumbBuf),
         });
-      } catch {
-        // keep original only
       }
     }
 

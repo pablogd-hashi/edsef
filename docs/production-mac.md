@@ -66,8 +66,12 @@ Restart the app. On iPhone Safari: `http://192.168.1.42:3000`
 ```bash
 # Edit paths in the plist, then:
 cp deploy/launchd/com.memoria.plist.example ~/Library/LaunchAgents/com.memoria.plist
+cp deploy/launchd/com.memoria.inbox.plist.example ~/Library/LaunchAgents/com.memoria.inbox.plist
 launchctl load ~/Library/LaunchAgents/com.memoria.plist
+launchctl load ~/Library/LaunchAgents/com.memoria.inbox.plist
 ```
+
+The inbox agent imports photos from a shared iCloud Drive folder. Setup: [icloud-inbox.md](./icloud-inbox.md).
 
 Ensure Docker Desktop starts at login (Docker Desktop → Settings → General → Start Docker Desktop when you sign in).
 
@@ -96,6 +100,7 @@ Then use **Export → PDF** in the app.
 | `npm run prod:update` | Rebuild after git pull |
 | `npm run prod:stop` | Alias for stop.sh |
 | `npm run prod:backup` | Backup DB + storage |
+| `npm run inbox:watch` | Import photos from the iCloud inbox |
 | `npm run db:migrate:deploy` | Production migrations |
 
 ## Troubleshooting

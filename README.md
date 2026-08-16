@@ -96,6 +96,7 @@ Next.js 16 · React 19 · PostgreSQL · Prisma · Auth.js · local disk storage
 |-------|------------------|
 | [production-mac.md](docs/production-mac.md) | Running on your Mac 24/7 |
 | [remote-access.md](docs/remote-access.md) | iPhone, iPad, or away from home |
+| [icloud-inbox.md](docs/icloud-inbox.md) | Partner drops photos from the iPhone |
 | [local-setup.md](docs/local-setup.md) | Hacking on the code locally |
 
 ## License

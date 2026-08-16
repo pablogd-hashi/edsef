@@ -38,6 +38,12 @@ export class MediaService {
     });
   }
 
+  async findByChecksum(checksum: string): Promise<MediaAsset | null> {
+    return prisma.mediaAsset.findFirst({
+      where: { checksum, deletedAt: null },
+    });
+  }
+
   async create(input: CreateMediaInput): Promise<MediaAsset> {
     return prisma.mediaAsset.create({
       data: {
