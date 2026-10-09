@@ -11,6 +11,10 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (session.user.role !== "OWNER" && session.user.role !== "PARENT") {
+    return NextResponse.json({ error: "Only parents can revoke invites" }, { status: 403 });
+  }
+
   const { id } = await params;
 
   try {

@@ -1,7 +1,7 @@
 "use client";
 
 import type { Prisma } from "@prisma/client";
-import { isHtmlContent, isTiptapJson, tiptapToPlainText } from "@/lib/rich-text";
+import { isHtmlContent, isTiptapJson, sanitizeRichHtml, tiptapToPlainText } from "@/lib/rich-text";
 import { cn } from "@/lib/utils";
 
 type TiptapNode = {
@@ -82,7 +82,7 @@ export function RichTextContent({
       return (
         <Tag
           className={cn("prose-yearbook rich-html", className)}
-          dangerouslySetInnerHTML={{ __html: value }}
+          dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(value) }}
         />
       );
     }

@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth/config";
+import { requireChildAccess } from "@/lib/api/require-child-access";
+import { requireParentSession } from "@/lib/api/require-parent";
 import { yearbookService } from "@/lib/services";
 import { createYearbookSchema } from "@/lib/validators";
 
 export async function GET(request: Request) {
-  const session = await auth();
-  if (!session?.user?.familyId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { searchParams } = new URL(request.url);
   const childId = searchParams.get("childId");
 
@@ -16,16 +12,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "childId required" }, { status: 400 });
   }
 
+  const access = await requireChildAccess(childId);
+  if (access.error) return access.error;
+
   const yearbooks = await yearbookService.listByChild(childId);
   return NextResponse.json(yearbooks);
 }
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const body = await request.json();
   const parsed = createYearbookSchema.safeParse(body);
 
@@ -36,6 +30,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const yearbook = await yearbookService.create(parsed.data, session.user.id);
+  const access = await requireParentSession(parsed.data.childId);
+  if (access.error) return access.error;
+
+  const yearbook = await yearbookService.create(parsed.data, access.session.user.id!);
   return NextResponse.json(yearbook, { status: 201 });
 }

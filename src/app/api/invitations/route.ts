@@ -12,6 +12,9 @@ export async function GET() {
   if (!session?.user?.id || !session.user.familyId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (session.user.role !== "OWNER" && session.user.role !== "PARENT") {
+    return NextResponse.json({ error: "Only parents can see invites" }, { status: 403 });
+  }
 
   const [invites, parents] = await Promise.all([
     accessService.listInvitations(session.user.familyId),

@@ -3,9 +3,9 @@ import { auth } from "@/lib/auth/config";
 import { accessService } from "@/lib/services/access.service";
 import { yearbookService } from "@/lib/services/yearbook.service";
 import { buildYearbookExport } from "@/lib/export/builder";
-import { createReadStream, existsSync } from "fs";
-import { Readable } from "stream";
+import { existsSync } from "fs";
 import path from "path";
+import { familyExportsRoot } from "@/lib/storage/local";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -43,16 +43,13 @@ export async function POST(request: Request) {
     );
 
     let downloadPath = result.zipPath;
-    let contentType = "application/zip";
     let filename = path.basename(result.zipPath);
 
     if (format === "HTML") {
       downloadPath = result.htmlPath;
-      contentType = "text/html";
       filename = "index.html";
     } else if (format === "PDF" && result.pdfPath) {
       downloadPath = result.pdfPath;
-      contentType = "application/pdf";
       filename = "yearbook.pdf";
     }
 
@@ -62,15 +59,16 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      downloadUrl: `/api/export/download?path=${encodeURIComponent(downloadPath)}`,
+      downloadUrl: `/api/export/download?file=${encodeURIComponent(
+        path.relative(familyExportsRoot(session.user.familyId), downloadPath)
+      )}`,
       filename,
       mediaCount: result.mediaRefs.length,
-      exportDir: result.exportDir,
     });
   } catch (e) {
     console.error("Export error:", e);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Export failed" },
+      { error: "Export failed" },
       { status: 500 }
     );
   }

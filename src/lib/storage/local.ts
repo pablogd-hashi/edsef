@@ -6,6 +6,16 @@ export const STORAGE_ROOT = path.resolve(
   process.env.STORAGE_PATH ?? path.join(process.cwd(), "storage")
 );
 
+/** True when `target` resolves to `root` itself or somewhere beneath it. */
+export function isInside(root: string, target: string): boolean {
+  const rel = path.relative(path.resolve(root), path.resolve(target));
+  return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
+}
+
+export function familyExportsRoot(familyId: string): string {
+  return path.join(STORAGE_ROOT, "exports", familyId);
+}
+
 export async function ensureDir(dir: string): Promise<void> {
   await fs.mkdir(dir, { recursive: true });
 }

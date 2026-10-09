@@ -15,3 +15,14 @@ describe("getYouTubeMusicUrl", () => {
     expect(url).toContain("As");
   });
 });
+
+describe("getYouTubeMusicUrl safety", () => {
+  it("ignores non-YouTube or script URLs", () => {
+    expect(getYouTubeMusicUrl("Song", "Artist", "javascript:alert(1)//youtube.com")).toContain(
+      "music.youtube.com/search"
+    );
+    expect(getYouTubeMusicUrl("Song", null, "https://youtube.com.evil.example/x")).toContain(
+      "music.youtube.com/search"
+    );
+  });
+});

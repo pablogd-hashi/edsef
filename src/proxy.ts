@@ -1,10 +1,17 @@
 import { auth } from "@/lib/auth/config";
 import { NextResponse } from "next/server";
+import { isRegistrationOpen } from "@/lib/auth/registration";
+
+// Next dev (React refresh) needs eval; production builds do not.
+const scriptSrc =
+  process.env.NODE_ENV === "development"
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+    : "script-src 'self' 'unsafe-inline'";
 
 const publicRoutes = ["/", "/login", "/register"];
 const authRoutes = ["/login", "/register"];
 
-export default auth((req) => {
+export const proxy = auth(async (req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
 
@@ -19,11 +26,8 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  // Block open registration when disabled (local/private installs)
-  if (
-    pathname === "/register" &&
-    process.env.ALLOW_REGISTRATION === "false"
-  ) {
+  // Only the first account (or ALLOW_REGISTRATION=true) may sign up; partners use invites.
+  if (pathname === "/register" && !(await isRegistrationOpen())) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
@@ -38,9 +42,10 @@ export default auth((req) => {
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   response.headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:;"
+    `default-src 'self'; ${scriptSrc}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
   );
 
   if (!pathname.startsWith("/api")) {

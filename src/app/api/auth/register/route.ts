@@ -2,9 +2,19 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db/prisma";
 import { registerSchema } from "@/lib/validators";
+import { isRegistrationOpen } from "@/lib/auth/registration";
+import { AUTH_LIMIT, clientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
-  if (process.env.ALLOW_REGISTRATION === "false") {
+  const limited = rateLimit(`register:${clientIp(request.headers)}`, AUTH_LIMIT);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many attempts. Try again later." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } }
+    );
+  }
+
+  if (!(await isRegistrationOpen())) {
     return NextResponse.json(
       { error: "Registration is disabled on this server." },
       { status: 403 },

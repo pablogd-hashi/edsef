@@ -1,12 +1,22 @@
 import { NextResponse } from "next/server";
 import { accessService, InviteError } from "@/lib/services/access.service";
 import { acceptInviteSchema } from "@/lib/validators";
+import { AUTH_LIMIT, clientIp, rateLimit } from "@/lib/rate-limit";
+
+function tooMany(retryAfterSec: number) {
+  return NextResponse.json(
+    { error: "Too many attempts. Try again later." },
+    { status: 429, headers: { "Retry-After": String(retryAfterSec) } }
+  );
+}
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
+  const limited = rateLimit(`invite:${clientIp(_request.headers)}`, AUTH_LIMIT);
+  if (!limited.ok) return tooMany(limited.retryAfterSec);
   try {
     const invite = await accessService.getPublicInvite(token);
     return NextResponse.json({
@@ -27,6 +37,8 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
+  const limited = rateLimit(`invite:${clientIp(request.headers)}`, AUTH_LIMIT);
+  if (!limited.ok) return tooMany(limited.retryAfterSec);
   const body = await request.json();
   const parsed = acceptInviteSchema.safeParse(body);
   if (!parsed.success) {

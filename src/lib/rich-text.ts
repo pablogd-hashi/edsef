@@ -1,4 +1,20 @@
 import type { Prisma } from "@prisma/client";
+import sanitizeHtml from "sanitize-html";
+
+/** Tags the TipTap editor produces — anything else (script, iframe, on* handlers) is dropped. */
+export function sanitizeRichHtml(html: string): string {
+  return sanitizeHtml(html, {
+    allowedTags: [
+      "p", "br", "strong", "b", "em", "i", "u", "s", "a",
+      "h2", "h3", "h4", "ul", "ol", "li", "blockquote", "code", "pre", "hr",
+    ],
+    allowedAttributes: { a: ["href", "target", "rel"] },
+    allowedSchemes: ["http", "https", "mailto"],
+    transformTags: {
+      a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer", target: "_blank" }),
+    },
+  });
+}
 
 type TiptapNode = {
   type: string;

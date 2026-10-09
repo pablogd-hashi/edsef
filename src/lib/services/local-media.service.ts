@@ -15,6 +15,7 @@ import { generateImageVariants } from "@/lib/inbox/heic";
 
 const MAX_IMAGE = Number(process.env.MAX_IMAGE_SIZE ?? 20 * 1024 * 1024);
 const MAX_VIDEO = Number(process.env.MAX_VIDEO_SIZE ?? 500 * 1024 * 1024);
+const MAX_OTHER = 50 * 1024 * 1024;
 
 function mimeToType(mime: string, filename: string): MediaType {
   const ext = path.extname(filename).replace(/^\./, "").toLowerCase();
@@ -56,8 +57,15 @@ export class LocalMediaService {
       title,
     } = params;
 
-    const canAccess = await accessService.assertChildAccess(userId, childId);
-    if (!canAccess) throw new Error("Forbidden");
+    const canEdit = await accessService.assertParentAccess(userId, childId);
+    if (!canEdit) throw new Error("Forbidden");
+    await assertLinksBelongToChild(childId, {
+      yearbookId,
+      milestoneId,
+      timelineEntryId,
+      storyId,
+      parentNoteId,
+    });
 
     const buffer = Buffer.from(await file.arrayBuffer());
     return this.uploadFromBuffer(familyId, {
@@ -116,6 +124,9 @@ export class LocalMediaService {
     }
     if (type === "VIDEO" && buffer.length > MAX_VIDEO) {
       throw new Error(`Video too large (max ${MAX_VIDEO / 1024 / 1024}MB)`);
+    }
+    if ((type === "AUDIO" || type === "DOCUMENT") && buffer.length > MAX_OTHER) {
+      throw new Error(`File too large (max ${MAX_OTHER / 1024 / 1024}MB)`);
     }
 
     const ext = sanitizeExtension(filename, mimeType);
@@ -253,6 +264,31 @@ export class LocalMediaService {
     }
     return this.resolvePath(asset.storageKey);
   }
+}
+
+/** Every record an upload links to must hang off the same child (no cross-family injection). */
+async function assertLinksBelongToChild(
+  childId: string,
+  ids: {
+    yearbookId?: string;
+    milestoneId?: string;
+    timelineEntryId?: string;
+    storyId?: string;
+    parentNoteId?: string;
+  }
+): Promise<void> {
+  const owned = { yearbook: { childId } };
+  const checks: Promise<unknown>[] = [];
+  if (ids.yearbookId) checks.push(prisma.yearbook.findFirst({ where: { id: ids.yearbookId, childId } }));
+  if (ids.milestoneId) checks.push(prisma.milestone.findFirst({ where: { id: ids.milestoneId, ...owned } }));
+  if (ids.timelineEntryId)
+    checks.push(prisma.timelineEntry.findFirst({ where: { id: ids.timelineEntryId, ...owned } }));
+  if (ids.storyId) checks.push(prisma.story.findFirst({ where: { id: ids.storyId, ...owned } }));
+  if (ids.parentNoteId)
+    checks.push(prisma.parentNote.findFirst({ where: { id: ids.parentNoteId, ...owned } }));
+
+  const found = await Promise.all(checks);
+  if (found.some((row) => !row)) throw new Error("Forbidden");
 }
 
 export const localMediaService = new LocalMediaService();

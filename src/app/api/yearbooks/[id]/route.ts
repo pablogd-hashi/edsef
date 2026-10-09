@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { yearbookService } from "@/lib/services";
 import { updateYearbookSchema } from "@/lib/validators";
 import { requireParentSession } from "@/lib/api/require-parent";
+import { prisma } from "@/lib/db/prisma";
 
 export async function PATCH(
   request: Request,
@@ -23,6 +24,16 @@ export async function PATCH(
   const parsed = updateYearbookSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  if (parsed.data.coverPhotoId) {
+    const photo = await prisma.mediaAsset.findFirst({
+      where: { id: parsed.data.coverPhotoId, childId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!photo) {
+      return NextResponse.json({ error: "Cover photo not found" }, { status: 400 });
+    }
   }
 
   try {

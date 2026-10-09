@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth/config";
 import { createReadStream, existsSync } from "fs";
 import { Readable } from "stream";
 import path from "path";
-import { STORAGE_ROOT } from "@/lib/storage/local";
+import { familyExportsRoot, isInside } from "@/lib/storage/local";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -12,17 +12,16 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const filePath = searchParams.get("path");
+  const file = searchParams.get("file");
 
-  if (!filePath) {
-    return NextResponse.json({ error: "path required" }, { status: 400 });
+  if (!file) {
+    return NextResponse.json({ error: "file required" }, { status: 400 });
   }
 
-  const resolved = path.resolve(filePath);
-  const exportsRoot = path.resolve(STORAGE_ROOT, "exports");
-
-  // Only allow downloads from exports directory
-  if (!resolved.startsWith(exportsRoot)) {
+  // Paths are relative to the caller's own family export folder only.
+  const exportsRoot = familyExportsRoot(session.user.familyId);
+  const resolved = path.resolve(exportsRoot, file);
+  if (!isInside(exportsRoot, resolved) || resolved === path.resolve(exportsRoot)) {
     return NextResponse.json({ error: "Path not allowed" }, { status: 403 });
   }
 
@@ -37,7 +36,7 @@ export async function GET(request: Request) {
 
   const types: Record<string, string> = {
     ".zip": "application/zip",
-    ".html": "text/html",
+    ".html": "application/octet-stream",
     ".pdf": "application/pdf",
     ".json": "application/json",
   };

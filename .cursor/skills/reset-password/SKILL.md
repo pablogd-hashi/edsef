@@ -9,11 +9,10 @@ disable-model-invocation: true
 Postgres must be running (`task db:up` or `task up`).
 
 ```bash
-npm run reset-password -- you@example.com "new password"
+npm run reset-password -- you@example.com
 ```
 
-- Password: 8–100 characters.
-- Unknown email → the script lists the accounts that exist.
-- Sign in again on every device (Mac, both iPhones).
+- The script asks for the new password (8–100 characters) without echoing it.
+- Every existing login for that account is signed out; sign in again on each device.
 
 Prefer this over editing `User.passwordHash` by hand — it stores a bcrypt hash the same way `/register` does.

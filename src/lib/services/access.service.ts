@@ -1,8 +1,14 @@
 import bcrypt from "bcryptjs";
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db/prisma";
 import type { FamilyRole, Prisma } from "@prisma/client";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** 256-bit unguessable token for one-time invite links. */
+function newInviteToken() {
+  return randomBytes(32).toString("base64url");
+}
 
 export class InviteError extends Error {
   constructor(
@@ -88,6 +94,7 @@ export class AccessService {
         childId,
         activateAtAge,
         invitedById,
+        token: newInviteToken(),
         expiresAt: new Date(Date.now() + INVITE_TTL_MS),
       },
     });
@@ -101,6 +108,7 @@ export class AccessService {
         email: `pending+${crypto.randomUUID()}@invite.local`,
         role: "PARENT",
         invitedById,
+        token: newInviteToken(),
         expiresAt: new Date(Date.now() + INVITE_TTL_MS),
       },
     });
@@ -162,6 +170,15 @@ export class AccessService {
     const passwordHash = await bcrypt.hash(data.password, 12);
 
     return prisma.$transaction(async (tx) => {
+      // Claim the invite first so two simultaneous accepts can't both succeed.
+      const claimed = await tx.invitation.updateMany({
+        where: { id: invite.id, status: "PENDING" },
+        data: { status: "ACCEPTED", email: data.email },
+      });
+      if (claimed.count !== 1) {
+        throw new InviteError("This invite is no longer valid", "used");
+      }
+
       const user = await tx.user.create({
         data: {
           name: data.name,
@@ -176,11 +193,6 @@ export class AccessService {
           userId: user.id,
           role: "PARENT",
         },
-      });
-
-      await tx.invitation.update({
-        where: { id: invite.id },
-        data: { status: "ACCEPTED", email: data.email },
       });
 
       return user;

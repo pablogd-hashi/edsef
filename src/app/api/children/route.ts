@@ -18,6 +18,9 @@ export async function POST(request: Request) {
   if (!session?.user?.familyId || !session.user.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (session.user.role !== "OWNER" && session.user.role !== "PARENT") {
+    return NextResponse.json({ error: "Only parents can add children" }, { status: 403 });
+  }
 
   const body = await request.json();
   const parsed = createChildSchema.safeParse(body);
