@@ -4,6 +4,7 @@ export type InboxChild = {
   id: string;
   fullName: string;
   nickname: string | null;
+  birthDate?: Date;
 };
 
 export function matchChildFolder(

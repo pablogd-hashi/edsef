@@ -11,13 +11,28 @@ import { inferMimeType } from "@/lib/storage/local";
 import { extractCapturedAt } from "./exif";
 import { resolveChildForFile, type InboxChild } from "./match-child";
 import {
+  FAILED_DIR,
   IMPORTED_DIR,
   isPlaceholderName,
   resolveInboxPath,
   titleFromFilename,
 } from "./paths";
 
-const STABLE_MS = 5_000;
+/** Give up on a file after this many failed import attempts and park it in .failed/. */
+const MAX_ATTEMPTS = 3;
+
+/**
+ * iCloud keeps the original mtime when it downloads a file, so "old mtime"
+ * doesn't mean "finished". A file is importable once its size and mtime are
+ * unchanged between two scans. State lives for the watcher's lifetime.
+ */
+const lastSeen = new Map<string, string>();
+const attempts = new Map<string, number>();
+
+export function resetInboxState() {
+  lastSeen.clear();
+  attempts.clear();
+}
 const MEDIA_EXT = new Set([
   "jpg",
   "jpeg",
@@ -67,6 +82,7 @@ export async function scanInbox(inboxPath = resolveInboxPath()): Promise<InboxSc
     id: c.id,
     fullName: c.fullName,
     nickname: c.nickname,
+    birthDate: c.birthDate,
   }));
 
   let files: PendingFile[];
@@ -77,9 +93,17 @@ export async function scanInbox(inboxPath = resolveInboxPath()): Promise<InboxSc
     return [{ file: inboxPath, status: "error", reason: message }];
   }
 
+  const ctx = { familyId: family.id, ownerId, children, inboxPath };
   const results: InboxScanResult[] = [];
   for (const file of files) {
-    results.push(await importOne(file, { familyId: family.id, ownerId, children, inboxPath }));
+    // One bad file must never stop the rest of the inbox from importing.
+    try {
+      const result = await importOne(file, ctx);
+      if (result.status !== "skipped") attempts.delete(file.absPath);
+      results.push(result);
+    } catch (error) {
+      results.push(await recordFailure(file, inboxPath, error));
+    }
   }
   return results;
 }
@@ -89,7 +113,7 @@ async function listPendingFiles(inboxPath: string): Promise<PendingFile[]> {
   const files: PendingFile[] = [];
 
   for (const entry of entries) {
-    if (entry.name === IMPORTED_DIR) continue;
+    if (entry.name === IMPORTED_DIR || entry.name === FAILED_DIR) continue;
     if (isPlaceholderName(entry.name)) continue;
 
     if (entry.isDirectory()) {
@@ -132,8 +156,11 @@ async function importOne(
   if (stat.size === 0) {
     return { file: file.relative, status: "skipped", reason: "Empty file" };
   }
-  if (Date.now() - stat.mtimeMs < STABLE_MS) {
-    return { file: file.relative, status: "skipped", reason: "Still downloading" };
+  const fingerprint = `${stat.size}:${stat.mtimeMs}`;
+  const previous = lastSeen.get(file.absPath);
+  lastSeen.set(file.absPath, fingerprint);
+  if (previous !== fingerprint) {
+    return { file: file.relative, status: "skipped", reason: "Waiting for download to settle" };
   }
 
   const child = resolveChildForFile(file.folderName, ctx.children);
@@ -143,8 +170,9 @@ async function importOne(
 
   const buffer = await fs.readFile(file.absPath);
   const checksum = computeSha256(buffer);
-  const existing = await mediaService.findByChecksum(checksum);
+  const existing = await mediaService.findByChecksum(checksum, ctx.familyId);
   if (existing) {
+    lastSeen.delete(file.absPath);
     await archiveImported(ctx.inboxPath, file);
     return { file: file.relative, status: "duplicate", reason: "Already imported" };
   }
@@ -161,25 +189,26 @@ async function importOne(
       eventDate: capturedAt,
       month: capturedAt.getMonth() + 1,
     },
-    (
-      await prisma.child.findUniqueOrThrow({
-        where: { id: child.id },
-        select: { birthDate: true },
-      })
-    ).birthDate
+    child.birthDate ?? (await prisma.child.findUniqueOrThrow({ where: { id: child.id } })).birthDate
   );
 
-  await localMediaService.uploadFromBuffer(ctx.familyId, {
-    buffer,
-    filename: file.filename,
-    mimeType: inferMimeType(file.filename),
-    childId: child.id,
-    yearbookId: yearbook.id,
-    timelineEntryId: entry.id,
-    title,
-    capturedAt,
-    sourcePath: file.absPath,
-  });
+  try {
+    await localMediaService.uploadFromBuffer(ctx.familyId, {
+      buffer,
+      filename: file.filename,
+      mimeType: inferMimeType(file.filename),
+      childId: child.id,
+      yearbookId: yearbook.id,
+      timelineEntryId: entry.id,
+      title,
+      capturedAt,
+      sourcePath: file.absPath,
+    });
+  } catch (error) {
+    // No empty "Imported from iCloud" entries when the photo itself failed.
+    await prisma.timelineEntry.delete({ where: { id: entry.id } }).catch(() => {});
+    throw error;
+  }
 
   await accessService.logAudit(
     "inbox.import",
@@ -195,16 +224,39 @@ async function importOne(
     }
   );
 
+  lastSeen.delete(file.absPath);
   await archiveImported(ctx.inboxPath, file);
   return { file: file.relative, status: "imported", timelineEntryId: entry.id };
 }
 
+async function recordFailure(
+  file: PendingFile,
+  inboxPath: string,
+  error: unknown
+): Promise<InboxScanResult> {
+  const reason = error instanceof Error ? error.message : String(error);
+  const count = (attempts.get(file.absPath) ?? 0) + 1;
+  attempts.set(file.absPath, count);
+  if (count < MAX_ATTEMPTS) {
+    return { file: file.relative, status: "error", reason: `${reason} (attempt ${count})` };
+  }
+
+  attempts.delete(file.absPath);
+  lastSeen.delete(file.absPath);
+  try {
+    const dest = await moveInto(path.join(inboxPath, FAILED_DIR, file.folderName ?? "_root"), file);
+    await fs.writeFile(`${dest}.error.txt`, `${new Date().toISOString()}\n${reason}\n`);
+  } catch {
+    // If even moving fails, leave it in place; it will be retried.
+  }
+  return { file: file.relative, status: "error", reason: `${reason} — moved to ${FAILED_DIR}/` };
+}
+
 async function archiveImported(inboxPath: string, file: PendingFile) {
-  const destDir = path.join(
-    inboxPath,
-    IMPORTED_DIR,
-    file.folderName ?? "_root"
-  );
+  await moveInto(path.join(inboxPath, IMPORTED_DIR, file.folderName ?? "_root"), file);
+}
+
+async function moveInto(destDir: string, file: PendingFile): Promise<string> {
   await fs.mkdir(destDir, { recursive: true });
   let dest = path.join(destDir, file.filename);
   try {
@@ -215,4 +267,5 @@ async function archiveImported(inboxPath: string, file: PendingFile) {
     // dest is free
   }
   await fs.rename(file.absPath, dest);
+  return dest;
 }

@@ -1,3 +1,4 @@
+import fs from "fs/promises";
 import path from "path";
 import { prisma } from "@/lib/db/prisma";
 import { accessService } from "@/lib/services/access.service";
@@ -142,57 +143,29 @@ export class LocalMediaService {
       storageKey: "pending",
       title: title ?? filename,
       capturedAt,
+      checksum,
     });
 
-    const originalPath = getAssetFilePath(familyId, childId, asset.id, "original", ext);
-    const storageKey = path.relative(STORAGE_ROOT, originalPath);
-
-    await saveBuffer(originalPath, buffer);
-
-    let width: number | undefined;
-    let height: number | undefined;
-
-    if (type === "IMAGE") {
-      const variants = await generateImageVariants(buffer, sourcePath);
-      width = variants.width;
-      height = variants.height;
-
-      if (variants.webBuf && variants.thumbBuf) {
-        const webPath = getAssetFilePath(familyId, childId, asset.id, "web", "jpg");
-        const thumbPath = getAssetFilePath(familyId, childId, asset.id, "thumbnail", "jpg");
-        await saveBuffer(webPath, variants.webBuf);
-        await saveBuffer(thumbPath, variants.thumbBuf);
-
-        await mediaService.addVariant(asset.id, "WEB", {
-          storageKey: path.relative(STORAGE_ROOT, webPath),
-          mimeType: "image/jpeg",
-          size: BigInt(variants.webBuf.length),
-          width: variants.width,
-          height: variants.height,
-          checksum: computeSha256(variants.webBuf),
-        });
-        await mediaService.addVariant(asset.id, "THUMBNAIL", {
-          storageKey: path.relative(STORAGE_ROOT, thumbPath),
-          mimeType: "image/jpeg",
-          size: BigInt(variants.thumbBuf.length),
-          width: 400,
-          height: 400,
-          checksum: computeSha256(variants.thumbBuf),
-        });
-      }
-    }
-
-    const updated = await prisma.mediaAsset.update({
-      where: { id: asset.id },
-      data: {
-        storageKey,
+    let updated;
+    try {
+      updated = await this.storeFiles(familyId, childId, asset.id, {
+        buffer,
+        ext,
+        type,
         checksum,
-        width,
-        height,
-        processingStatus: "READY",
-      },
-      include: { variants: true },
-    });
+        sourcePath,
+      });
+    } catch (error) {
+      // Never leave a half-imported asset behind: no row, no stray files.
+      await prisma.mediaAsset.delete({ where: { id: asset.id } }).catch(() => {});
+      await fs
+        .rm(path.dirname(getAssetFilePath(familyId, childId, asset.id, "original", ext)), {
+          recursive: true,
+          force: true,
+        })
+        .catch(() => {});
+      throw error;
+    }
 
     if (milestoneId) {
       const count = await prisma.milestoneMedia.count({ where: { milestoneId } });
@@ -232,6 +205,64 @@ export class LocalMediaService {
     }
 
     return updated;
+  }
+
+  private async storeFiles(
+    familyId: string,
+    childId: string,
+    assetId: string,
+    opts: { buffer: Buffer; ext: string; type: string; checksum: string; sourcePath?: string }
+  ) {
+    const { buffer, ext, type, checksum, sourcePath } = opts;
+    const originalPath = getAssetFilePath(familyId, childId, assetId, "original", ext);
+    const storageKey = path.relative(STORAGE_ROOT, originalPath);
+
+    await saveBuffer(originalPath, buffer);
+
+    let width: number | undefined;
+    let height: number | undefined;
+
+    if (type === "IMAGE") {
+      const variants = await generateImageVariants(buffer, sourcePath);
+      width = variants.width;
+      height = variants.height;
+
+      if (variants.webBuf && variants.thumbBuf) {
+        const webPath = getAssetFilePath(familyId, childId, assetId, "web", "jpg");
+        const thumbPath = getAssetFilePath(familyId, childId, assetId, "thumbnail", "jpg");
+        await saveBuffer(webPath, variants.webBuf);
+        await saveBuffer(thumbPath, variants.thumbBuf);
+
+        await mediaService.addVariant(assetId, "WEB", {
+          storageKey: path.relative(STORAGE_ROOT, webPath),
+          mimeType: "image/jpeg",
+          size: BigInt(variants.webBuf.length),
+          width: variants.width,
+          height: variants.height,
+          checksum: computeSha256(variants.webBuf),
+        });
+        await mediaService.addVariant(assetId, "THUMBNAIL", {
+          storageKey: path.relative(STORAGE_ROOT, thumbPath),
+          mimeType: "image/jpeg",
+          size: BigInt(variants.thumbBuf.length),
+          width: 400,
+          height: 400,
+          checksum: computeSha256(variants.thumbBuf),
+        });
+      }
+    }
+
+    return prisma.mediaAsset.update({
+      where: { id: assetId },
+      data: {
+        storageKey,
+        checksum,
+        width,
+        height,
+        processingStatus: "READY",
+      },
+      include: { variants: true },
+    });
   }
 
   async delete(userId: string, mediaId: string): Promise<void> {

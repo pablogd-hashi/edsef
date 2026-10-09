@@ -4,8 +4,11 @@ export function extractCapturedAt(buffer: Buffer, fallback?: Date): Date {
   return fromExif ?? fallback ?? new Date();
 }
 
+/** EXIF lives in the file header; never decode a whole 500 MB video as text. */
+const EXIF_SCAN_BYTES = 256 * 1024;
+
 export function parseExifDate(buffer: Buffer): Date | null {
-  const text = buffer.toString("latin1");
+  const text = buffer.subarray(0, EXIF_SCAN_BYTES).toString("latin1");
   const match = text.match(/(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
   if (!match) return null;
   const [, y, mo, d, h, mi, s] = match;

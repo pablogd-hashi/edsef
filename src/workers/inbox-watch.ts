@@ -5,8 +5,29 @@
  *   ICLOUD_INBOX_PATH="~/Library/Mobile Documents/com~apple~CloudDocs/Memoria Inbox"
  *   npm run inbox:watch
  */
+import fs from "fs";
+import os from "os";
+import path from "path";
 import { resolveInboxPath } from "@/lib/inbox/paths";
 import { scanInbox } from "@/lib/inbox/scan";
+
+// Two watchers (LaunchAgent + a manual run) would import the same file twice.
+const LOCK = path.join(os.tmpdir(), "memoria-inbox-watch.pid");
+acquireLock();
+
+function acquireLock() {
+  try {
+    const pid = Number(fs.readFileSync(LOCK, "utf8"));
+    if (pid && pid !== process.pid) {
+      process.kill(pid, 0); // throws if that process is gone
+      console.error(`[inbox] another watcher is running (pid ${pid}); exiting`);
+      process.exit(0);
+    }
+  } catch {
+    // no lock, or a stale one from a crashed watcher
+  }
+  fs.writeFileSync(LOCK, String(process.pid));
+}
 
 const INTERVAL_MS = Number(process.env.ICLOUD_INBOX_POLL_MS ?? 30_000);
 
@@ -38,6 +59,11 @@ const timer = setInterval(() => {
 
 function shutdown() {
   clearInterval(timer);
+  try {
+    if (fs.readFileSync(LOCK, "utf8") === String(process.pid)) fs.unlinkSync(LOCK);
+  } catch {
+    // already gone
+  }
   process.exit(0);
 }
 

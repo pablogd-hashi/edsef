@@ -12,6 +12,8 @@ async function main() {
   process.env.STORAGE_PATH = await fs.mkdtemp(path.join(os.tmpdir(), "memoria-storage-"));
   const inboxPath = await fs.mkdtemp(path.join(os.tmpdir(), "memoria-inbox-"));
   process.env.ICLOUD_INBOX_PATH = inboxPath;
+  // Tiny video limit so a "too large" clip exercises the failure path.
+  process.env.MAX_VIDEO_SIZE = "1000";
 
   await setup();
 
@@ -111,10 +113,36 @@ async function main() {
   const past = Date.now() - 10_000;
   await fs.utimes(photoPath, past / 1000, past / 1000);
 
+  // A clip that will always fail to import must not block the photo next to it.
+  const badClip = path.join(childDir, "too big.mov");
+  await fs.writeFile(badClip, Buffer.alloc(5000, 1));
+  await fs.utimes(badClip, past / 1000, past / 1000);
+
+  // First sighting only records size/mtime (iCloud may still be downloading).
+  const settleScan = await scanInbox(inboxPath);
+  if (settleScan.some((r) => r.status === "imported")) {
+    throw new Error("Imported a file before it was seen stable twice");
+  }
+
   const firstScan = await scanInbox(inboxPath);
   const imported = firstScan.find((r) => r.status === "imported");
   if (!imported) {
     throw new Error(`Inbox did not import: ${JSON.stringify(firstScan)}`);
+  }
+  if (!firstScan.some((r) => r.status === "error" && r.file.includes("too big"))) {
+    throw new Error(`Expected the oversized clip to fail: ${JSON.stringify(firstScan)}`);
+  }
+
+  // Third failure parks the clip in .failed/ with the reason next to it.
+  await scanInbox(inboxPath);
+  await scanInbox(inboxPath);
+  const failed = await fs.readdir(path.join(inboxPath, ".failed", "Sofia"));
+  if (!failed.includes("too big.mov") || !failed.includes("too big.mov.error.txt")) {
+    throw new Error(`Failed clip not parked: ${failed.join(",")}`);
+  }
+  const orphanAssets = await prisma.mediaAsset.count({ where: { originalFilename: "too big.mov" } });
+  if (orphanAssets !== 0) {
+    throw new Error("Failed import left a MediaAsset row behind");
   }
 
   const entries = await prisma.timelineEntry.findMany({
@@ -142,6 +170,7 @@ async function main() {
 
   await fs.writeFile(photoPath, jpeg);
   await fs.utimes(photoPath, past / 1000, past / 1000);
+  await scanInbox(inboxPath);
   const secondScan = await scanInbox(inboxPath);
   if (!secondScan.some((r) => r.status === "duplicate")) {
     throw new Error(`Expected duplicate skip, got ${JSON.stringify(secondScan)}`);

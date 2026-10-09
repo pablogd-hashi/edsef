@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireChildAccess } from "@/lib/api/require-child-access";
 import { requireParentSession } from "@/lib/api/require-parent";
 import { yearbookService } from "@/lib/services";
+import { isUniqueViolation } from "@/lib/services/yearbook.service";
 import { createYearbookSchema } from "@/lib/validators";
 
 export async function GET(request: Request) {
@@ -33,6 +34,13 @@ export async function POST(request: Request) {
   const access = await requireParentSession(parsed.data.childId);
   if (access.error) return access.error;
 
-  const yearbook = await yearbookService.create(parsed.data, access.session.user.id!);
-  return NextResponse.json(yearbook, { status: 201 });
+  try {
+    const yearbook = await yearbookService.create(parsed.data, access.session.user.id!);
+    return NextResponse.json(yearbook, { status: 201 });
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      return NextResponse.json({ error: "That year already exists" }, { status: 409 });
+    }
+    throw error;
+  }
 }

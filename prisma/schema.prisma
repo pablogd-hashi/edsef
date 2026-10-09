@@ -470,6 +470,7 @@ model MediaAsset {
   @@index([childId, type])
   @@index([yearbookId])
   @@index([processingStatus])
+  @@index([checksum])
 }
 
 model MediaVariant {

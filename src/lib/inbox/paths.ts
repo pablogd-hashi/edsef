@@ -2,6 +2,7 @@ import os from "os";
 import path from "path";
 
 export const IMPORTED_DIR = ".imported";
+export const FAILED_DIR = ".failed";
 export const UNASSIGNED_DIR = "unassigned";
 
 export function resolveInboxPath(override?: string): string {

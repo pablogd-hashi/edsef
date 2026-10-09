@@ -129,15 +129,25 @@ export class YearbookService {
     });
     if (existing) return existing;
 
-    return this.create(
-      {
-        childId,
-        title: `Year ${yearNumber}`,
-        yearNumber,
-        template: "EDITORIAL",
-      },
-      userId
-    );
+    try {
+      return await this.create(
+        {
+          childId,
+          title: `Year ${yearNumber}`,
+          yearNumber,
+          template: "EDITORIAL",
+        },
+        userId
+      );
+    } catch (error) {
+      // Inbox and the dashboard button can race; the unique index lets one win.
+      if (isUniqueViolation(error)) {
+        return prisma.yearbook.findFirstOrThrow({
+          where: { childId, yearNumber, deletedAt: null },
+        });
+      }
+      throw error;
+    }
   }
 
   async create(input: CreateYearbookInput, userId: string): Promise<Yearbook> {
@@ -254,3 +264,12 @@ export class YearbookService {
 }
 
 export const yearbookService = new YearbookService();
+
+export function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "P2002"
+  );
+}

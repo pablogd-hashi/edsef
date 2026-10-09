@@ -16,6 +16,7 @@ export interface CreateMediaInput {
   description?: string;
   capturedAt?: Date;
   externalUrl?: string;
+  checksum?: string;
 }
 
 export class MediaService {
@@ -38,9 +39,10 @@ export class MediaService {
     });
   }
 
-  async findByChecksum(checksum: string): Promise<MediaAsset | null> {
+  /** A finished, non-deleted copy of this exact file in the same family. */
+  async findByChecksum(checksum: string, familyId: string): Promise<MediaAsset | null> {
     return prisma.mediaAsset.findFirst({
-      where: { checksum, deletedAt: null },
+      where: { checksum, deletedAt: null, processingStatus: "READY", child: { familyId } },
     });
   }
 
