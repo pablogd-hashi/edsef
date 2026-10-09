@@ -9,6 +9,18 @@
         "dev"
       ],
       "port": 3000
+    },
+    {
+      "name": "test-pglite",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "tsx",
+        "scripts/test-server.mts"
+      ],
+      "port": 3100,
+      "env": {
+        "PORT": "3100"
+      }
     }
   ]
 }

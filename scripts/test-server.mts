@@ -12,7 +12,9 @@ const root = path.join(__dirname, "..");
 // Never write test uploads into the real ./storage (family photos).
 const storagePath = mkdtempSync(path.join(os.tmpdir(), "memoria-e2e-"));
 
-const child = spawn("npx", ["next", "dev", "-H", "0.0.0.0", "-p", "3000"], {
+const port = process.env.PORT ?? "3000";
+
+const child = spawn("npx", ["next", "dev", "-H", "0.0.0.0", "-p", port], {
   cwd: root,
   stdio: "inherit",
   env: {
@@ -20,7 +22,7 @@ const child = spawn("npx", ["next", "dev", "-H", "0.0.0.0", "-p", "3000"], {
     MEMORIA_TEST_MODE: "1",
     DATABASE_URL: "postgresql://pglite:pglite@localhost:5432/memoria",
     AUTH_SECRET: "dev-secret-change-in-production-min-32-chars-long",
-    AUTH_URL: "http://localhost:3000",
+    AUTH_URL: `http://localhost:${port}`,
     ALLOW_REGISTRATION: "true",
     STORAGE_PATH: storagePath,
   },
