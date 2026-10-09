@@ -26,10 +26,7 @@ export function SummaryLocationMaps({
   const knownKey = knownPoints.map((p) => `${p.latitude},${p.longitude}`).join("|");
 
   useEffect(() => {
-    if (!childId || !text?.trim()) {
-      setGeocoded([]);
-      return;
-    }
+    if (!childId || !text?.trim()) return;
 
     const places = splitPlaces
       ? splitPlaceList(text).filter(
@@ -41,15 +38,12 @@ export function SummaryLocationMaps({
             !knownPoints.some((p) => p.name.toLowerCase().includes(place.toLowerCase()))
         );
 
-    if (places.length === 0) {
-      setGeocoded([]);
-      return;
-    }
+    if (places.length === 0) return;
 
     let cancelled = false;
-    setLoading(true);
 
     void (async () => {
+      setLoading(true);
       const results: MapPoint[] = [];
       for (const place of places.slice(0, 4)) {
         try {
@@ -84,7 +78,8 @@ export function SummaryLocationMaps({
     };
   }, [childId, text, knownKey, knownPoints, splitPlaces]);
 
-  const points = [...knownPoints, ...geocoded];
+  const hasQuery = Boolean(childId && text?.trim());
+  const points = hasQuery ? [...knownPoints, ...geocoded] : knownPoints;
   if (points.length === 0 && !loading) return null;
 
   return (

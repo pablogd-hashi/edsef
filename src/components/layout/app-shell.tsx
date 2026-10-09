@@ -10,8 +10,8 @@ interface AppShellProps {
 
 export function AppShell({ children, userName, className }: AppShellProps) {
   return (
-    <div className={cn("min-h-screen bg-background", className)}>
-      <header className="sticky top-0 z-50 border-b border-border/60 glass">
+    <div className={cn("min-h-dvh bg-background", className)}>
+      <header className="app-sticky-header sticky top-0 z-50 border-b border-border/60 glass">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5">
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">

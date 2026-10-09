@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { MapPin, Loader2, X, Link2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -35,9 +34,8 @@ export function LocationPicker({
   childId: string;
   location?: LocationData | null;
   canEdit: boolean;
-  onSave: (locationId: string | null) => Promise<void>;
+  onSave: (locationId: string | null, location?: LocationData | null) => Promise<void>;
 }) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("search");
   const [query, setQuery] = useState("");
@@ -90,12 +88,11 @@ export function LocationPicker({
       });
       if (!res.ok) throw new Error("Failed to save location");
       const loc = await res.json();
-      await onSave(loc.id);
+      await onSave(loc.id, loc);
       setOpen(false);
       setQuery("");
       setMapUrl("");
       setResults([]);
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed");
     } finally {
@@ -151,8 +148,7 @@ export function LocationPicker({
   }
 
   async function clearLocation() {
-    await onSave(null);
-    router.refresh();
+    await onSave(null, null);
   }
 
   if (location?.latitude != null && location?.longitude != null) {

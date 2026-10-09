@@ -1,14 +1,5 @@
 import { parseMonthName } from "./months";
-import type {
-  ImportMilestone,
-  ImportMusic,
-  ImportParentNote,
-  ImportPreview,
-  ImportStory,
-  ImportTimelineItem,
-  ImportVideo,
-  TimelineCategory,
-} from "./types";
+import type { ImportPreview, ImportTimelineItem, TimelineCategory } from "./types";
 
 const URL_RE = /https?:\/\/[^\s)]+/gi;
 const PAGE_MARKER_RE = /^--\s*\d+\s+of\s+\d+\s*--$/i;

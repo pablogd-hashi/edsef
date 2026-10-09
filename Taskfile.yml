@@ -18,7 +18,7 @@ tasks:
       - npm run db:migrate:deploy
       - mkdir -p storage
       - echo ""
-      - echo "Ready. Run  task up  then open http://localhost:3000/register"
+      - echo "Ready. Run  task up  (family server) then open http://localhost:3000/register"
 
   env:
     desc: Create .env from .env.example if missing
@@ -28,17 +28,28 @@ tasks:
       - cp .env.example .env
       - echo "Created .env from .env.example"
 
-  up:
-    desc: Start Postgres + Redis and Next.js dev server
+  lan:serve:
+    desc: Production build + LAN server (alias for task up)
+    cmds:
+      - task: up
+
+  phone:
+    desc: Alias for up — family server for iPhone + daily use
+    cmds:
+      - task: up
+
+  dev:
+    desc: Dev server with hot reload (Mac coding only — flickers on iPhone)
     deps:
       - db:up
     cmds:
       - echo ""
-      - echo "Database is up. Starting Next.js (this terminal will block — that is normal)."
+      - echo "Dev mode — for coding on the Mac. iPhone should use  task up  instead."
+      - echo ""
       - npm run dev
 
   dev:only:
-    desc: Start Next.js only (when Docker is already running)
+    desc: Next.js dev only (when Docker is already running)
     cmds:
       - npm run dev
 
@@ -52,19 +63,19 @@ tasks:
     cmds:
       - bash scripts/relocate-from-icloud.sh
 
-  dev:
-    desc: Alias for up — start DB and Next.js dev server
+  up:
+    desc: Family server — production mode on LAN (default; stable on iPhone)
     cmds:
-      - task: up
+      - bash scripts/family-serve.sh
 
   db:up:
-    desc: Start only Postgres + Redis
+    desc: Start only Postgres
     cmds:
       - docker compose -f {{.COMPOSE_FILE}} up -d --wait
       - docker compose -f {{.COMPOSE_FILE}} ps
 
   down:
-    desc: Stop Postgres + Redis
+    desc: Stop Postgres
     cmds:
       - docker compose -f {{.COMPOSE_FILE}} down
 

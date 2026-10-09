@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
 import { buttonVariants } from "@/components/ui/button";
-import { CHILD_THEME_PRESETS, DEFAULT_THEME_COLOR } from "@/lib/theme/colors";
+import { DEFAULT_THEME_COLOR } from "@/lib/theme/colors";
+import { ThemeColorSwatches } from "@/components/children/theme-color-swatches";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
@@ -112,23 +113,7 @@ export default function NewChildPage() {
 
           <div>
             <label className="block text-sm font-medium mb-2">Theme color</label>
-            <div className="flex flex-wrap gap-2">
-              {CHILD_THEME_PRESETS.map((preset) => (
-                <button
-                  key={preset.value}
-                  type="button"
-                  title={preset.name}
-                  onClick={() => setThemeColor(preset.value)}
-                  className={cn(
-                    "h-9 w-9 rounded-full border-2 transition-all",
-                    themeColor === preset.value
-                      ? "border-foreground scale-110"
-                      : "border-white shadow-sm hover:scale-105"
-                  )}
-                  style={{ backgroundColor: preset.value }}
-                />
-              ))}
-            </div>
+            <ThemeColorSwatches value={themeColor} onChange={setThemeColor} />
           </div>
 
           <div>

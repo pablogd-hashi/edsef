@@ -8,7 +8,7 @@ source "$ROOT_DIR/scripts/prod/lib.sh"
 
 load_env
 
-log "Stopping Postgres + Redis (stop Next.js with Ctrl+C if running in foreground)"
+log "Stopping Postgres (stop Next.js with Ctrl+C if running in foreground)"
 compose down
 
-echo "✓ Docker services stopped. Data kept in volumes memoria_postgres / memoria_redis."
+echo "✓ Docker services stopped. Data kept in volumes memoria_postgres."

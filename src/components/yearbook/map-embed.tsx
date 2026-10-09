@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { googleMapsUrl } from "@/lib/maps/parse-url";
 import { buildMapViewport } from "@/lib/maps/tiles";
+import { useTouchUi } from "@/lib/use-touch-ui";
 
 export function MapEmbed({
   latitude,
@@ -17,25 +18,39 @@ export function MapEmbed({
   childId: string;
   className?: string;
 }) {
+  const touchUi = useTouchUi();
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 640, height: 192 });
 
   useEffect(() => {
+    if (touchUi) return;
     const el = containerRef.current;
     if (!el) return;
 
     const update = () => {
       const rect = el.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
-        setSize({ width: rect.width, height: rect.height });
+        setSize((prev) => {
+          if (Math.abs(prev.width - rect.width) < 2 && Math.abs(prev.height - rect.height) < 2) {
+            return prev;
+          }
+          return { width: rect.width, height: rect.height };
+        });
       }
     };
 
     update();
-    const ro = new ResizeObserver(update);
+    let frame = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(update);
+    });
     ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+    return () => {
+      cancelAnimationFrame(frame);
+      ro.disconnect();
+    };
+  }, [touchUi]);
 
   const viewport = useMemo(
     () => buildMapViewport(latitude, longitude, size.width, size.height),

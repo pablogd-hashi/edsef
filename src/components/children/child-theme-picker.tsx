@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { CHILD_THEME_PRESETS } from "@/lib/theme/colors";
+import { Loader2 } from "lucide-react";
+import { ThemeColorSwatches } from "@/components/children/theme-color-swatches";
 
 export function ChildThemePicker({
   childId,
@@ -19,19 +18,34 @@ export function ChildThemePicker({
   const [selected, setSelected] = useState(currentColor);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [syncedColor, setSyncedColor] = useState(currentColor);
+  if (currentColor !== syncedColor) {
+    setSyncedColor(currentColor);
+    setSelected(currentColor);
+  }
 
   useEffect(() => {
-    setSelected(currentColor);
-  }, [currentColor]);
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, []);
 
   if (!canEdit) return null;
 
-  async function saveColor(color: string) {
-    if (color === selected && color === currentColor) return;
-    setSaving(true);
-    setError("");
+  function queueSave(color: string) {
+    if (color.toLowerCase() === selected.toLowerCase()) return;
     setSelected(color);
+    setError("");
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      void persist(color);
+    }, 350);
+  }
 
+  async function persist(color: string) {
+    setSaving(true);
     try {
       const res = await fetch(`/api/children/${childId}`, {
         method: "PATCH",
@@ -54,30 +68,10 @@ export function ChildThemePicker({
       <p className="text-xs uppercase tracking-wider text-accent-dark mb-3">
         Theme color
       </p>
-      <div className="flex flex-wrap gap-2">
-        {CHILD_THEME_PRESETS.map((preset) => {
-          const isActive = selected.toLowerCase() === preset.value.toLowerCase();
-          return (
-            <button
-              key={preset.value}
-              type="button"
-              disabled={saving}
-              title={preset.name}
-              onClick={() => saveColor(preset.value)}
-              className={cn(
-                "relative h-10 w-10 rounded-full border-2 transition-all touch-manipulation",
-                isActive ? "border-foreground scale-110 shadow-md" : "border-white shadow-sm hover:scale-105"
-              )}
-              style={{ backgroundColor: preset.value }}
-            >
-              {isActive && (
-                <Check className="absolute inset-0 m-auto h-4 w-4 text-white drop-shadow" />
-              )}
-            </button>
-          );
-        })}
-        {saving && <Loader2 className="h-5 w-5 animate-spin text-muted self-center ml-1" />}
-      </div>
+      <ThemeColorSwatches value={selected} onChange={queueSave} />
+      {saving && (
+        <Loader2 className="h-5 w-5 animate-spin text-muted mt-2" />
+      )}
       {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
     </div>
   );

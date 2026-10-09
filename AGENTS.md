@@ -19,6 +19,7 @@ One slash command per action. Skills live in `.cursor/skills/<name>/SKILL.md`.
 | `/run-e2e-tests` | Playwright |
 | `/invite-parent` | Second parent one-time link |
 | `/lock-registration` | `ALLOW_REGISTRATION=false` |
+| `/reset-password` | Forgot password (no email flow) |
 | `/start-inbox-watch` | Import photos from the inbox folder |
 | `/test-inbox-local` | Inbox dry-run without iCloud |
 | `/setup-icloud-inbox` | Real iCloud Drive drop-box |

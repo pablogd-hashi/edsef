@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useYearbookEditorOptional } from "@/components/yearbook/yearbook-editor-context";
 import { Calendar, Plus, Loader2, X, Image as ImageIcon, Film } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -46,6 +47,7 @@ export function TimelineAddEvent({
   onClose?: () => void;
   variant?: "button" | "fab";
 }) {
+  const editor = useYearbookEditorOptional();
   const router = useRouter();
   const photoInputId = useId();
   const videoInputId = useId();
@@ -162,7 +164,8 @@ export function TimelineAddEvent({
       }
 
       handleClose();
-      router.refresh();
+      editor?.addTimelineEntry({ ...data, media: [], location: null });
+      if (!editor) router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
     } finally {

@@ -148,7 +148,7 @@ export default async function ChildPage({
           </FadeIn>
         ) : (
           <StaggerChildren className="space-y-4">
-            {yearbooks.map((yearbook) => {
+            {yearbooks.map((yearbook, index) => {
               const period =
                 yearbook.periodStart && yearbook.periodEnd
                   ? {
@@ -163,7 +163,7 @@ export default async function ChildPage({
                 : null;
 
               return (
-              <StaggerItem key={yearbook.id}>
+              <StaggerItem key={yearbook.id} index={index}>
                 <div className={cn(
                   "group rounded-2xl border bg-card overflow-hidden transition-all duration-300 hover:shadow-[var(--warm-shadow)] hover:border-accent-light/50",
                   yearbook.yearNumber === currentYear

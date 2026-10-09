@@ -13,8 +13,7 @@ import { RichTextContent } from "@/components/ui/rich-text-content";
 import { EditableField } from "@/components/ui/editable-field";
 import { SummaryLocationMaps } from "@/components/yearbook/summary-location-map";
 import { richTextToPlain } from "@/lib/rich-text";
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export function CoverHero({
   yearbook,
@@ -146,13 +145,14 @@ export function SummarySection({
   yearbookId?: string;
   childId?: string;
 }) {
-  const router = useRouter();
   const [local, setLocal] = useState<ManualSummaryContent>(manual ?? {});
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
+  const [syncedManual, setSyncedManual] = useState(manual);
+  if (manual !== syncedManual) {
+    setSyncedManual(manual);
     setLocal(manual ?? {});
-  }, [manual]);
+  }
 
   const derivedLocation =
     derived.locations.length > 0 ? derived.locations.join(" · ") : undefined;
@@ -177,7 +177,6 @@ export function SummarySection({
         body: JSON.stringify({ summaryContent: next }),
       });
       if (!res.ok) throw new Error("Failed to save");
-      router.refresh();
     } finally {
       setSaving(false);
     }
@@ -355,8 +354,6 @@ export function CoverTitleEditor({
   title: string;
   canEdit: boolean;
 }) {
-  const router = useRouter();
-
   if (!canEdit) return null;
 
   return (
@@ -373,7 +370,6 @@ export function CoverTitleEditor({
           body: JSON.stringify({ customCoverTitle }),
         });
         if (!res.ok) throw new Error("Failed to save");
-        router.refresh();
       }}
     />
   );

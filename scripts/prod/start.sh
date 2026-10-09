@@ -9,7 +9,7 @@ source "$ROOT_DIR/scripts/prod/lib.sh"
 
 load_env
 
-log "Postgres + Redis"
+log "Postgres"
 compose up -d
 wait_postgres
 

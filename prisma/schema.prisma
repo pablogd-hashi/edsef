@@ -359,6 +359,7 @@ model TimelineEntry {
 
   @@index([yearbookId, month])
   @@index([yearbookId, eventDate])
+  @@index([yearbookId, category])
 }
 
 model MusicEntry {

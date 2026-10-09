@@ -76,7 +76,7 @@ export default async function DashboardPage() {
           </FadeIn>
         ) : (
           <StaggerChildren className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {children.map((child) => {
+            {children.map((child, index) => {
               const photoUrl = child.profilePhoto
                 ? `/api/media/${child.profilePhoto.id}/file?variant=thumbnail`
                 : null;
@@ -85,7 +85,7 @@ export default async function DashboardPage() {
               const childInbox = inboxImports.filter((i) => i.childId === child.id);
 
               return (
-              <StaggerItem key={child.id}>
+              <StaggerItem key={child.id} index={index}>
                 <div className="group h-full rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:shadow-[var(--warm-shadow-lg)] hover:border-accent-light/50">
                   <Link href={`/children/${child.id}`} className="flex items-start gap-4">
                     <Avatar
@@ -135,7 +135,7 @@ export default async function DashboardPage() {
               );
             })}
 
-            <StaggerItem>
+            <StaggerItem index={children.length}>
               <Link
                 href="/children/new"
                 className="flex h-full min-h-[140px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-cream/30 p-6 text-muted hover:border-accent-light hover:text-accent-dark hover:bg-cream/50 transition-all duration-300"

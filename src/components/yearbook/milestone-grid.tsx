@@ -1,7 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { StaggerChildren, StaggerItem } from "@/components/ui/motion";
 import { MilestoneMediaGallery } from "@/components/yearbook/milestone-media";
 import { MediaUpload } from "@/components/yearbook/media-upload";
@@ -9,6 +7,7 @@ import { EditableField } from "@/components/ui/editable-field";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { RichTextContent } from "@/components/ui/rich-text-content";
 import { LocationPicker, type LocationData } from "@/components/yearbook/location-picker";
+import { useYearbookEditorOptional } from "@/components/yearbook/yearbook-editor-context";
 
 export interface MilestoneItem {
   id: string;
@@ -42,16 +41,14 @@ export function MilestoneGrid({
   yearbookId: string;
   canEdit?: boolean;
 }) {
-  const router = useRouter();
+  const editor = useYearbookEditorOptional();
 
   return (
     <StaggerChildren className="grid gap-5 sm:grid-cols-2">
       {milestones.map((m, i) => (
-        <StaggerItem key={m.id}>
-          <motion.div
+        <StaggerItem key={m.id} index={i}>
+          <div
             id={`milestone-${m.id}`}
-            whileHover={{ y: -4 }}
-            transition={{ duration: 0.2 }}
             className="group relative h-full rounded-2xl border border-border bg-card p-6 overflow-hidden"
           >
             <div
@@ -72,7 +69,6 @@ export function MilestoneGrid({
                   inputClassName="text-xs uppercase"
                   onSave={async (ageLabel) => {
                     await patchMilestone(m.id, { ageLabel });
-                    router.refresh();
                   }}
                 />
 
@@ -85,7 +81,6 @@ export function MilestoneGrid({
                   inputClassName="font-editorial text-lg"
                   onSave={async (title) => {
                     await patchMilestone(m.id, { title });
-                    router.refresh();
                   }}
                 />
 
@@ -97,7 +92,6 @@ export function MilestoneGrid({
                       placeholder="Describe this moment — add bold, links, lists…"
                       onSave={async (description) => {
                         await patchMilestone(m.id, { description: description as string });
-                        router.refresh();
                       }}
                     />
                   </div>
@@ -109,9 +103,9 @@ export function MilestoneGrid({
                   childId={childId}
                   location={m.location}
                   canEdit={canEdit}
-                  onSave={async (locationId) => {
+                  onSave={async (locationId, location) => {
                     await patchMilestone(m.id, { locationId });
-                    router.refresh();
+                    editor?.updateMilestoneLocation(m.id, locationId, location ?? null);
                   }}
                 />
 
@@ -127,12 +121,14 @@ export function MilestoneGrid({
                     childId={childId}
                     yearbookId={yearbookId}
                     milestoneId={m.id}
-                    onUploaded={() => router.refresh()}
+                    onUploaded={(asset) => {
+                      if (asset) editor?.appendMilestoneMedia(m.id, asset);
+                    }}
                   />
                 )}
               </div>
             </div>
-          </motion.div>
+          </div>
         </StaggerItem>
       ))}
     </StaggerChildren>

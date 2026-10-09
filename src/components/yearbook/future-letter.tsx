@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { Lock } from "lucide-react";
 import { formatDate } from "@/lib/age";
 import { EditableField } from "@/components/ui/editable-field";
@@ -20,8 +19,6 @@ export function FutureLetter({
   hiddenUntilAge?: number | null;
   canEdit?: boolean;
 }) {
-  const router = useRouter();
-
   async function patchLetter(data: Record<string, string | null>) {
     const res = await fetch(`/api/future-letters/${id}`, {
       method: "PATCH",
@@ -56,7 +53,6 @@ export function FutureLetter({
           inputClassName="font-editorial text-base"
           onSave={async (newContent) => {
             await patchLetter({ content: newContent });
-            router.refresh();
           }}
         />
         <div className="mt-10 text-right font-editorial text-xl text-accent-dark">
@@ -68,7 +64,6 @@ export function FutureLetter({
               className="text-right"
               onSave={async (newSignature) => {
                 await patchLetter({ signature: newSignature || null });
-                router.refresh();
               }}
             />
           ) : (

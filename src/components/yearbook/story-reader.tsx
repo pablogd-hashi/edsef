@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import { EditableField } from "@/components/ui/editable-field";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
@@ -26,8 +25,6 @@ export function StoryReader({
   yearbookId: string;
   canEdit?: boolean;
 }) {
-  const router = useRouter();
-
   async function patchStory(data: Record<string, unknown>) {
     const res = await fetch(`/api/stories/${id}`, {
       method: "PATCH",
@@ -51,7 +48,6 @@ export function StoryReader({
         inputClassName="font-display text-2xl"
         onSave={async (newTitle) => {
           await patchStory({ title: newTitle });
-          router.refresh();
         }}
       />
       {canEdit ? (
@@ -62,7 +58,6 @@ export function StoryReader({
           placeholder="Write the story — use bold, links, headings…"
           onSave={async (newContent) => {
             await patchStory({ content: newContent });
-            router.refresh();
           }}
         />
       ) : (

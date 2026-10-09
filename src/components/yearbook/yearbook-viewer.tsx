@@ -22,16 +22,19 @@ import {
   ParentNoteAdd,
 } from "./section-add-forms";
 import { SectionEmpty } from "./section-empty";
-import { FadeIn, SectionTitle } from "@/components/ui/motion";
+import { SectionTitle } from "@/components/ui/motion";
 import type { Prisma, SectionType, TimelineCategory } from "@prisma/client";
 import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useTouchUi } from "@/lib/use-touch-ui";
 import { ExternalLink } from "lucide-react";
+import { computeYearbookPeriod, formatYearbookYears } from "@/lib/yearbook/period";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 import {
-  computeYearbookPeriod,
-  formatYearbookYears,
-} from "@/lib/yearbook/period";
+  YearbookEditorProvider,
+  useYearbookEditor,
+} from "./yearbook-editor-context";
+import { LazySection } from "./lazy-section";
 
 interface YearbookViewerProps {
   yearbook: YearbookWithRelations;
@@ -162,16 +165,27 @@ const UI_TO_SECTION_TYPE: Record<string, SectionType> = {
   "this-year": "TIMELINE",
 };
 
-export function YearbookViewer({
-  yearbook,
+const EAGER_SECTIONS = new Set(["cover", "summary"]);
+
+export function YearbookViewer(props: YearbookViewerProps) {
+  return (
+    <YearbookEditorProvider initial={props.yearbook}>
+      <YearbookViewerInner mode={props.mode} canEdit={props.canEdit} />
+    </YearbookEditorProvider>
+  );
+}
+
+function YearbookViewerInner({
   mode = "edit",
   canEdit: canEditProp,
-}: YearbookViewerProps) {
+}: Omit<YearbookViewerProps, "yearbook">) {
+  const { yearbook } = useYearbookEditor();
   const canEdit = canEditProp ?? mode === "edit";
   const isPreview = mode === "preview";
   const childId = yearbook.childId;
   const yearbookId = yearbook.id;
   const [activeSection, setActiveSection] = useState("cover");
+  const touchUi = useTouchUi();
 
   const manualSummary = yearbook.summaryContent as ManualSummaryContent | null;
   const derivedSummary = useMemo(() => deriveSummaryFromYearbook(yearbook), [yearbook]);
@@ -260,20 +274,28 @@ export function YearbookViewer({
           : `section-${raw}`;
     const el = document.getElementById(id);
     if (el) {
-      requestAnimationFrame(() => el.scrollIntoView({ behavior: "smooth", block: "start" }));
+      requestAnimationFrame(() =>
+        el.scrollIntoView({
+          behavior: touchUi ? "auto" : "smooth",
+          block: "start",
+        })
+      );
     }
-  }, []);
+  }, [touchUi]);
 
   useEffect(() => {
+    if (touchUi) return;
+
+    let frame = 0;
     const observer = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id.replace("section-", ""));
-          }
-        }
+        const visible = entries.find((entry) => entry.isIntersecting);
+        if (!visible) return;
+        const id = visible.target.id.replace("section-", "");
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => setActiveSection(id));
       },
-      { rootMargin: "-20% 0px -60% 0px" }
+      { rootMargin: "-15% 0px -70% 0px", threshold: 0.1 }
     );
 
     for (const s of visibleSections) {
@@ -281,8 +303,11 @@ export function YearbookViewer({
       if (el) observer.observe(el);
     }
 
-    return () => observer.disconnect();
-  }, [visibleSections]);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [visibleSections, touchUi]);
 
   function renderSection(id: string) {
     const meta = orderedSections.find((s) => s.id === id);
@@ -291,15 +316,15 @@ export function YearbookViewer({
     switch (id) {
       case "cover":
         return (
-          <section id="section-cover" className="book-page">
+
             <CoverHero yearbook={yearbook} immersive={isPreview} canEdit={canEdit} />
-          </section>
+
         );
 
       case "summary":
         return (
-          <section id="section-summary" className="book-page">
-            <FadeIn>
+
+            <>
               <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
               <SummarySection
                 manual={manualSummary}
@@ -318,14 +343,14 @@ export function YearbookViewer({
                 sectionType="SUMMARY"
                 canEdit={canEdit}
               />
-            </FadeIn>
-          </section>
+            </>
+
         );
 
       case "milestones":
         return (
-          <section id="section-milestones" className="book-page">
-            <FadeIn>
+
+            <>
               <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
               {yearbook.milestones.length > 0 && (
                 <MilestoneGrid
@@ -357,14 +382,14 @@ export function YearbookViewer({
                 sectionType="MILESTONES"
                 canEdit={canEdit}
               />
-            </FadeIn>
-          </section>
+            </>
+
         );
 
       case "music":
         return (
-          <section id="section-music" className="book-page">
-            <FadeIn>
+
+            <>
               <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
               <MusicSection
                 tracks={yearbook.music}
@@ -382,14 +407,14 @@ export function YearbookViewer({
               {!canEdit && yearbook.music.length === 0 && musicMedia.length === 0 && (
                 <SectionEmpty hint={meta.emptyHint} />
               )}
-            </FadeIn>
-          </section>
+            </>
+
         );
 
       case "stories":
         return (
-          <section id="section-stories" className="book-page">
-            <FadeIn>
+
+            <>
               <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
               {yearbook.stories.length > 0 && (
                 <div className="space-y-16">
@@ -430,14 +455,14 @@ export function YearbookViewer({
                 sectionType="STORIES"
                 canEdit={canEdit}
               />
-            </FadeIn>
-          </section>
+            </>
+
         );
 
       case "videos":
         return (
-          <section id="section-videos" className="book-page">
-            <FadeIn>
+
+            <>
               <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
               {(videoLinks.length > 0 || videoUploads.length > 0 || canEdit) ? (
                 <VideoSection
@@ -457,14 +482,14 @@ export function YearbookViewer({
                 sectionType="VIDEOS"
                 canEdit={canEdit}
               />
-            </FadeIn>
-          </section>
+            </>
+
         );
 
       case "notes":
         return (
-          <section id="section-notes" className="book-page">
-            <FadeIn>
+
+            <>
               <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
               {yearbook.parentNotes.length > 0 && (
                 <ParentNotes
@@ -503,14 +528,14 @@ export function YearbookViewer({
                 sectionType="PARENT_NOTES"
                 canEdit={canEdit}
               />
-            </FadeIn>
-          </section>
+            </>
+
         );
 
       case "before-birth":
         return (
-          <section id="section-before-birth" className="book-page">
-            <FadeIn>
+
+            <>
               <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
               <InteractiveTimeline
                 items={beforeBirth}
@@ -528,14 +553,14 @@ export function YearbookViewer({
                 sectionType="TIMELINE"
                 canEdit={canEdit}
               />
-            </FadeIn>
-          </section>
+            </>
+
         );
 
       case "this-year":
         return (
-          <section id="section-this-year" className="book-page">
-            <FadeIn>
+
+            <>
               <SectionTitle subtitle={meta.subtitle}>{meta.label}</SectionTitle>
               <InteractiveTimeline
                 items={thisYear}
@@ -553,8 +578,8 @@ export function YearbookViewer({
                 sectionType="TIMELINE"
                 canEdit={canEdit}
               />
-            </FadeIn>
-          </section>
+            </>
+
         );
 
       default:
@@ -564,7 +589,7 @@ export function YearbookViewer({
 
   return (
     <div className={cn("yearbook-reader", isPreview && "preview-mode")}>
-      <nav className="sticky top-[57px] z-40 border-b border-border/60 glass">
+      <nav className="yearbook-section-nav border-b border-border/60 bg-card">
         <HorizontalScroll className="mx-auto max-w-4xl px-4">
           <div className="flex gap-1 py-2 min-w-max">
             {calendarYears && isPreview && (
@@ -592,7 +617,14 @@ export function YearbookViewer({
 
       <div className="mx-auto max-w-4xl px-6 py-8 md:py-12 space-y-0">
         {visibleSections.map((s) => (
-          <div key={s.id}>{renderSection(s.id)}</div>
+          <LazySection
+            key={s.id}
+            sectionId={`section-${s.id}`}
+            className="book-page"
+            eager={EAGER_SECTIONS.has(s.id)}
+          >
+            {renderSection(s.id)}
+          </LazySection>
         ))}
       </div>
     </div>

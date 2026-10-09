@@ -13,7 +13,7 @@ interface MediaUploadProps {
   storyId?: string;
   parentNoteId?: string;
   sectionType?: string;
-  onUploaded?: () => void;
+  onUploaded?: (asset?: { id: string; type: string; title?: string | null }) => void;
   className?: string;
 }
 
@@ -70,9 +70,6 @@ export function MediaUpload({
       const isVideo =
         /\.(mov|mp4|m4v|webm|avi|mkv|3gp)$/i.test(file.name) ||
         file.type.startsWith("video/");
-      const isImage =
-        /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(file.name) ||
-        (file.type.startsWith("image/") && !isVideo);
       const limit = isVideo ? maxVideo : maxImage;
       if (file.size > limit) {
         setError(
@@ -107,11 +104,12 @@ export function MediaUpload({
         setUploading(false);
         return;
       }
+      const asset = (await res.json()) as { id: string; type: string; title?: string | null };
+      onUploaded?.(asset);
     }
 
     setUploading(false);
     setProgress("");
-    onUploaded?.();
   }
 
   const inputProps = {

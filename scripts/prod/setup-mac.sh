@@ -51,7 +51,7 @@ mkdir -p "${STORAGE_PATH:-./storage}"
 log "Installing dependencies (npm ci)"
 npm ci
 
-log "Starting Postgres + Redis"
+log "Starting Postgres"
 compose up -d
 wait_postgres
 

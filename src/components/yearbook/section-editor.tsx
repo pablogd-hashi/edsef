@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GripVertical, Eye, EyeOff, ChevronUp, ChevronDown, Loader2 } from "lucide-react";
-import { YEARBOOK_SECTIONS, type SectionEditorState } from "@/lib/yearbook/sections";
+import { type SectionEditorState } from "@/lib/yearbook/sections";
 import { cn } from "@/lib/utils";
 
 export function SectionEditor({

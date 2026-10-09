@@ -1,10 +1,12 @@
 ---
 name: start-dev
-description: Start Postgres, Redis, and the Next.js dev server. Use when the user wants to run Memoria locally or test in the browser.
+description: Start Postgres, Redis, and the Next.js dev server with hot reload. Use only when coding on the Mac — not for iPhone use.
 disable-model-invocation: true
 ---
 
-# Start the dev app
+# Start the dev app (coding only)
+
+For daily use and iPhone, run **`task up`** instead (production mode — no flicker).
 
 From the repo root:
 
@@ -20,4 +22,4 @@ If Docker is already running:
 task dev:only
 ```
 
-Login fails if the database is down — run `/doctor`. For iPhone on Wi‑Fi, use `/phone-access` so `AUTH_URL` is the LAN IP, not localhost.
+Login fails if the database is down — run `/doctor`. For iPhone on Wi‑Fi, use **`task up`** and `/phone-access` so `AUTH_URL` matches Safari.

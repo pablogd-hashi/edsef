@@ -1,4 +1,4 @@
-# Producción en Mac (M1/M2/M3): solo Postgres + Redis.
+# Producción en Mac (M1/M2/M3): solo Postgres.
 # La app Next.js corre nativa con: npm run prod:start
 #
 # Uso:
@@ -23,21 +23,5 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    platform: linux/arm64
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-    ports:
-      - "127.0.0.1:6379:6379"
-    volumes:
-      - memoria_redis:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
 volumes:
   memoria_postgres:
-  memoria_redis:

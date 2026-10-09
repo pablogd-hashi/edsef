@@ -26,10 +26,14 @@ echo "  When you see '✓ Ready' below, open:  http://localhost:3000"
 echo "  This terminal stays open while the server runs — that is correct."
 echo "  Stop the server with Ctrl+C."
 echo ""
+echo "  iPhone / daily use:  task up   (production — stable)"
+echo "  Coding on Mac only:  task dev   (hot reload — not for phones)"
+echo ""
 
 export NEXT_TELEMETRY_DISABLED=1
 
-HOST="${DEV_HOST:-127.0.0.1}"
+# 0.0.0.0 so iPhone on Wi-Fi can reach the Mac. Opt out with DEV_HOST=127.0.0.1
+HOST="${DEV_HOST:-0.0.0.0}"
 PORT="${PORT:-3000}"
 USE_WEBPACK="${DEV_WEBPACK:-1}"
 

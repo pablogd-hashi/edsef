@@ -31,7 +31,7 @@ export default async function YearbookPage({
   return (
     <ChildTheme themeColor={yearbook.child.themeColor} className="min-h-screen bg-background">
       {/* Editor toolbar */}
-      <header className="sticky top-0 z-50 border-b border-border/60 glass">
+      <header className="app-sticky-header sticky top-0 z-50 border-b border-border/60 glass">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3 min-w-0">
             <Link

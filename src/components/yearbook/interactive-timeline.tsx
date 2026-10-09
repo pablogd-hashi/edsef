@@ -1,8 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getMonthAbbrev, getMonthName } from "@/lib/age";
 import { ImageIcon } from "lucide-react";
@@ -14,6 +12,7 @@ import { RichTextContent } from "@/components/ui/rich-text-content";
 import { LocationPicker, type LocationData } from "@/components/yearbook/location-picker";
 import { TimelineAddEvent } from "@/components/yearbook/timeline-add-event";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
+import { useYearbookEditorOptional } from "@/components/yearbook/yearbook-editor-context";
 
 type MonthGroup = {
   key: string;
@@ -143,7 +142,7 @@ export function InteractiveTimeline({
   periodEnd?: Date | string | null;
   category?: "PARENTS_BEFORE_BIRTH" | "PARENTS_DURING_YEAR" | "GENERAL";
 }) {
-  const router = useRouter();
+  const editor = useYearbookEditorOptional();
 
   const months = useMemo(() => {
     const grouped = new Map<string, TimelineItem[]>();
@@ -266,16 +265,8 @@ export function InteractiveTimeline({
       </div>
 
       {/* Events for selected month */}
-      <AnimatePresence mode="wait">
-        {activeGroup && (
-          <motion.div
-            key={activeGroup.key}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25 }}
-            className="space-y-6"
-          >
+      {activeGroup && (
+        <div key={activeGroup.key} className="motion-month-panel space-y-6">
             <h3 className="font-editorial text-2xl capitalize text-foreground">
               {getMonthName(activeGroup.month)}
               {spansMultipleYears && (
@@ -316,7 +307,6 @@ export function InteractiveTimeline({
                         className="font-medium text-lg mt-2"
                         onSave={async (title) => {
                           await patchTimeline(item.id, { title });
-                          router.refresh();
                         }}
                       />
 
@@ -328,7 +318,6 @@ export function InteractiveTimeline({
                             placeholder="Describe this moment…"
                             onSave={async (description) => {
                               await patchTimeline(item.id, { description: description as string });
-                              router.refresh();
                             }}
                           />
                         </div>
@@ -340,9 +329,9 @@ export function InteractiveTimeline({
                         childId={childId}
                         location={item.location}
                         canEdit={canEdit}
-                        onSave={async (locationId) => {
+                        onSave={async (locationId, location) => {
                           await patchTimeline(item.id, { locationId });
-                          router.refresh();
+                          editor?.updateTimelineLocation(item.id, locationId, location ?? null);
                         }}
                       />
 
@@ -358,7 +347,9 @@ export function InteractiveTimeline({
                           childId={childId}
                           yearbookId={yearbookId}
                           timelineEntryId={item.id}
-                          onUploaded={() => router.refresh()}
+                          onUploaded={(asset) => {
+                            if (asset) editor?.appendTimelineMedia(item.id, asset);
+                          }}
                         />
                       )}
                     </div>
@@ -366,9 +357,8 @@ export function InteractiveTimeline({
                 );
               })}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
         </>
       )}
     </div>

@@ -15,6 +15,38 @@ type Invitation = {
   url: string | null;
 };
 
+/** Clipboard API needs HTTPS; LAN http://192.168.x.x falls back to execCommand. */
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // fall through
+    }
+  }
+  try {
+    const el = document.createElement("textarea");
+    el.value = text;
+    el.setAttribute("readonly", "");
+    el.style.position = "fixed";
+    el.style.left = "-9999px";
+    document.body.appendChild(el);
+    el.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(el);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+async function loadFamily(): Promise<{ parents?: Parent[]; invitations?: Invitation[] }> {
+  const res = await fetch("/api/invitations");
+  if (!res.ok) throw new Error("Could not load family");
+  return res.json();
+}
+
 export function InviteParentCard() {
   const [parents, setParents] = useState<Parent[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -24,17 +56,24 @@ export function InviteParentCard() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   async function refresh() {
-    const res = await fetch("/api/invitations");
-    if (!res.ok) throw new Error("Could not load family");
-    const data = await res.json();
+    const data = await loadFamily();
     setParents(data.parents ?? []);
     setInvitations(data.invitations ?? []);
   }
 
   useEffect(() => {
-    refresh()
-      .catch(() => setError("Could not load family members"))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    loadFamily()
+      .then((data) => {
+        if (cancelled) return;
+        setParents(data.parents ?? []);
+        setInvitations(data.invitations ?? []);
+      })
+      .catch(() => !cancelled && setError("Could not load family members"))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function createInvite() {
@@ -46,8 +85,8 @@ export function InviteParentCard() {
       if (!res.ok) throw new Error(data.error ?? "Could not create invite");
       await refresh();
       if (data.url) {
-        await navigator.clipboard.writeText(data.url).catch(() => undefined);
-        setCopiedId(data.id);
+        const copied = await copyToClipboard(data.url);
+        if (copied) setCopiedId(data.id);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create invite");
@@ -67,8 +106,13 @@ export function InviteParentCard() {
   }
 
   async function copy(url: string, id: string) {
-    await navigator.clipboard.writeText(url);
-    setCopiedId(id);
+    setError("");
+    const copied = await copyToClipboard(url);
+    if (copied) {
+      setCopiedId(id);
+      return;
+    }
+    setError("Could not copy — select the link above instead.");
   }
 
   const pending = invitations.filter((i) => i.status === "PENDING");

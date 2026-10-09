@@ -2,13 +2,13 @@
 
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Link from "@tiptap/extension-link";
-import Placeholder from "@tiptap/extension-placeholder";
+import { Placeholder } from "@tiptap/extensions";
 import type { Prisma } from "@prisma/client";
-import { Bold, Italic, Link2, List, Heading2, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Bold, Italic, Link2, List, Heading2, Loader2, Pencil } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { isTiptapJson, toEditorContent } from "@/lib/rich-text";
+import { richTextToPlain, toEditorContent } from "@/lib/rich-text";
+import { RichTextContent } from "@/components/ui/rich-text-content";
 
 interface RichTextEditorProps {
   value: string | Prisma.JsonValue | null;
@@ -35,6 +35,8 @@ function ToolbarButton({
     <button
       type="button"
       onClick={onClick}
+      onMouseDown={(e) => e.preventDefault()}
+      onPointerDown={(e) => e.preventDefault()}
       aria-label={label}
       className={cn(
         "flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
@@ -46,32 +48,109 @@ function ToolbarButton({
   );
 }
 
-export function RichTextEditor({
+function hasRichText(value: string | Prisma.JsonValue | null | undefined) {
+  return Boolean(richTextToPlain(value)?.trim());
+}
+
+function RichTextEditorSurface({
   value,
   onSave,
-  canEdit,
   placeholder = "Write here…",
   className,
   outputFormat = "html",
-}: RichTextEditorProps) {
+}: Omit<RichTextEditorProps, "canEdit">) {
   const [saving, setSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const focusedRef = useRef(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onSaveRef = useRef(onSave);
+  const outputFormatRef = useRef(outputFormat);
+  useEffect(() => {
+    onSaveRef.current = onSave;
+    outputFormatRef.current = outputFormat;
+  }, [onSave, outputFormat]);
+  const lastSavedRef = useRef<string | null>(null);
+
+  function snapshot(json: Prisma.JsonObject, html: string) {
+    return outputFormatRef.current === "tiptap" ? JSON.stringify(json) : html;
+  }
+
+  async function persist(json: Prisma.JsonObject, html: string) {
+    const next = snapshot(json, html);
+    if (lastSavedRef.current === null) {
+      lastSavedRef.current = next;
+      return;
+    }
+    if (next === lastSavedRef.current) return;
+
+    setSaving(true);
+    try {
+      const output = outputFormatRef.current === "tiptap" ? json : html;
+      await onSaveRef.current(output);
+      lastSavedRef.current = next;
+      setSaveFailed(false);
+    } catch {
+      // Keep the draft in the editor; lastSavedRef stays stale so a retry re-sends it.
+      setSaveFailed(true);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [2, 3] } }),
-      Link.configure({ openOnClick: false, HTMLAttributes: { class: "text-accent-dark underline" } }),
+      StarterKit.configure({
+        heading: { levels: [2, 3] },
+        link: {
+          openOnClick: false,
+          HTMLAttributes: { class: "text-accent-dark underline" },
+        },
+      }),
       Placeholder.configure({ placeholder }),
     ],
     content: toEditorContent(value),
-    editable: canEdit,
+    editable: true,
     immediatelyRender: false,
-    onBlur: ({ editor: ed }) => {
-      void handleSave(ed.getJSON(), ed.getHTML());
+    onCreate: ({ editor: ed }) => {
+      lastSavedRef.current = snapshot(ed.getJSON(), ed.getHTML());
+    },
+    onFocus: () => {
+      focusedRef.current = true;
+    },
+    onBlur: ({ editor: ed, event }) => {
+      const next = event.relatedTarget;
+      if (next instanceof Node && ed.view.dom.parentElement?.contains(next)) {
+        return;
+      }
+      focusedRef.current = false;
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+      }
+      void persist(ed.getJSON(), ed.getHTML());
+    },
+    onUpdate: ({ editor: ed }) => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => {
+        void persist(ed.getJSON(), ed.getHTML());
+      }, 1200);
     },
   });
 
   useEffect(() => {
-    if (!editor || !value) return;
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!editor) return;
+    requestAnimationFrame(() => editor.commands.focus("end"));
+  }, [editor]);
+
+  useEffect(() => {
+    if (!editor || value == null || value === "") return;
+    if (focusedRef.current) return;
     const next = toEditorContent(value);
     if (typeof next === "string") {
       if (editor.getHTML() !== next) editor.commands.setContent(next);
@@ -80,23 +159,6 @@ export function RichTextEditor({
     }
   }, [value, editor]);
 
-  async function handleSave(json: Prisma.JsonObject, html: string) {
-    const output = outputFormat === "tiptap" ? json : html;
-    const prev = outputFormat === "tiptap"
-      ? (isTiptapJson(value) ? JSON.stringify(value) : "")
-      : (typeof value === "string" ? value : "");
-    const next = outputFormat === "tiptap" ? JSON.stringify(output) : (output as string);
-    if (next === prev) return;
-
-    setSaving(true);
-    try {
-      await onSave(output);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (!canEdit) return null;
   if (!editor) return null;
 
   function setLink() {
@@ -145,11 +207,68 @@ export function RichTextEditor({
           <List className="h-4 w-4" />
         </ToolbarButton>
         {saving && <Loader2 className="h-4 w-4 animate-spin text-muted ml-auto" />}
+        {!saving && saveFailed && (
+          <button
+            type="button"
+            className="ml-auto rounded-md px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+            onClick={() => editor && void persist(editor.getJSON(), editor.getHTML())}
+          >
+            Not saved – retry
+          </button>
+        )}
       </div>
       <EditorContent
         editor={editor}
-        className="prose-yearbook-editor px-4 py-3 min-h-[100px] text-foreground leading-relaxed [&_.tiptap]:outline-none [&_.tiptap_p.is-editor-empty:first-child::before]:text-muted [&_.tiptap_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.tiptap_p.is-editor-empty:first-child::before]:float-left [&_.tiptap_p.is-editor-empty:first-child::before]:h-0 [&_.tiptap_p.is-editor-empty:first-child::before]:pointer-events-none"
+        className="prose-yearbook-editor px-4 py-3 min-h-[100px] text-base text-foreground leading-relaxed [&_.tiptap]:outline-none [&_.tiptap_p.is-editor-empty:first-child::before]:text-muted [&_.tiptap_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.tiptap_p.is-editor-empty:first-child::before]:float-left [&_.tiptap_p.is-editor-empty:first-child::before]:h-0 [&_.tiptap_p.is-editor-empty:first-child::before]:pointer-events-none"
       />
     </div>
+  );
+}
+
+/** TipTap mounts only after tap — yearbooks had dozens of editors repainting on iOS. */
+export function RichTextEditor({
+  value,
+  onSave,
+  canEdit,
+  placeholder = "Write here…",
+  className,
+  outputFormat = "html",
+}: RichTextEditorProps) {
+  const [editing, setEditing] = useState(false);
+
+  if (!canEdit) return null;
+
+  if (!editing) {
+    const filled = hasRichText(value);
+    return (
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className={cn(
+          "group/rte w-full rounded-xl border border-border-light bg-cream/30 px-4 py-3 text-left touch-manipulation",
+          className
+        )}
+      >
+        {filled ? (
+          <RichTextContent value={value} />
+        ) : (
+          <span className="text-muted italic">{placeholder}</span>
+        )}
+        <span className="mt-2 flex items-center gap-1 text-xs text-muted/70">
+          <Pencil className="h-3 w-3" />
+          Tap to edit
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    <RichTextEditorSurface
+      value={value}
+      onSave={onSave}
+      placeholder={placeholder}
+      className={className}
+      outputFormat={outputFormat}
+    />
   );
 }

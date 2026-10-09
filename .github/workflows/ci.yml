@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main, memoria-v2]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm test
+      - run: npm run test:integration
+      - run: npm run build
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          AUTH_SECRET: ci-only-secret-not-used-anywhere-else-0000
+      # prisma CLI pulls deepmerge-ts<8 (build-time only) until the Prisma 7 move.
+      - run: npm audit --omit=dev --audit-level=critical

@@ -35,8 +35,119 @@
   --font-display: var(--font-cormorant);
 }
 
-* {
+html {
   scroll-behavior: smooth;
+}
+
+@media (hover: none), (pointer: coarse) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  body {
+    overscroll-behavior-y: none;
+    min-height: 100dvh;
+  }
+
+  /* 100vh jumps when the iOS URL bar shows/hides — reflows every screen */
+  .min-h-screen,
+  .min-h-dvh {
+    min-height: auto !important;
+  }
+
+  /* Sticky + blur repaints the whole viewport on iOS scroll */
+  .app-sticky-header {
+    position: static !important;
+    background: var(--card) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Hover transitions repaint constantly while scrolling on iOS */
+  .transition-all,
+  .transition-colors,
+  .transition-shadow,
+  .transition-opacity,
+  .duration-200,
+  .duration-300 {
+    transition: none !important;
+  }
+
+  /* Expensive backgrounds while scrolling */
+  .hero-pattern,
+  .warm-gradient {
+    background-image: none !important;
+    background: var(--background) !important;
+  }
+
+  .animate-float,
+  .animate-fade-up {
+    animation: none !important;
+  }
+
+  .yearbook-section-nav {
+    position: static !important;
+  }
+
+  .min-h-\[85vh\] {
+    min-height: auto !important;
+  }
+
+  /* content-visibility caused visible pop-in while scrolling */
+  .book-page {
+    content-visibility: visible !important;
+    contain-intrinsic-size: auto !important;
+  }
+
+  /* Room for dev banner when testing on phone */
+  body:has(.dev-phone-banner) {
+    padding-bottom: 3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Desktop-only entrance animations — disabled on touch to prevent iOS flicker */
+@media (hover: hover) and (pointer: fine) {
+  .motion-fade-in {
+    opacity: 0;
+    animation: fade-up 0.4s ease-out forwards;
+    animation-delay: var(--motion-delay, 0s);
+  }
+
+  .motion-stagger-item {
+    opacity: 0;
+    animation: fade-up 0.35s ease-out forwards;
+    animation-delay: var(--motion-delay, 0s);
+  }
+
+  .motion-month-panel {
+    animation: fade-up 0.25s ease-out forwards;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-fade-in,
+  .motion-stagger-item,
+  .motion-month-panel {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+/* iOS zooms (and then fights maximum-scale) on focused fields under 16px */
+@media (hover: none) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea,
+  .tiptap,
+  .ProseMirror {
+    font-size: 16px !important;
+  }
 }
 
 body {
@@ -66,6 +177,14 @@ body {
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+}
+
+@media (hover: none), (pointer: coarse) {
+  .glass {
+    background: var(--card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 
 .warm-gradient {

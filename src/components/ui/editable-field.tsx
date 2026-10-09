@@ -27,34 +27,40 @@ export function EditableField({
 }: EditableFieldProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
+  const [committed, setCommitted] = useState(value);
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement | HTMLInputElement>(null);
 
-  useEffect(() => {
+  const [syncedValue, setSyncedValue] = useState(value);
+  if (!editing && value !== syncedValue) {
+    setSyncedValue(value);
+    setCommitted(value);
     setDraft(value);
-  }, [value]);
+  }
 
   useEffect(() => {
-    if (editing && inputRef.current) {
-      inputRef.current.focus();
-      if (multiline && inputRef.current instanceof HTMLTextAreaElement) {
-        inputRef.current.setSelectionRange(draft.length, draft.length);
-      }
+    if (!editing || !inputRef.current) return;
+    const el = inputRef.current;
+    el.focus();
+    if (multiline && el instanceof HTMLTextAreaElement) {
+      const end = el.value.length;
+      el.setSelectionRange(end, end);
     }
-  }, [editing, draft.length, multiline]);
+  }, [editing, multiline]);
 
   async function save() {
     const trimmed = draft.trim();
-    if (trimmed === value.trim()) {
+    if (trimmed === committed.trim()) {
       setEditing(false);
       return;
     }
     setSaving(true);
     try {
       await onSave(trimmed);
+      setCommitted(trimmed);
       setEditing(false);
     } catch {
-      setDraft(value);
+      setDraft(committed);
     } finally {
       setSaving(false);
     }
@@ -78,13 +84,13 @@ export function EditableField({
           void save();
         }
         if (e.key === "Escape") {
-          setDraft(value);
+          setDraft(committed);
           setEditing(false);
         }
       },
       disabled: saving,
       className: cn(
-        "w-full rounded-lg border border-accent/30 bg-cream/50 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent/40 touch-manipulation",
+        "w-full rounded-lg border border-accent/30 bg-cream/50 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-accent/40 touch-manipulation",
         inputClassName
       ),
     };
@@ -113,8 +119,8 @@ export function EditableField({
         className
       )}
     >
-      <C className={cn("inline", value ? "" : "text-muted italic")}>
-        {value || placeholder}
+      <C className={cn("inline", committed ? "" : "text-muted italic")}>
+        {committed || placeholder}
       </C>
       <Pencil className="inline-block ml-1.5 h-3 w-3 text-muted/60 align-middle" />
     </button>

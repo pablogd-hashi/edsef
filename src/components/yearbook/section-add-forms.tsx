@@ -2,13 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Loader2, X, Trash2 } from "lucide-react";
+import { Plus, Loader2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { EditableField } from "@/components/ui/editable-field";
 import { getYouTubeMusicUrl } from "@/lib/youtube-music";
 import { ExternalLink, Music } from "lucide-react";
 import { MediaUpload } from "@/components/yearbook/media-upload";
+import { useYearbookEditorOptional } from "@/components/yearbook/yearbook-editor-context";
+
+function useRefreshFallback() {
+  const editor = useYearbookEditorOptional();
+  const router = useRouter();
+  return () => {
+    if (!editor) router.refresh();
+  };
+}
 
 // ─── Milestone add ───────────────────────────────────────────────────────────
 
@@ -19,7 +28,8 @@ export function MilestoneAdd({
   childId: string;
   yearbookId: string;
 }) {
-  const router = useRouter();
+  const editor = useYearbookEditorOptional();
+  const refreshFallback = useRefreshFallback();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -36,10 +46,12 @@ export function MilestoneAdd({
         body: JSON.stringify({ childId, yearbookId, title: title.trim(), description: description.trim() || undefined }),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? "Failed");
+      const milestone = await res.json();
+      editor?.addMilestone({ ...milestone, media: [], location: null, tags: [], people: [] });
       setOpen(false);
       setTitle("");
       setDescription("");
-      router.refresh();
+      refreshFallback();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to add milestone");
     } finally {
@@ -72,7 +84,8 @@ export function MilestoneAdd({
 // ─── Story add ─────────────────────────────────────────────────────────────
 
 export function StoryAdd({ childId, yearbookId }: { childId: string; yearbookId: string }) {
-  const router = useRouter();
+  const editor = useYearbookEditorOptional();
+  const refreshFallback = useRefreshFallback();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -89,10 +102,12 @@ export function StoryAdd({ childId, yearbookId }: { childId: string; yearbookId:
         body: JSON.stringify({ childId, yearbookId, title: title.trim(), content }),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? "Failed");
+      const story = await res.json();
+      editor?.addStory({ ...story, attachments: [] });
       setOpen(false);
       setTitle("");
       setContent("");
-      router.refresh();
+      refreshFallback();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");
     } finally {
@@ -140,7 +155,8 @@ export function MusicSection({
   yearbookId: string;
   canEdit: boolean;
 }) {
-  const router = useRouter();
+  const editor = useYearbookEditorOptional();
+  const refreshFallback = useRefreshFallback();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
@@ -158,11 +174,13 @@ export function MusicSection({
         body: JSON.stringify({ childId, yearbookId, title: title.trim(), artist: artist.trim() || undefined, youtubeUrl: youtubeUrl.trim() || undefined }),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? "Failed");
+      const track = await res.json();
+      editor?.addMusic(track);
       setTitle("");
       setArtist("");
       setYoutubeUrl("");
       setOpen(false);
-      router.refresh();
+      refreshFallback();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");
     } finally {
@@ -173,7 +191,8 @@ export function MusicSection({
   async function removeTrack(id: string) {
     if (!confirm("Remove this song?")) return;
     await fetch(`/api/music/${id}`, { method: "DELETE" });
-    router.refresh();
+    editor?.removeMusic(id);
+    refreshFallback();
   }
 
   async function patchTrack(id: string, data: Record<string, string>) {
@@ -183,7 +202,8 @@ export function MusicSection({
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error("Failed to save");
-    router.refresh();
+    editor?.updateMusic(id, data);
+    refreshFallback();
   }
 
   return (
@@ -246,7 +266,8 @@ export function MusicSection({
 // ─── Video link add ──────────────────────────────────────────────────────────
 
 export function VideoAdd({ childId, yearbookId }: { childId: string; yearbookId: string }) {
-  const router = useRouter();
+  const editor = useYearbookEditorOptional();
+  const refreshFallback = useRefreshFallback();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
@@ -270,10 +291,12 @@ export function VideoAdd({ childId, yearbookId }: { childId: string; yearbookId:
         }),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? "Failed");
+      const entry = await res.json();
+      editor?.addVideoTimelineEntry({ ...entry, media: [], location: null });
       setOpen(false);
       setTitle("");
       setUrl("");
-      router.refresh();
+      refreshFallback();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");
     } finally {
@@ -304,7 +327,8 @@ export function VideoAdd({ childId, yearbookId }: { childId: string; yearbookId:
 // ─── Video file upload ───────────────────────────────────────────────────────
 
 export function VideoFileAdd({ childId, yearbookId }: { childId: string; yearbookId: string }) {
-  const router = useRouter();
+  const editor = useYearbookEditorOptional();
+  const refreshFallback = useRefreshFallback();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [entryId, setEntryId] = useState<string | null>(null);
@@ -328,8 +352,9 @@ export function VideoFileAdd({ childId, yearbookId }: { childId: string; yearboo
       });
       if (!res.ok) throw new Error((await res.json()).error ?? "Failed");
       const data = await res.json();
+      editor?.addVideoTimelineEntry({ ...data, media: [], location: null });
       setEntryId(data.id);
-      router.refresh();
+      refreshFallback();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");
     } finally {
@@ -372,9 +397,10 @@ export function VideoFileAdd({ childId, yearbookId }: { childId: string; yearboo
         childId={childId}
         yearbookId={yearbookId}
         timelineEntryId={entryId}
-        onUploaded={() => {
+        onUploaded={(asset) => {
+          if (asset && entryId) editor?.appendTimelineMedia(entryId, asset);
           close();
-          router.refresh();
+          refreshFallback();
         }}
       />
       <button type="button" onClick={close} className={cn(buttonVariants("ghost", "sm"))}>Done</button>
@@ -385,7 +411,8 @@ export function VideoFileAdd({ childId, yearbookId }: { childId: string; yearboo
 // ─── Parent note add ─────────────────────────────────────────────────────────
 
 export function ParentNoteAdd({ childId, yearbookId }: { childId: string; yearbookId: string }) {
-  const router = useRouter();
+  const editor = useYearbookEditorOptional();
+  const refreshFallback = useRefreshFallback();
   const [open, setOpen] = useState(false);
   const [author, setAuthor] = useState("Mom");
   const [content, setContent] = useState("");
@@ -402,9 +429,11 @@ export function ParentNoteAdd({ childId, yearbookId }: { childId: string; yearbo
         body: JSON.stringify({ childId, yearbookId, author: author.trim(), content: content.trim() }),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? "Failed");
+      const note = await res.json();
+      editor?.addParentNote({ ...note, attachments: [] });
       setOpen(false);
       setContent("");
-      router.refresh();
+      refreshFallback();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");
     } finally {

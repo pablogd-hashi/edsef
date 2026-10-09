@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
 import { formatDate } from "@/lib/age";
 import { EditableField } from "@/components/ui/editable-field";
@@ -29,8 +28,6 @@ export function ParentNotes({
   yearbookId: string;
   canEdit?: boolean;
 }) {
-  const router = useRouter();
-
   async function patchNote(id: string, data: Record<string, string>) {
     const res = await fetch(`/api/parent-notes/${id}`, {
       method: "PATCH",
@@ -59,7 +56,6 @@ export function ParentNotes({
               className="inline text-xs uppercase tracking-wider text-accent-dark"
               onSave={async (author) => {
                 await patchNote(note.id, { author });
-                router.refresh();
               }}
             />
             {" · "}
@@ -73,7 +69,6 @@ export function ParentNotes({
               className="font-editorial italic"
               onSave={async (content) => {
                 await patchNote(note.id, { content: content as string });
-                router.refresh();
               }}
             />
           ) : (
