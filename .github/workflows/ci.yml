@@ -26,3 +26,30 @@ jobs:
           AUTH_SECRET: ci-only-secret-not-used-anywhere-else-0000
       # prisma CLI pulls deepmerge-ts<8 (build-time only) until the Prisma 7 move.
       - run: npm audit --omit=dev --audit-level=critical
+
+  backup-drill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: memoria
+          POSTGRES_PASSWORD: drill
+          POSTGRES_DB: memoria
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U memoria -d memoria"
+          --health-interval 2s --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client-16
+      - run: npm ci
+      - run: bash tests/backup-drill.sh
+        env:
+          MEMORIA_PG_MODE: direct
+          DATABASE_URL: postgresql://memoria:drill@localhost:5432/memoria

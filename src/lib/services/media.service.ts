@@ -114,11 +114,6 @@ export class MediaService {
       _sum: { size: true },
     });
 
-    const lastBackup = await prisma.backupJob.findFirst({
-      where: { familyId, status: "COMPLETED" },
-      orderBy: { completedAt: "desc" },
-    });
-
     const lastExport = await prisma.exportJob.findFirst({
       where: { familyId, status: "COMPLETED" },
       orderBy: { completedAt: "desc" },
@@ -129,7 +124,6 @@ export class MediaService {
       withoutChecksum,
       pendingProcessing: pending,
       totalSize: sizeResult._sum.size ?? BigInt(0),
-      lastBackup: lastBackup?.completedAt ?? null,
       lastExport: lastExport?.completedAt ?? null,
       missingFiles: 0,
       status: withoutChecksum === 0 && pending === 0 ? "healthy" : "attention",

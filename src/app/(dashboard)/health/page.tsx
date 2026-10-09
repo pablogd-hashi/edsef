@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth/config";
-import { mediaService, backupService } from "@/lib/services";
+import { mediaService } from "@/lib/services";
+import { readBackupStatus } from "@/lib/backup/status";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { BackupControls } from "@/components/health/backup-controls";
@@ -8,25 +9,22 @@ import { formatBytes } from "@/lib/utils";
 import { FadeIn } from "@/components/ui/motion";
 import { ArrowLeft, CheckCircle, AlertCircle, HardDrive, Shield } from "lucide-react";
 
+/** More than two days without a backup means the nightly job is not running. */
+function isBackupStale(lastBackupAt: string | null): boolean {
+  if (!lastBackupAt) return true;
+  return Date.now() - new Date(lastBackupAt).getTime() > 2 * 24 * 60 * 60 * 1000;
+}
+
 export default async function HealthPage() {
   const session = await auth();
   if (!session?.user?.familyId) redirect("/login");
 
-  const [health, jobs] = await Promise.all([
+  const [health, backupStatus] = await Promise.all([
     mediaService.getHealthStats(session.user.familyId),
-    backupService.listByFamily(session.user.familyId),
+    readBackupStatus(),
   ]);
   const isHealthy = health.status === "healthy";
   const isOwner = session.user.role === "OWNER";
-
-  const serializedJobs = jobs.map((j) => ({
-    id: j.id,
-    status: j.status,
-    createdAt: j.createdAt.toISOString(),
-    completedAt: j.completedAt?.toISOString() ?? null,
-    resultSize: j.resultSize?.toString() ?? null,
-    error: j.error,
-  }));
 
   return (
     <AppShell userName={session.user.name}>
@@ -86,9 +84,10 @@ export default async function HealthPage() {
             { label: "Processing", value: String(health.pendingProcessing) },
             {
               label: "Last backup",
-              value: health.lastBackup
-                ? new Date(health.lastBackup).toLocaleDateString("en-US")
+              value: backupStatus.lastBackupAt
+                ? new Date(backupStatus.lastBackupAt).toLocaleDateString("es-ES")
                 : "Never",
+              warn: isBackupStale(backupStatus.lastBackupAt),
             },
             {
               label: "Last export",
@@ -120,7 +119,7 @@ export default async function HealthPage() {
               <Shield className="h-5 w-5 text-accent-dark" />
               <h2 className="font-editorial text-xl">Backups</h2>
             </div>
-            <BackupControls jobs={serializedJobs} isOwner={isOwner} />
+            <BackupControls status={backupStatus} isOwner={isOwner} />
           </section>
         </FadeIn>
 
@@ -132,9 +131,15 @@ export default async function HealthPage() {
             </div>
             <div className="space-y-3">
               {[
-                { done: true, text: "Server copy (database + storage)" },
-                { done: false, text: "Secondary S3 copy (configurable in production)" },
-                { done: false, text: "Offline copy (export ZIP manually)" },
+                {
+                  done: Boolean(backupStatus.lastBackupAt),
+                  text: "Copia diaria en este Mac (base de datos + fotos)",
+                },
+                {
+                  done: Boolean(backupStatus.externalCopiedAt),
+                  text: "Copia en disco externo (USB/SSD)",
+                },
+                { done: false, text: "Archivo offline en iCloud Drive (próximamente)" },
               ].map((item) => (
                 <div key={item.text} className="flex items-center gap-3 text-sm">
                   <div

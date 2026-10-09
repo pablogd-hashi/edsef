@@ -1,15 +1,15 @@
 ---
 name: backup
-description: Backup the Postgres database and ./storage photos. Use when the user wants a Memoria backup or weekly archive.
+description: Back up the Memoria database and all photos/videos. Use when the user wants a backup now or asks where backups are.
 disable-model-invocation: true
 ---
 
 # Backup
 
-From the repo root (Docker Postgres must be running):
+From the repo root (Postgres must be running):
 
 ```bash
 npm run prod:backup
 ```
 
-Writes `backups/memoria-YYYYMMDD-HHMMSS/` with `database.sql`, `storage.tar.gz`, and a copy of `.env`. Copy that folder off the Mac (Time Machine or an external drive). Do not commit `backups/` or `storage/`.
+Writes `~/Memoria-Backups/memoria-YYYYMMDD-HHMMSS/` (or `BACKUP_DIR`) with `database.dump`, `storage.tar` and `manifest.json` (checksums, row counts). Copies to `BACKUP_EXTERNAL_DIR` when that drive is mounted. Nightly backups run automatically after `/install-autostart`. No secrets are stored in backups.

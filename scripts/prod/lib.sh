@@ -4,8 +4,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
-COMPOSE_FILE="docker-compose.prod.yml"
-ENV_FILE=".env"
+# LaunchAgents and the app's "Backup now" button start with a minimal PATH.
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:/Applications/Docker.app/Contents/Resources/bin"
+
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
+ENV_FILE="${ENV_FILE:-.env}"
 
 log() { echo "→ $*"; }
 die() { echo "✗ $*" >&2; exit 1; }
@@ -98,4 +101,74 @@ needs_build() {
 write_build_fingerprint() {
   mkdir -p .next
   source_fingerprint > .next/.source-fingerprint
+}
+
+# ─── Database access for backup/restore ──────────────────────────────────────
+# MEMORIA_PG_MODE=docker (default): run pg tools inside the Postgres container.
+# MEMORIA_PG_MODE=direct: use host pg tools against DATABASE_URL (CI, Postgres.app).
+
+# The family server uses docker-compose.local.yml, the production install
+# docker-compose.prod.yml — pick whichever has Postgres running.
+detect_compose() {
+  [[ "${MEMORIA_PG_MODE:-docker}" == "direct" ]] && return 0
+  local f
+  for f in "$COMPOSE_FILE" docker-compose.prod.yml docker-compose.local.yml; do
+    [[ -f "$f" ]] || continue
+    if docker compose -f "$f" --env-file "$ENV_FILE" ps --status running --services 2>/dev/null \
+      | grep -qx postgres; then
+      COMPOSE_FILE="$f"
+      return 0
+    fi
+  done
+  die "Postgres is not running. Start it first (task up, or ./scripts/prod/start.sh)."
+}
+
+# DATABASE_URL without ?schema=… (pg tools reject Prisma's query params).
+pg_url() {
+  echo "${DATABASE_URL%%\?*}"
+}
+
+pg_tool() {
+  local tool="$1"; shift
+  if [[ "${MEMORIA_PG_MODE:-docker}" == "direct" ]]; then
+    "$tool" "$@" --dbname="$(pg_url)"
+  else
+    compose exec -T postgres "$tool" "$@" \
+      --username="${POSTGRES_USER:-memoria}" --dbname="${POSTGRES_DB:-memoria}"
+  fi
+}
+
+sha256_of() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  else
+    shasum -a 256 "$1" | awk '{print $1}'
+  fi
+}
+
+file_size() {
+  if [[ "$(uname)" == "Darwin" ]]; then stat -f %z "$1"; else stat -c %s "$1"; fi
+}
+
+backup_root() {
+  echo "${BACKUP_DIR:-$HOME/Memoria-Backups}"
+}
+
+storage_root() {
+  local s="${STORAGE_PATH:-./storage}"
+  [[ "$s" = /* ]] || s="$ROOT_DIR/${s#./}"
+  echo "$s"
+}
+
+# Row counts of the tables that hold family memories (compared after a restore).
+table_counts() {
+  pg_tool psql -tA -F= -c "
+    SELECT 'users', count(*) FROM \"User\"
+    UNION ALL SELECT 'children', count(*) FROM \"Child\"
+    UNION ALL SELECT 'yearbooks', count(*) FROM \"Yearbook\"
+    UNION ALL SELECT 'media', count(*) FROM \"MediaAsset\"
+    UNION ALL SELECT 'milestones', count(*) FROM \"Milestone\"
+    UNION ALL SELECT 'timeline', count(*) FROM \"TimelineEntry\"
+    UNION ALL SELECT 'stories', count(*) FROM \"Story\"
+    UNION ALL SELECT 'notes', count(*) FROM \"ParentNote\";"
 }

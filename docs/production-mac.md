@@ -57,21 +57,38 @@ Restart the app. On iPhone Safari: `http://192.168.1.42:3000`
 | Step | Action |
 |------|--------|
 | 1 | Create your parent account |
-| 2 | In `.env`: `ALLOW_REGISTRATION=false` |
+| 2 | Registration closes automatically after the first account; your partner joins with an invite link |
 | 3 | Do not expose port 3000 to the public internet without a VPN |
-| 4 | Weekly backups: `./scripts/prod/backup.sh` |
+| 4 | Backups run every night once autostart is installed (below) |
 
 ## Auto-start when the Mac boots
 
 ```bash
-# Edit paths in the plist, then:
-cp deploy/launchd/com.memoria.plist.example ~/Library/LaunchAgents/com.memoria.plist
-cp deploy/launchd/com.memoria.inbox.plist.example ~/Library/LaunchAgents/com.memoria.inbox.plist
-launchctl load ~/Library/LaunchAgents/com.memoria.plist
-launchctl load ~/Library/LaunchAgents/com.memoria.inbox.plist
+./scripts/prod/install-launchagents.sh
 ```
 
-The inbox agent imports photos from a shared iCloud Drive folder. Setup: [icloud-inbox.md](./icloud-inbox.md).
+This installs three LaunchAgents with the right paths for this checkout:
+
+- `com.memoria` — the app; restarts if it stops (at most once a minute).
+- `com.memoria.inbox` — imports photos from the shared iCloud Drive folder, only when `ICLOUD_INBOX_PATH` is set. Setup: [icloud-inbox.md](./icloud-inbox.md).
+- `com.memoria.backup` — full backup every night at 03:30 (runs on wake if the Mac was asleep).
+
+Logs are in `~/Library/Logs/com.memoria*.log`. Remove them with `--remove`.
+
+## Backups and restore
+
+- Backups go to `BACKUP_DIR` (default `~/Memoria-Backups`): database dump + all photos + checksums.
+- Set `BACKUP_EXTERNAL_DIR` (e.g. `/Volumes/Memoria/Backups`) and every backup is also copied to that drive whenever it is plugged in.
+- 14 daily backups plus one per month for a year are kept.
+- The Health page shows the last backup and last external copy, and has a "Hacer copia ahora" button.
+
+Restore (stop the app first):
+
+```bash
+./scripts/prod/restore.sh ~/Memoria-Backups/memoria-YYYYMMDD-HHMMSS
+```
+
+It checks checksums, asks you to type `RESTORE`, replaces the database and photos, and keeps the old photo folder as `storage.before-restore-…` until you delete it.
 
 Ensure Docker Desktop starts at login (Docker Desktop → Settings → General → Start Docker Desktop when you sign in).
 

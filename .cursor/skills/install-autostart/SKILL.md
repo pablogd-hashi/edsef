@@ -1,20 +1,17 @@
 ---
 name: install-autostart
-description: Install macOS LaunchAgents so Memoria and the inbox watcher start at login. Use when the user wants the family server to come back after reboot.
+description: Install macOS LaunchAgents so Memoria, the inbox watcher and the nightly backup start at login. Use when the user wants the family server to come back after reboot or wants automatic backups.
 disable-model-invocation: true
 ---
 
 # Install login autostart
 
-Edit the USER paths inside the example plists, then:
-
 ```bash
-cp deploy/launchd/com.memoria.plist.example ~/Library/LaunchAgents/com.memoria.plist
-cp deploy/launchd/com.memoria.inbox.plist.example ~/Library/LaunchAgents/com.memoria.inbox.plist
-launchctl load ~/Library/LaunchAgents/com.memoria.plist
-launchctl load ~/Library/LaunchAgents/com.memoria.inbox.plist
+./scripts/prod/install-launchagents.sh
 ```
+
+Installs `com.memoria` (app, auto-restart), `com.memoria.inbox` (only if `ICLOUD_INBOX_PATH` is set) and `com.memoria.backup` (03:30 nightly). Paths come from this checkout; re-run after moving the repo. `--remove` uninstalls.
 
 Also: Docker Desktop → Settings → General → Start Docker Desktop when you sign in.
 
-Logs: `~/Library/Logs/memoria.log` and `~/Library/Logs/memoria-inbox.log`. Inbox folder must already exist (`/setup-icloud-inbox`).
+Logs: `~/Library/Logs/com.memoria*.log`.

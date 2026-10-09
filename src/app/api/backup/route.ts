@@ -1,46 +1,44 @@
 import { NextResponse } from "next/server";
+import { spawn } from "child_process";
+import path from "path";
 import { auth } from "@/lib/auth/config";
-import { backupService } from "@/lib/services/backup.service";
-import { runFamilyBackup } from "@/lib/backup/runner";
+import { readBackupStatus } from "@/lib/backup/status";
 
 export async function GET() {
   const session = await auth();
   if (!session?.user?.familyId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
   if (session.user.role !== "OWNER" && session.user.role !== "PARENT") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const jobs = await backupService.listByFamily(session.user.familyId);
-  return NextResponse.json({ jobs });
+  return NextResponse.json(await readBackupStatus());
 }
 
+/** Starts the same script the nightly LaunchAgent runs; poll GET for completion. */
 export async function POST() {
   const session = await auth();
   if (!session?.user?.familyId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
   if (session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Only the family owner can create backups" }, { status: 403 });
   }
 
-  try {
-    const result = await runFamilyBackup(session.user.familyId);
-    return NextResponse.json({
-      success: true,
-      backupId: result.backupId,
-      fileCount: result.fileCount,
-      totalSize: result.totalSize.toString(),
-      downloadUrl: `/api/backup/download?backupId=${result.backupId}`,
-    });
-  } catch (e) {
-    console.error("Backup error:", e);
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Backup failed" },
-      { status: 500 }
-    );
+  const status = await readBackupStatus();
+  if (status.running) {
+    return NextResponse.json({ started: false, running: true }, { status: 409 });
   }
+
+  const script = path.join(process.cwd(), "scripts", "prod", "backup.sh");
+  const child = spawn("bash", [script], {
+    cwd: process.cwd(),
+    detached: true,
+    stdio: "ignore",
+    env: process.env,
+  });
+  child.unref();
+
+  return NextResponse.json({ started: true }, { status: 202 });
 }
